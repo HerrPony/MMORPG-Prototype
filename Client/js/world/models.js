@@ -1,28 +1,29 @@
-import { makeHumanoid, loadHumanAssets as loadRigs, humanAssetsLoaded, quiverProp } from './human.js';
-import { loadBeastAssets, beastsLoaded, makeFoxBeast } from './beasts.js';
-import { makeHuman, makeWolf, makeSpider, playerStyle, FORESTER_STYLE } from './proc.js';
+import { makeHumanoid, loadHumanAssets as loadRigs, quiverProp } from './human.js';
+import { loadBeastAssets, makePixelBeast } from './beasts.js';
+import { makeSpider } from './proc.js';
+import { SKIN, HAIR } from '../util.js';
 import { makeCroc, makeScorpion, makeWisp, makeGriffin, makeObject } from './creatures2.js';
 
 export { makeGriffin };
 export const loadHumanAssets = () => Promise.all([loadRigs(), loadBeastAssets()]);
+const PANTS = { warrior: 0x4a3b2c, hunter: 0x5a4a2d, mage: 0x23358a };
 
 const CLASS_LOOK = {
-  warrior: { tint: 0xc4c8d4, emissive: 0x0a0a10, head: { kind: 'helmet', id: 'mail_head_1' }, mh: 'sword', oh: 'shield', body: [1.14, 1, 1.12],
+  warrior: { pants: PANTS.warrior, tint: 0xc4c8d4, emissive: 0x0a0a10, head: { kind: 'helmet', id: 'mail_head_1' }, mh: 'sword', oh: 'shield', body: [1.14, 1, 1.12],
     base: { chest: 'mail_chest_1', legs: 'mail_legs_1', feet: 'mail_feet_1', hands: 'mail_hands_1', shoulder: 'mail_shoulder_1' } },
-  hunter: { tint: 0x8aa66a, emissive: 0x08140a, hideVisor: true, head: { kind: 'hood', color: 0x2f4f2a }, mh: 'bow', oh: null, cloak: { color: 0x2f4f2a }, body: [0.97, 1.02, 0.97], quiver: true,
+  hunter: { pants: PANTS.hunter, tint: 0x8aa66a, emissive: 0x08140a, hideVisor: true, head: { kind: 'hood', color: 0x2f4f2a }, mh: 'bow', oh: null, cloak: { color: 0x2f4f2a }, body: [0.97, 1.02, 0.97], quiver: true,
     base: { chest: 'leather_chest_0', legs: 'leather_legs_0', feet: 'leather_feet_0', hands: 'leather_hands_0' } },
-  mage: { tint: 0x8a96e8, emissive: 0x0e1440, hideVisor: true, head: { kind: 'wizardhat', color: 0x23358a }, mh: 'staff', oh: null, body: [0.92, 1.0, 0.92],
+  mage: { pants: PANTS.mage, tint: 0x8a96e8, emissive: 0x0e1440, hideVisor: true, head: { kind: 'wizardhat', color: 0x23358a }, mh: 'staff', oh: null, body: [0.92, 1.0, 0.92],
     base: { chest: 'cloth_chest_1', waist: 'cloth_waist_2', hands: 'cloth_hands_0' } },
 };
 // armor kind of an item id (cloth_head_3 -> cloth)
 const kindOf = (id) => (id || '').split('_')[0];
-const ARMOR_TINT = { cloth: 0x5a6ae0, leather: 0x7a5a38, mail: 0xa8aeb8 };
 
 // Builds the spec describing what a player model wears.
-function playerSpec(cls, eq = {}, female = false) {
+function playerSpec(cls, eq = {}, lk = {}) {
+  const female = lk?.gender === 'f';
   const base = CLASS_LOOK[cls] || CLASS_LOOK.warrior;
-  const spec = { tint: base.tint, emissive: base.emissive, hideVisor: base.hideVisor, props: [], scale: 1, bodyScale: base.body, rig: female ? 'michelle' : 'soldier' };
-  if (female) spec.scale = 0.94;
+  const spec = { tint: base.tint, pants: base.pants, props: [], scale: female ? 0.95 : 1, bodyScale: base.body, female, skin: SKIN[lk?.skin ?? 0], hair: HAIR[lk?.hair ?? 0] };
   const mh = eq.mainhand, oh = eq.offhand;
   const wk = (id, dflt) => (id ? id.split('_')[0] : dflt);
   const mhKind = wk(mh, base.mh);
@@ -38,10 +39,8 @@ function playerSpec(cls, eq = {}, female = false) {
   else if (base.cloak) spec.cloak = { id: 'back_0', color: base.cloak.color };
   const bs = base.base || {};
   spec.chest = eq.chest || bs.chest; spec.legs = eq.legs || bs.legs; spec.feet = eq.feet || bs.feet; spec.hands = eq.hands || bs.hands; spec.waist = eq.waist || bs.waist;
-  if (base.quiver) spec.extra = [{ bone: 'spine', obj: quiverProp(), off: [-0.08, 0.1, -0.2], rot: [0, 0, 0] }];
+  if (base.quiver) spec.extra = [{ bone: 'chest', obj: quiverProp(), off: [-0.08, 0.1, -0.2], rot: [0, 0, 0] }];
   if (eq.chest) {
-    const k = kindOf(eq.chest);
-    spec.tint = ARMOR_TINT[k] || spec.tint;
     const t = parseInt(eq.chest.split('_').pop(), 10);
     if (eq.chest.endsWith('_bf') || t >= 7) spec.emissive = 0x3a2a08;
   }
@@ -89,28 +88,26 @@ const HUMANOIDS = {
   water_elem_pet: { tint: 0x4aaaff, emissive: 0x1a5a9a, opacity: 0.72, hideVisor: true, scale: 0.95 },
 };
 
-// which rig / body proportions (bodyScale x,y,z ; headScale) an NPC or monster uses
-const RIG_OF = {
-  priest: 'michelle', herbalist: 'michelle', witch: 'michelle', hag: 'michelle', scholar: 'michelle', merchant: 'michelle', trainer_mage: 'michelle', fisher: 'michelle',
-  skeleton: 'xbot', mummy: 'xbot', tomb_guardian: 'xbot', water_elem: 'xbot', water_elem_pet: 'xbot', zombie: 'xbot', zombie_giant: 'xbot', kobold_king: 'xbot',
+// painted style, gender and proportions (bodyScale x,y,z ; headScale) of NPCs and monsters
+const STYLE_OF = {
+  skeleton: 'skeleton', zombie: 'zombie', zombie_giant: 'zombie', mummy: 'bandage', tomb_guardian: 'gold', yeti: 'fur', yeti_chief: 'fur',
+  kobold: 'kobold', kobold_shaman: 'kobold', kobold_boss: 'kobold', kobold_king: 'kobold', water_elem: 'water', water_elem_pet: 'water',
 };
+const FEMALE_NPC = new Set(['priest', 'herbalist', 'witch', 'hag', 'scholar', 'merchant', 'trainer_mage', 'fisher']);
 const BODY_OF = {
   guard: { b: [1.12, 1, 1.1] }, trainer_warrior: { b: [1.14, 1, 1.12] }, smith: { b: [1.2, 0.97, 1.2] }, mayor: { b: [1.25, 0.95, 1.3] }, elder: { b: [0.95, 0.92, 0.95] },
-  bandit_chief: { b: [1.2, 1, 1.15] }, farmer: { b: [1.05, 1, 1.1] }, merchant: { b: [1.08, 1, 1.15] },
-  kobold: { b: [1.1, 0.95, 1.1], h: 1.7 }, kobold_shaman: { b: [1.0, 0.95, 1.0], h: 1.7 }, kobold_boss: { b: [1.35, 0.95, 1.3], h: 1.6 }, kobold_king: { b: [1.4, 0.98, 1.35], h: 1.5 },
-  yeti: { b: [1.55, 1.0, 1.35], h: 0.85 }, yeti_chief: { b: [1.7, 1.0, 1.45], h: 0.85 },
-  zombie: { b: [0.98, 0.98, 0.98], h: 1.0 }, zombie_giant: { b: [1.6, 1.0, 1.45] }, skeleton: { b: [0.78, 1.0, 0.78], h: 1.1 }, mummy: { b: [1.0, 1.0, 1.0] },
-  tomb_guardian: { b: [1.35, 1.0, 1.3] }, water_elem: { b: [1.3, 1.0, 1.3] }, water_elem_pet: { b: [1.1, 1.0, 1.1] }, witch: { b: [0.95, 1, 0.95] }, hag: { b: [0.9, 0.92, 0.9] },
-  desert_raider: { b: [1.0, 1.0, 1.0] }, bandit: { b: [0.98, 1, 0.98] },
+  bandit_chief: { b: [1.2, 1, 1.15] }, farmer: { b: [1.05, 1, 1.1] }, merchant: { b: [1.0, 1, 1.0] },
+  kobold: { b: [1.1, 0.95, 1.1], h: 1.3 }, kobold_shaman: { b: [1.0, 0.95, 1.0], h: 1.3 }, kobold_boss: { b: [1.35, 0.95, 1.3], h: 1.25 }, kobold_king: { b: [1.4, 0.98, 1.35], h: 1.2 },
+  yeti: { b: [1.55, 1.0, 1.35], h: 0.9 }, yeti_chief: { b: [1.7, 1.0, 1.45], h: 0.9 },
+  skeleton: { b: [0.8, 1.0, 0.8] }, zombie_giant: { b: [1.6, 1.0, 1.45] },
+  tomb_guardian: { b: [1.35, 1.0, 1.3] }, water_elem: { b: [1.3, 1.0, 1.3] }, water_elem_pet: { b: [1.1, 1.0, 1.1] }, hag: { b: [0.9, 0.92, 0.9] },
 };
-
-const QUAD = { wolf: 'wolf', wolf_alpha: 'wolf', boar: 'boar', bear: 'bear', bear_big: 'bear', hyena: 'hyena', icewolf: 'icewolf', polarbear: 'polarbear', polarbear_big: 'polarbear', bull: 'bull', sheep: 'sheep' };
+const QUAD = new Set(['wolf', 'wolf_alpha', 'icewolf', 'hyena', 'boar', 'bear', 'bear_big', 'polarbear', 'polarbear_big', 'bull', 'sheep']);
 
 export function makeModel(ent) {
   const k = ent.k, m = ent.m;
   if (k === 'obj') return makeObject(m);
-  if (['wolf', 'wolf_alpha', 'icewolf', 'hyena'].includes(m) && beastsLoaded()) return makeFoxBeast(m);
-  if (QUAD[m]) return makeWolf(ent.id, QUAD[m]);
+  if (QUAD.has(m)) return makePixelBeast(m, ent.id);
   switch (m) {
     case 'spider': return makeSpider(ent.id);
     case 'cavespider': return makeSpider(ent.id, 0x3a3a52);
@@ -122,24 +119,23 @@ export function makeModel(ent) {
     case 'frostspirit': return makeWisp(0x7ad8ff);
     case 'griffin': return makeGriffin();
   }
-  if (!humanAssetsLoaded()) { // fallback if the rig could not be loaded
-    if (m === 'forester') return makeHuman(FORESTER_STYLE);
-    return makeHuman(playerStyle(ent.c, ent.lk));
-  }
   if (k === 'player') {
-    const model = makeHumanoid(playerSpec(ent.c, ent.eq || {}, ent.lk?.gender === 'f'));
+    const model = makeHumanoid(playerSpec(ent.c, ent.eq || {}, ent.lk));
     model.playerClass = ent.c;
     return model;
   }
-  const spec = HUMANOIDS[m];
-  if (spec) { const bo = BODY_OF[m]; return makeHumanoid({ ...spec, rig: RIG_OF[m], bodyScale: bo?.b, headScale: bo?.h }); }
-  return makeHumanoid({ tint: 0x888888, hideVisor: true });
+  const spec = HUMANOIDS[m] || { tint: 0x888888 };
+  const bo = BODY_OF[m];
+  const id = ent.id || 0;
+  return makeHumanoid({
+    ...spec, style: STYLE_OF[m], female: FEMALE_NPC.has(m), bodyScale: bo?.b, headScale: bo?.h,
+    skin: SKIN[id % 4], hair: HAIR[(id >> 1) % 6],
+  });
 }
-
 // Re-dresses a player model when the equipment changed.
 export function applyEquipment(model, ent) {
   if (model.kind !== 'human' || !model.dress || !model.playerClass) return;
-  const spec = playerSpec(ent.c, ent.eq || {}, ent.lk?.gender === 'f');
+  const spec = playerSpec(ent.c, ent.eq || {}, ent.lk);
   model.setTint(spec.tint);
   model.dress(spec);
 }

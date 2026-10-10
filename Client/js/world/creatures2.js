@@ -1,10 +1,12 @@
 import * as THREE from 'three';
+import { pixTex } from './human.js';
 
-const M = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
+// Pixel look: every lit material gets a small noise texture, spheres become cubes and cones become 4-sided pyramids.
+const M = (c, o = {}) => new THREE.MeshLambertMaterial({ map: pixTex('n' + c, 4, 4, (p) => p.fill(c, 0.2)), ...o });
 const B = (c) => new THREE.MeshBasicMaterial({ color: c });
-const sph = (r, m, ws = 10, hs = 8) => { const x = new THREE.Mesh(new THREE.SphereGeometry(r, ws, hs), m); x.castShadow = true; return x; };
+const sph = (r, m) => { const x = new THREE.Mesh(new THREE.BoxGeometry(r * 1.7, r * 1.7, r * 1.7), m); x.castShadow = true; return x; };
 const box = (w, h, d, m) => { const x = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); x.castShadow = true; return x; };
-const cone = (r, h, m, s = 6) => { const x = new THREE.Mesh(new THREE.ConeGeometry(r, h, s), m); x.castShadow = true; return x; };
+const cone = (r, h, m) => { const x = new THREE.Mesh(new THREE.ConeGeometry(r, h, 4), m); x.castShadow = true; return x; };
 const pivot = (x, y, z) => { const g = new THREE.Group(); g.position.set(x, y, z); return g; };
 
 let glowTex = null;
@@ -135,7 +137,7 @@ export function makeGriffin() {
   const fur = M(0xc89a58), feather = M(0xf2ece0), dark = M(0x6a4a2a);
   const torso = sph(0.55, fur, 12, 10); torso.scale.set(0.9, 0.8, 1.9); torso.position.set(0, 1.0, -0.3); body.add(torso);
   const chest = sph(0.5, feather, 10, 8); chest.position.set(0, 1.15, 0.65); body.add(chest);
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 0.7, 8), feather); neck.position.set(0, 1.6, 0.9); neck.rotation.x = 0.4; body.add(neck);
+  const neck = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.7, 0.4), feather); neck.position.set(0, 1.6, 0.9); neck.rotation.x = 0.4; body.add(neck);
   const head = new THREE.Group(); head.position.set(0, 1.98, 1.15); body.add(head);
   const skull = sph(0.26, feather, 10, 8); head.add(skull);
   const beak = cone(0.12, 0.5, M(0xe8b030), 5); beak.rotation.x = Math.PI / 2 + 0.2; beak.position.set(0, -0.08, 0.38); head.add(beak);

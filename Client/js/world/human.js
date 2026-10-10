@@ -1,60 +1,55 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
-// Humanoid characters use one rigged, animated model (Idle / Walk / Run) which is tinted and
-// dressed per class, NPC and monster with props attached to its bones.
+// Pixel-art humanoids: a blocky rig (head, torso, two arms, two legs) whose faces are painted
+// with small procedurally drawn textures (nearest-neighbour filtered => crisp pixels).
+// Clothes, armor, skin, hair and style (skeleton, zombie, yeti ...) are all painted, props are boxes.
 
-// Several rigged models: each has its own body (male soldier, female, robot/skeleton) and animations.
-const RIG_FILES = { soldier: 'assets/Soldier.glb', michelle: 'assets/Michelle.glb', xbot: 'assets/Xbot.glb' };
-const rigs = {}; // name -> { gltf, height, flip, clips }
-let rigsReady = null;
+export const loadHumanAssets = () => Promise.resolve(true);
+export const humanAssetsLoaded = () => true;
 
-function loadRig(name) {
-  return new Promise((resolve) => {
-    new GLTFLoader().load(RIG_FILES[name], (g) => {
-      g.scene.updateMatrixWorld(true);
-      const pos = (n) => { let o = null; g.scene.traverse((x) => { if (x.name === n) o = x; }); return o ? new THREE.Vector3().setFromMatrixPosition(o.matrixWorld) : null; };
-      const head = pos('mixamorigHead'), foot = pos('mixamorigLeftFoot'), toe = pos('mixamorigLeftToeBase');
-      let height = 1.8;
-      if (head && foot) height = Math.max(0.3, (head.y - foot.y) * 1.12 + 0.12);
-      // which way the model looks (+Z in the game): toes point forward
-      const flip = toe && foot ? toe.z - foot.z < 0 : false;
-      rigs[name] = { gltf: g, height, flip };
-      console.log('rig', name, 'height', height.toFixed(2), 'flip', flip);
-      resolve(true);
-    }, undefined, () => resolve(false));
-  });
+// ---------- colours & random ----------
+const hexCss = (c) => '#' + (c & 0xffffff).toString(16).padStart(6, '0');
+export const shade = (c, f) => {
+  const r = Math.min(255, Math.round(((c >> 16) & 255) * f)), g = Math.min(255, Math.round(((c >> 8) & 255) * f)), b = Math.min(255, Math.round((c & 255) * f));
+  return (r << 16) | (g << 8) | b;
+};
+export const mix = (a, b, t) => {
+  const ch = (s) => Math.round(((a >> s) & 255) * (1 - t) + ((b >> s) & 255) * t);
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+};
+function rng(seed) {
+  let s = seed >>> 0;
+  return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 }
+function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
 
-export function loadHumanAssets() {
-  if (!rigsReady) {
-    rigsReady = loadRig('soldier').then(async (ok) => {
-      await Promise.all([loadRig('michelle'), loadRig('xbot')]);
-      return ok;
-    });
+// ---------- pixel textures ----------
+class Painter {
+  constructor(g, w, h, seed) { this.g = g; this.w = w; this.h = h; this.r = rng(seed); }
+  fill(c, amt = 0.12, x0 = 0, y0 = 0, w = this.w, h = this.h) {
+    for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) { this.g.fillStyle = hexCss(shade(c, 1 + (this.r() - 0.5) * amt)); this.g.fillRect(x, y, 1, 1); }
   }
-  return rigsReady;
+  px(x, y, c) { if (x < 0 || y < 0 || x >= this.w || y >= this.h) return; this.g.fillStyle = hexCss(c); this.g.fillRect(x, y, 1, 1); }
+  rect(x, y, w, h, c) { this.g.fillStyle = hexCss(c); this.g.fillRect(x, y, w, h); }
 }
 
-export const humanAssetsLoaded = () => !!rigs.soldier;
-
-// clips by role for each rig (Michelle has no walk/run of its own and re-uses the soldier clips: same bone names)
-function clipsFor(name) {
-  const r = rigs[name];
-  const find = (arr, ...n) => arr.find((a) => n.includes(a.name));
-  const own = r.gltf.animations;
-  if (name === 'xbot') return { idle: find(own, 'idle'), walk: find(own, 'walk'), run: find(own, 'run') };
-  const src = rigs.soldier.gltf.animations;
-  // the hips track of the soldier clips is not compatible with this skeleton's rest pose
-  const adapt = (c) => new THREE.AnimationClip(c.name, c.duration, c.tracks.filter((t) => !t.name.startsWith('mixamorigHips.')));
-  return { idle: adapt(find(src, 'Idle')), walk: adapt(find(src, 'Walk')), run: adapt(find(src, 'Run')) };
+const texCache = new Map();
+export function pixTex(key, w, h, draw) {
+  let t = texCache.get(key);
+  if (t) return t;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  draw(new Painter(c.getContext('2d'), w, h, hashStr(key)));
+  t = new THREE.CanvasTexture(c);
+  t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.colorSpace = THREE.SRGBColorSpace;
+  texCache.set(key, t);
+  return t;
 }
 
 const M = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
+const bx = (w, h, d, c, o = {}) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M(c, o)); m.castShadow = true; return m; };
 const TIER_COLORS = [0x8a8a8a, 0x6a9a5a, 0x5a9ac8, 0x4a7ae0, 0x9a6ad8, 0xd8a040, 0xe08040, 0xe05050, 0xd04aa0, 0xffd860];
 
-// item id suffix -> tier index (bf = dungeon set, shown as dark gold)
 function tierOf(id) {
   if (!id) return 0;
   if (id.endsWith('_bf')) return 8;
@@ -62,14 +57,20 @@ function tierOf(id) {
   return Number.isFinite(t) ? t : 0;
 }
 const metalColor = (id) => (id.endsWith('_bf') ? 0x6a5a30 : [0x9a9a9a, 0xa8b0b8, 0xb8c0cc, 0xc4ccd8, 0xaab4d0, 0xc8c8e0, 0xd8d0b0, 0xe8e0c0, 0xf0d890, 0xfff0b0][Math.min(9, tierOf(id))]);
+const kindOfItem = (id) => (id || '').split('_')[0];
 
-// ---- props: Object3D whose local +Y is "along the held item" ----
+function armorColor(id) {
+  const base = { cloth: 0x4a5ad0, leather: 0x7a5a38, mail: 0xa8aeb8 }[kindOfItem(id)] || 0x888888;
+  const t = tierOf(id);
+  return mix(base, TIER_COLORS[Math.min(9, t)], id.endsWith('_bf') ? 0.5 : Math.min(0.45, t * 0.05));
+}
+
+// ---------- props (all in local space, +Y along the item) ----------
 function blade(len, w, color) {
   const g = new THREE.Group();
-  const b = new THREE.Mesh(new THREE.BoxGeometry(w, len, w * 0.25), M(color, { emissive: 0x222222 }));
-  b.position.y = len / 2 + 0.08; g.add(b);
-  const guard = new THREE.Mesh(new THREE.BoxGeometry(w * 3.2, 0.05, 0.07), M(0x8a6a28)); guard.position.y = 0.08; g.add(guard);
-  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.2, 6), M(0x4a2a14)); grip.position.y = -0.04; g.add(grip);
+  const b = bx(w, len, w * 0.3, color, { emissive: 0x222222 }); b.position.y = len / 2 + 0.1; g.add(b);
+  const guard = bx(w * 3.4, 0.05, 0.08, 0x8a6a28); guard.position.y = 0.09; g.add(guard);
+  const grip = bx(0.05, 0.2, 0.05, 0x4a2a14); grip.position.y = -0.03; g.add(grip);
   return g;
 }
 
@@ -77,323 +78,426 @@ function propFor(kind, id) {
   const tier = tierOf(id);
   const tc = TIER_COLORS[Math.min(9, tier)];
   const g = new THREE.Group();
+  const glow = (s, c) => { const m = new THREE.Mesh(new THREE.BoxGeometry(s, s, s), new THREE.MeshBasicMaterial({ color: c })); m.rotation.set(0.6, 0.6, 0); return m; };
   switch (kind) {
-    case 'sword': return blade(0.5 + tier * 0.025, 0.07, metalColor(id || 'x_0'));
-    case 'dagger': return blade(0.28, 0.05, 0xb0b4bc);
-    case 'scimitar': { const b = blade(0.55, 0.08, 0xd8d8e0); b.rotation.z = 0.15; return b; }
+    case 'sword': return blade(0.5 + tier * 0.025, 0.08, metalColor(id || 'x_0'));
+    case 'dagger': return blade(0.28, 0.06, 0xb0b4bc);
+    case 'scimitar': { const b = blade(0.55, 0.09, 0xd8d8e0); b.rotation.z = 0.15; return b; }
     case 'axe': {
-      const s = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.8, 6), M(0x6b4423)); s.position.y = 0.3; g.add(s);
-      const h = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.05), M(0xaab0b8)); h.position.set(0.12, 0.62, 0); g.add(h);
+      const s = bx(0.05, 0.8, 0.05, 0x6b4423); s.position.y = 0.3; g.add(s);
+      const h = bx(0.3, 0.22, 0.05, 0xaab0b8); h.position.set(0.13, 0.62, 0); g.add(h);
       return g;
     }
     case 'pick': {
-      const s = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.7, 6), M(0x6b4423)); s.position.y = 0.25; g.add(s);
-      const h = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.5, 5), M(0x8a8a90)); h.rotation.z = Math.PI / 2; h.position.set(0, 0.58, 0); g.add(h);
+      const s = bx(0.05, 0.7, 0.05, 0x6b4423); s.position.y = 0.25; g.add(s);
+      const h = bx(0.5, 0.07, 0.07, 0x8a8a90); h.position.set(0, 0.6, 0); g.add(h);
       return g;
     }
     case 'staff': {
-      const s = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 1.7, 6), M(0x6b4423)); s.position.y = 0.45; g.add(s);
-      const orb = new THREE.Mesh(new THREE.SphereGeometry(0.1 + tier * 0.006, 10, 8), new THREE.MeshBasicMaterial({ color: tier > 0 ? tc : 0x66aaff })); orb.position.y = 1.35; g.add(orb);
-      const halo = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.02, 5, 14), M(0xc8a24a)); halo.position.y = 1.3; halo.rotation.x = Math.PI / 2; g.add(halo);
+      const s = bx(0.06, 1.7, 0.06, 0x6b4423); s.position.y = 0.45; g.add(s);
+      const orb = glow(0.18 + tier * 0.01, tier > 0 ? tc : 0x66aaff); orb.position.y = 1.4; g.add(orb);
+      const halo = bx(0.26, 0.04, 0.26, 0xc8a24a); halo.position.y = 1.28; g.add(halo);
       return g;
     }
     case 'witchstaff': {
-      const s = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 1.5, 5), M(0x3a2a1a)); s.position.y = 0.4; g.add(s);
-      const orb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshBasicMaterial({ color: 0x9aff4a })); orb.position.y = 1.2; g.add(orb);
+      const s = bx(0.06, 1.5, 0.06, 0x3a2a1a); s.position.y = 0.4; g.add(s);
+      const orb = glow(0.16, 0x9aff4a); orb.position.y = 1.2; g.add(orb);
       return g;
     }
     case 'spear': {
-      const s = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2.1, 6), M(0x6b4423)); s.position.y = 0.5; g.add(s);
-      const t = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.28, 6), M(0xc0c4cc)); t.position.y = 1.65; g.add(t);
+      const s = bx(0.05, 2.1, 0.05, 0x6b4423); s.position.y = 0.5; g.add(s);
+      const t = bx(0.1, 0.3, 0.04, 0xc0c4cc); t.position.y = 1.67; g.add(t);
       return g;
     }
     case 'bow': {
-      const bow = new THREE.Mesh(new THREE.TorusGeometry(0.45 + tier * 0.01, 0.018, 6, 20, Math.PI), M(tier > 2 ? tc : 0x6b4a22));
-      bow.rotation.z = -Math.PI / 2; g.add(bow);
-      const str = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.9, 0.006), M(0xdddddd)); str.position.x = 0; g.add(str);
+      // pixel bow: stepped arc along Y, bulging to +X
+      const col = tier > 2 ? tc : 0x6b4a22;
+      const mid = bx(0.06, 0.24, 0.05, col); mid.position.x = 0.14; g.add(mid);
+      for (const s of [-1, 1]) {
+        const a = bx(0.06, 0.2, 0.05, col); a.position.set(0.1, s * 0.2, 0); a.rotation.z = -s * 0.3; g.add(a);
+        const b = bx(0.06, 0.2, 0.05, col); b.position.set(0.0, s * 0.4, 0); b.rotation.z = -s * 0.6; g.add(b);
+      }
+      const str = bx(0.012, 0.86, 0.012, 0xdddddd); str.position.x = -0.04; g.add(str);
       return g;
     }
     case 'rifle': {
-      const s = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.1, 6), M(0x333333)); s.position.y = 0.3; g.add(s);
-      const st = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.35, 0.06), M(0x6b4423)); st.position.y = -0.2; g.add(st);
+      const s = bx(0.05, 1.1, 0.05, 0x333333); s.position.y = 0.3; g.add(s);
+      const st = bx(0.08, 0.35, 0.07, 0x6b4423); st.position.y = -0.2; g.add(st);
       return g;
     }
     case 'shield': {
-      const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.06, 16), M(tier > 0 ? tc : 0x9a2a2a)); sh.rotation.x = Math.PI / 2; g.add(sh);
-      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.025, 5, 20), M(metalColor(id || 'x_0'))); g.add(rim);
-      const boss = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), M(0xc9a24a)); boss.position.z = 0.04; g.add(boss);
+      const body = bx(0.5, 0.62, 0.06, tier > 0 ? tc : 0x9a2a2a); g.add(body);
+      const rim = bx(0.54, 0.66, 0.04, metalColor(id || 'x_0')); rim.position.z = -0.01; g.add(rim);
+      const boss = bx(0.14, 0.14, 0.05, 0xc9a24a); boss.position.z = 0.05; g.add(boss);
       return g;
     }
-    case 'orb': {
-      const o = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), new THREE.MeshBasicMaterial({ color: tc })); g.add(o);
-      return g;
-    }
+    case 'orb': { g.add(bx(0.2, 0.2, 0.2, tc)); return g; }
     case 'candle': {
-      const c = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.15, 6), M(0xe8e0c0)); g.add(c);
-      const f = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 5), new THREE.MeshBasicMaterial({ color: 0xffaa33 })); f.position.y = 0.12; g.add(f);
+      g.add(bx(0.06, 0.16, 0.06, 0xe8e0c0));
+      const f = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.07, 0.06), new THREE.MeshBasicMaterial({ color: 0xffaa33 })); f.position.y = 0.12; g.add(f);
       return g;
     }
   }
-  return g;
-}
-
-function headPropFor(kind, id, color) {
-  const tier = tierOf(id);
-  const mc = id ? metalColor(id) : 0xb9bec8;
-  const g = new THREE.Group();
-  switch (kind) {
-    case 'helmet': {
-      const h = new THREE.Mesh(new THREE.SphereGeometry(0.17, 14, 10, 0, 6.283, 0, 1.75), M(mc, { emissive: 0x111111 })); h.position.y = 0.02; g.add(h);
-      const nasal = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.12, 0.02), M(mc)); nasal.position.set(0, -0.02, 0.17); g.add(nasal);
-      if (tier >= 3) { const crest = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.12, 0.3), M(TIER_COLORS[Math.min(9, tier)])); crest.position.set(0, 0.2, 0); g.add(crest); }
-      return g;
-    }
-    case 'hood': {
-      const h = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 8, 0, 6.283, 0, 1.9), M(color || 0x2f4f2a)); h.position.set(0, 0.0, -0.02); g.add(h);
-      return g;
-    }
-    case 'wizardhat': {
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.55, 12), M(color || 0x23358a)); cone.position.y = 0.4; cone.rotation.x = -0.15; g.add(cone);
-      const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.025, 16), M(color || 0x23358a)); brim.position.y = 0.14; g.add(brim);
-      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.205, 0.205, 0.05, 14), M(0xd8b13a)); band.position.y = 0.17; g.add(band);
-      return g;
-    }
-    case 'straw': {
-      const c = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, 0.1, 12), M(0xe0c070)); c.position.y = 0.15; g.add(c);
-      const b = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.02, 16), M(0xe0c070)); b.position.y = 0.1; g.add(b);
-      return g;
-    }
-    case 'turban': {
-      const t = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 8, 0, 6.283, 0, 1.6), M(color || 0xe8e0c8)); t.position.y = 0.07; g.add(t);
-      return g;
-    }
-    case 'crown': {
-      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.19, 0.12, 8), M(0xe8c040, { emissive: 0x443300 })); base.position.y = 0.15; g.add(base);
-      for (let i = 0; i < 6; i++) { const p = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.12, 4), M(0xe8c040, { emissive: 0x443300 })); const a = (i / 6) * 6.283; p.position.set(Math.cos(a) * 0.17, 0.27, Math.sin(a) * 0.17); g.add(p); }
-      return g;
-    }
-    case 'witchhat': {
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.6, 10), M(0x2a1a3a)); cone.position.y = 0.42; cone.rotation.z = 0.2; g.add(cone);
-      const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.02, 14), M(0x2a1a3a)); brim.position.y = 0.14; g.add(brim);
-      return g;
-    }
-    case 'mask': {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.1, 0.06), M(color || 0x8a1a1a)); m.position.set(0, -0.04, 0.15); g.add(m);
-      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.175, 12, 8, 0, 6.283, 0, 1.4), M(0x2a2a2a)); cap.position.y = 0.03; g.add(cap);
-      return g;
-    }
-    case 'horns': {
-      for (const s of [-1, 1]) { const h = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.3, 5), M(0xe8e0c8)); h.position.set(s * 0.15, 0.2, 0); h.rotation.z = -s * 0.5; g.add(h); }
-      return g;
-    }
-    case 'pharaoh': {
-      const h = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.34, 4), M(0xe8c040, { emissive: 0x443300 })); h.position.y = 0.18; h.rotation.y = Math.PI / 4; g.add(h);
-      return g;
-    }
-    case 'ears': {
-      for (const s of [-1, 1]) { const e = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.35, 4), M(color || 0x8a6a3a)); e.position.set(s * 0.22, 0.02, 0); e.rotation.z = -s * 1.2; g.add(e); }
-      return g;
-    }
-  }
-  return g;
-}
-
-// Armor (visible parts only: shoulder pads / cloak).
-function shoulderProp(id, side) {
-  const mc = metalColor(id);
-  const g = new THREE.Group();
-  const pad = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), M(new THREE.Color(mc).multiplyScalar(0.75), { emissive: 0x111111 }));
-  pad.scale.set(1, 0.7, 1);
-  g.add(pad);
-  if (tierOf(id) >= 3) { const sp = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.16, 5), M(TIER_COLORS[Math.min(9, tierOf(id))])); sp.position.y = 0.12; g.add(sp); }
-  g.userData.side = side;
   return g;
 }
 
 export function quiverProp() {
   const g = new THREE.Group();
-  const q = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.5, 8), M(0x6b4a28)); q.rotation.z = 0.25; g.add(q);
-  for (let i = 0; i < 3; i++) { const a = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.18, 4), M(0xd8d0b8)); a.position.set(-0.07 + i * 0.03, 0.3, 0); a.rotation.z = 0.25; g.add(a); }
+  const q = bx(0.12, 0.5, 0.1, 0x6b4a28); q.rotation.z = 0.25; g.add(q);
+  for (let i = 0; i < 3; i++) { const a = bx(0.02, 0.18, 0.02, 0xd8d0b8); a.position.set(-0.07 + i * 0.04, 0.32, 0); a.rotation.z = 0.25; g.add(a); }
+  return g;
+}
+
+// head props are centered on the middle of the (0.42 m) head
+function headPropFor(kind, id, color) {
+  const tier = tierOf(id);
+  const mc = id ? metalColor(id) : 0xb9bec8;
+  const g = new THREE.Group();
+  const add = (m, x = 0, y = 0, z = 0) => { m.position.set(x, y, z); g.add(m); return m; };
+  switch (kind) {
+    case 'helmet': {
+      add(bx(0.48, 0.18, 0.48, mc, { emissive: 0x111111 }), 0, 0.15, 0);
+      add(bx(0.06, 0.22, 0.48, mc), 0.21, 0.0, 0); add(bx(0.06, 0.22, 0.48, mc), -0.21, 0.0, 0);
+      add(bx(0.48, 0.22, 0.06, mc), 0, 0.0, -0.21);
+      add(bx(0.05, 0.16, 0.03, mc), 0, 0.0, 0.23);
+      if (tier >= 3) add(bx(0.05, 0.14, 0.36, TIER_COLORS[Math.min(9, tier)]), 0, 0.3, 0);
+      return g;
+    }
+    case 'hood': {
+      const c = color || 0x2f4f2a;
+      add(bx(0.48, 0.1, 0.48, c), 0, 0.2, 0);
+      add(bx(0.48, 0.44, 0.1, c), 0, 0.0, -0.19);
+      add(bx(0.07, 0.4, 0.4, c), 0.21, 0.0, -0.02); add(bx(0.07, 0.4, 0.4, c), -0.21, 0.0, -0.02);
+      add(bx(0.48, 0.08, 0.06, shade(c, 0.8)), 0, 0.13, 0.2);
+      return g;
+    }
+    case 'wizardhat': {
+      const c = color || 0x23358a;
+      add(bx(0.72, 0.04, 0.72, c), 0, 0.22, 0);
+      add(bx(0.44, 0.04, 0.44, 0xd8b13a), 0, 0.26, 0);
+      add(bx(0.4, 0.2, 0.4, c), 0, 0.36, 0);
+      add(bx(0.3, 0.2, 0.3, c), 0, 0.55, -0.02);
+      add(bx(0.2, 0.18, 0.2, c), 0, 0.73, -0.06);
+      add(bx(0.1, 0.14, 0.1, c), 0, 0.88, -0.12);
+      return g;
+    }
+    case 'straw': {
+      add(bx(0.78, 0.03, 0.78, 0xe0c070), 0, 0.2, 0);
+      add(bx(0.42, 0.12, 0.42, 0xd0b060), 0, 0.27, 0);
+      return g;
+    }
+    case 'turban': {
+      const c = color || 0xe8e0c8;
+      add(bx(0.5, 0.2, 0.5, c), 0, 0.2, 0); add(bx(0.4, 0.1, 0.4, shade(c, 0.9)), 0, 0.35, 0);
+      return g;
+    }
+    case 'crown': {
+      add(bx(0.46, 0.1, 0.46, 0xe8c040, { emissive: 0x443300 }), 0, 0.25, 0);
+      for (const [x, z] of [[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18], [0, 0.2], [0, -0.2]]) add(bx(0.06, 0.12, 0.06, 0xe8c040, { emissive: 0x443300 }), x, 0.36, z);
+      return g;
+    }
+    case 'witchhat': {
+      const c = 0x2a1a3a;
+      add(bx(0.8, 0.03, 0.8, c), 0, 0.22, 0);
+      add(bx(0.42, 0.2, 0.42, c), 0, 0.34, 0);
+      add(bx(0.3, 0.2, 0.3, c), 0.02, 0.53, 0);
+      add(bx(0.2, 0.18, 0.2, c), 0.07, 0.71, 0);
+      add(bx(0.1, 0.14, 0.1, c), 0.14, 0.86, 0);
+      add(bx(0.43, 0.05, 0.43, 0x8a3ad8), 0, 0.27, 0);
+      return g;
+    }
+    case 'mask': {
+      add(bx(0.44, 0.14, 0.04, color || 0x8a1a1a), 0, -0.04, 0.22);
+      add(bx(0.46, 0.14, 0.46, 0x2a2a2a), 0, 0.18, 0);
+      return g;
+    }
+    case 'horns': {
+      for (const s of [-1, 1]) { add(bx(0.07, 0.26, 0.07, 0xe8e0c8), s * 0.26, 0.28, 0).rotation.z = -s * 0.5; add(bx(0.06, 0.12, 0.06, 0xe8e0c8), s * 0.37, 0.43, 0).rotation.z = -s * 0.9; }
+      return g;
+    }
+    case 'pharaoh': {
+      add(bx(0.5, 0.3, 0.5, 0xe8c040, { emissive: 0x443300 }), 0, 0.17, 0);
+      for (const s of [-1, 1]) add(bx(0.08, 0.5, 0.2, 0x2a4aa8), s * 0.28, -0.05, 0.0);
+      return g;
+    }
+    case 'ears': {
+      for (const s of [-1, 1]) add(bx(0.24, 0.07, 0.05, color || 0x8a6a3a), s * 0.32, 0.06, 0).rotation.z = s * 0.35;
+      return g;
+    }
+  }
+  return g;
+}
+
+function shoulderProp(id) {
+  const mc = shade(metalColor(id), 0.85);
+  const g = new THREE.Group();
+  g.add(bx(0.27, 0.12, 0.28, mc, { emissive: 0x111111 }));
+  const side = bx(0.07, 0.16, 0.26, shade(mc, 0.85)); side.position.set(0.0, -0.08, 0); g.add(side);
+  if (tierOf(id) >= 3) { const sp = bx(0.05, 0.12, 0.05, TIER_COLORS[Math.min(9, tierOf(id))]); sp.position.y = 0.1; g.add(sp); }
   return g;
 }
 
 function cloakProp(id, color) {
   const g = new THREE.Group();
-  const c = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.95, 0.04), M(color || [0x6a3a2a, 0x3a5a3a, 0x3a3a7a, 0x7a2a2a][tierOf(id) % 4]));
-  c.position.set(0, -0.45, 0);
-  g.add(c);
+  const c = bx(0.5, 0.95, 0.04, color || [0x6a3a2a, 0x3a5a3a, 0x3a3a7a, 0x7a2a2a][tierOf(id) % 4]);
+  c.position.set(0, -0.2, 0); g.add(c);
   return g;
 }
 
-// worn armor pieces drawn on top of the rig
-function armorColor(id) {
-  const k = (id || '').split('_')[0];
-  const base = { cloth: 0x4a5ad0, leather: 0x7a5a38, mail: 0xa8aeb8 }[k] || 0x888888;
-  const c = new THREE.Color(base);
-  const t = tierOf(id);
-  c.lerp(new THREE.Color(TIER_COLORS[Math.min(9, t)]), id.endsWith('_bf') ? 0.5 : Math.min(0.45, t * 0.05));
-  return c.getHex();
+// ---------- appearance ----------
+// style: normal | skeleton | zombie | bandage | gold | fur | kobold | water
+function paletteOf(spec) {
+  const style = spec.style || 'normal';
+  const P = { style, skin: spec.skin ?? 0xe0ac82, hair: spec.hair ?? 0x4a3020, hairOn: spec.hair != null && !spec.bald, eyes: 0x1a1a22, shirt: spec.tint ?? 0x777777, female: !!spec.female };
+  P.pants = spec.pants ?? shade(P.shirt, 0.55);
+  P.boots = spec.boots ?? 0x2e2218;
+  switch (style) {
+    case 'skeleton': P.skin = 0xe6e2d0; P.shirt = 0xdcd8c4; P.pants = 0xcfcbb8; P.boots = 0xcfcbb8; P.hairOn = false; break;
+    case 'zombie': P.skin = 0x6f8f5a; P.hairOn = false; P.eyes = 0xcc2222; P.pants = 0x4a4a3a; break;
+    case 'bandage': P.skin = 0xe0d8b8; P.shirt = 0xe0d8b8; P.pants = 0xd4ccac; P.boots = 0xd4ccac; P.hairOn = false; break;
+    case 'gold': P.skin = 0xd8b038; P.shirt = 0xe0b840; P.pants = 0xc89c30; P.boots = 0xb08828; P.hairOn = false; break;
+    case 'fur': P.skin = spec.tint ?? 0xe8f2ff; P.shirt = P.skin; P.pants = shade(P.skin, 0.94); P.boots = shade(P.skin, 0.85); P.hairOn = false; break;
+    case 'kobold': P.skin = 0xa8663a; P.hairOn = false; P.eyes = 0xffd020; break;
+    case 'water': P.skin = spec.tint ?? 0x2a6ad8; P.shirt = P.skin; P.pants = P.skin; P.boots = P.skin; P.hairOn = false; P.eyes = 0xffffff; break;
+  }
+  return P;
 }
 
-function chestPlate(id) {
-  const g = new THREE.Group();
-  const col = armorColor(id), k = id.split('_')[0];
-  const body = new THREE.Mesh(new THREE.BoxGeometry(k === 'cloth' ? 0.36 : 0.42, 0.42, k === 'cloth' ? 0.24 : 0.3), M(col, { emissive: tierOf(id) >= 7 ? 0x332200 : 0x000000 }));
-  g.add(body);
-  if (k === 'cloth') { const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.34, 0.5, 10), M(col)); skirt.position.y = -0.45; g.add(skirt); }
-  const trim = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.05, 0.32), M(TIER_COLORS[Math.min(9, tierOf(id))])); trim.position.y = -0.2; g.add(trim);
-  return g;
+const SPEC_KEY = (P, extra = '') => `${P.style}|${P.skin}|${P.hair}|${P.hairOn}|${P.eyes}|${P.shirt}|${P.pants}|${P.boots}|${P.female}|${extra}`;
+
+function headTex(P, face) { // face: front | back | top | bottom | sideR | sideL
+  return pixTex('h' + face + SPEC_KEY(P), 8, 8, (p) => {
+    p.fill(P.skin, P.style !== 'normal' && P.style !== 'fur' ? 0.2 : 0.1);
+    const hl = P.female ? 7 : 3; // how far the hair reaches down on the sides / back
+    if (face === 'top') { if (P.hairOn) p.fill(P.hair, 0.3); return; }
+    if (face === 'bottom') return;
+    if (face === 'back') { if (P.hairOn) p.fill(P.hair, 0.3, 0, 0, 8, hl + 1); return; }
+    if (face === 'sideR' || face === 'sideL') {
+      if (P.hairOn) {
+        p.fill(P.hair, 0.3, 0, 0, 8, 2);
+        p.fill(P.hair, 0.3, face === 'sideR' ? 4 : 0, 2, 4, hl - 1); // the back of the head
+      }
+      return;
+    }
+    // front
+    if (P.hairOn) {
+      p.fill(P.hair, 0.3, 0, 0, 8, 2);
+      p.fill(P.hair, 0.3, 0, 2, 1, hl - 1); p.fill(P.hair, 0.3, 7, 2, 1, hl - 1);
+      p.px(1, 2, P.hair); p.px(6, 2, P.hair); p.px(3, 2, P.hair);
+    }
+    if (P.style === 'skeleton') {
+      p.rect(1, 3, 2, 2, 0x111111); p.rect(5, 3, 2, 2, 0x111111); p.px(3, 5, shade(P.skin, 0.6));
+      for (let x = 2; x <= 5; x++) p.px(x, 6, x % 2 ? 0x222222 : 0xf0f0e8);
+      return;
+    }
+    if (P.style === 'bandage') {
+      for (let y = 1; y < 8; y += 2) p.rect(0, y, 8, 1, 0xb8b090);
+      p.rect(1, 4, 2, 1, 0x1a1a1a); p.rect(5, 4, 2, 1, 0x1a1a1a); p.px(1, 4, 0xcc3322); p.px(6, 4, 0xcc3322);
+      return;
+    }
+    if (P.style === 'gold') { p.rect(1, 4, 2, 1, 0x101018); p.rect(5, 4, 2, 1, 0x101018); p.rect(0, 3, 8, 1, 0x2a4aa8); p.rect(3, 6, 2, 1, shade(P.skin, 0.6)); return; }
+    if (P.style === 'fur') { p.rect(1, 3, 6, 4, shade(P.skin, 0.82)); p.px(2, 4, 0x2a4a8a); p.px(5, 4, 0x2a4a8a); p.rect(2, 6, 4, 1, 0x555a66); p.px(2, 6, 0xffffff); p.px(5, 6, 0xffffff); return; }
+    if (P.style === 'water') { for (let i = 0; i < 10; i++) p.px((i * 5) % 8, (i * 3) % 8, shade(P.skin, 1.5)); p.rect(1, 3, 2, 2, 0xffffff); p.rect(5, 3, 2, 2, 0xffffff); return; }
+    if (P.style === 'kobold') { p.px(1, 4, P.eyes); p.px(2, 4, 0x201008); p.px(5, 4, 0x201008); p.px(6, 4, P.eyes); p.rect(3, 5, 2, 1, shade(P.skin, 0.75)); p.rect(2, 6, 4, 1, 0x5a2a14); p.px(3, 6, 0xffffff); p.px(5, 6, 0xffffff); return; }
+    if (P.style === 'zombie') { p.px(1, 4, 0xddddaa); p.px(2, 4, P.eyes); p.px(5, 4, P.eyes); p.px(6, 4, 0xddddaa); p.rect(2, 6, 4, 1, 0x2a1a1a); p.px(0, 5, 0x4a5a3a); p.px(7, 3, 0x4a5a3a); return; }
+    // normal
+    p.px(1, 4, 0xffffff); p.px(2, 4, P.eyes); p.px(5, 4, P.eyes); p.px(6, 4, 0xffffff);
+    if (P.hairOn) for (const x of [1, 2, 5, 6]) p.px(x, 3, shade(P.hair, 0.8));
+    p.rect(3, 5, 2, 1, shade(P.skin, 0.85));
+    p.rect(3, 6, 2, 1, mix(P.skin, 0xa04040, 0.45));
+  });
 }
 
-function limbPiece(id, len, r) {
-  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.85, len, 8), M(armorColor(id)));
-  m.position.y = -len / 2 + 0.02;
-  const g = new THREE.Group(); g.add(m); return g;
+// worn armor panel with a pattern depending on the armor kind
+function armorPanel(p, w, h, base, kind, tier) {
+  p.fill(base, 0.12);
+  if (kind === 'mail') {
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if ((x + y) % 2 === 0) p.px(x, y, shade(base, 1.16));
+    p.rect(0, 0, w, 1, shade(base, 1.3));
+  } else if (kind === 'leather') {
+    for (let y = 2; y < h; y += 4) p.rect(0, y, w, 1, shade(base, 0.75));
+    p.rect(w >> 1, 0, 1, h, shade(base, 0.7));
+  } else if (kind === 'cloth') {
+    p.rect(0, h - 1, w, 1, 0xd8b13a); if (w > 4) p.rect(w >> 1, 0, 1, h, 0xd8b13a);
+  }
+  if (tier >= 5) for (let i = 0; i < w; i += 2) p.px(i, 1, TIER_COLORS[Math.min(9, tier)]);
 }
 
-const SLOT_BONES = {
-  right: 'RightHand', left: 'LeftHand', head: 'Head', spine: 'Spine2', rshoulder: 'RightShoulder', lshoulder: 'LeftShoulder',
-};
-
-function findBone(root, name) {
-  let found = null;
-  root.traverse((o) => { if (!found && o.isBone && (o.name === 'mixamorig' + name || o.name === 'mixamorig:' + name)) found = o; });
-  return found;
+function torsoTex(P, A, face) { // face: front | back | side
+  const chest = A.chest;
+  const w = face === 'side' ? 4 : 8;
+  return pixTex('t' + face + SPEC_KEY(P, `${chest}|${A.waist}`), w, 12, (p) => {
+    if (chest) armorPanel(p, w, 12, armorColor(chest), kindOfItem(chest), tierOf(chest));
+    else p.fill(P.shirt, P.style === 'normal' ? 0.14 : 0.2);
+    if (!chest && P.style === 'skeleton') { for (const y of [2, 4, 6]) p.rect(face === 'side' ? 0 : 1, y, face === 'side' ? 4 : 6, 1, 0x4a4638); if (face !== 'side') p.rect(3, 1, 2, 7, 0xb8b4a0); }
+    if (!chest && P.style === 'bandage') for (let y = 1; y < 12; y += 2) p.rect(0, y, w, 1, 0xb8b090);
+    if (!chest && P.style === 'zombie' && face === 'front') { p.rect(1, 3, 3, 2, 0x4a3a2a); p.rect(5, 6, 2, 3, 0x4a3a2a); }
+    if (!chest && P.style === 'water') for (let i = 0; i < 8; i++) p.px((i * 3) % w, (i * 5) % 12, shade(P.shirt, 1.5));
+    if (!chest && P.style === 'fur') for (let i = 0; i < 14; i++) p.px((i * 3) % w, (i * 5) % 12, shade(P.shirt, 0.88));
+    if (!chest && P.style === 'normal' && face === 'front') { p.px(3, 0, P.skin); p.px(4, 0, P.skin); p.px(3, 1, shade(P.shirt, 0.8)); p.px(4, 1, shade(P.shirt, 0.8)); }
+    const clothed = P.style === 'normal' || P.style === 'zombie' || P.style === 'kobold';
+    if (A.waist) { p.rect(0, 9, w, 1, armorColor(A.waist)); if (face === 'front') p.px(3, 9, 0xe8c040); }
+    else if (clothed) { p.rect(0, 9, w, 1, 0x4a3520); if (face === 'front') p.px(3, 9, 0xc8a040); }
+    if (!chest && clothed) p.fill(P.pants, 0.12, 0, 10, w, 2);
+  });
 }
 
-// Where props sit on the bones (offset in meters in bone-local axes, tuned for this rig).
-const HOLD = {
-  right: { pos: [0, 0.06, 0], rot: [Math.PI / 2, 0, 0] },
-  left: { pos: [0, 0.06, 0], rot: [0, 0, 0] },
-  head: { pos: [0, 0.2, 0.03], rot: [0, 0, 0] },
-};
-
-function attach(bone, obj, worldOffset, rot, scale = 1) {
-  if (!bone) return;
-  const ws = new THREE.Vector3();
-  bone.getWorldScale(ws);
-  const s = 1 / (ws.x || 1);
-  obj.position.set(worldOffset[0] * s, worldOffset[1] * s, worldOffset[2] * s);
-  obj.rotation.set(rot[0], rot[1], rot[2]);
-  obj.scale.setScalar(s * scale);
-  bone.add(obj);
+function armTex(P, A) {
+  const chest = A.chest, hands = A.hands;
+  return pixTex('a' + SPEC_KEY(P, `${chest}|${hands}`), 4, 12, (p) => {
+    const clothed = P.style === 'normal' || P.style === 'kobold' || P.style === 'zombie';
+    const sleeve = chest ? 9 : (clothed ? 5 : 12);
+    p.fill(P.skin, 0.12);
+    if (chest) armorPanel(p, 4, sleeve, armorColor(chest), kindOfItem(chest), tierOf(chest));
+    else p.fill(P.shirt, 0.14, 0, 0, 4, sleeve);
+    if (!chest && P.style === 'skeleton') { p.fill(0xe6e2d0, 0.1); p.rect(1, 0, 2, 12, 0xc8c4b0); }
+    if (!chest && P.style === 'bandage') for (let y = 1; y < 12; y += 2) p.rect(0, y, 4, 1, 0xb8b090);
+    if (hands) { p.fill(armorColor(hands), 0.12, 0, 9, 4, 3); p.rect(0, 9, 4, 1, shade(armorColor(hands), 1.25)); }
+    else if (clothed) p.fill(P.skin, 0.1, 0, 10, 4, 2);
+  });
 }
+
+function legTex(P, A) {
+  const legs = A.legs, feet = A.feet;
+  return pixTex('l' + SPEC_KEY(P, `${legs}|${feet}`), 4, 12, (p) => {
+    if (legs) armorPanel(p, 4, 9, armorColor(legs), kindOfItem(legs), tierOf(legs)); else p.fill(P.pants, 0.14, 0, 0, 4, 9);
+    if (!legs && P.style === 'skeleton') { p.fill(0xe6e2d0, 0.1, 0, 0, 4, 9); p.rect(1, 0, 2, 9, 0xc8c4b0); }
+    if (!legs && P.style === 'bandage') for (let y = 1; y < 9; y += 2) p.rect(0, y, 4, 1, 0xb8b090);
+    if (!legs && P.style === 'zombie') p.rect(0, 4, 2, 2, 0x3a3a2a);
+    const boot = feet ? armorColor(feet) : P.boots;
+    p.fill(boot, 0.14, 0, 9, 4, 3); p.rect(0, 9, 4, 1, shade(boot, 1.3));
+  });
+}
+
+const solidTex = (c) => pixTex('s' + c, 4, 4, (p) => p.fill(c, 0.16));
 
 /**
- * Creates an animated humanoid.
- * opts: { tint, emissive, scale, hideVisor, props: [{kind, id, slot}], head: {kind, id, color}, cloak, shoulders, transparent, opacity }
+ * Creates an animated pixel humanoid.
+ * spec: { tint (shirt), skin, hair, bald, female, style, pants, boots, emissive, scale, bodyScale, headScale, opacity,
+ *         props, head, cloak, shoulders, chest, legs, feet, hands, waist, extra, slow, armsForward }
  */
-export function makeHumanoid(opts = {}) {
+export function makeHumanoid(spec0 = {}) {
+  let spec = spec0;
   const root = new THREE.Group();
-  const rigName = rigs[opts.rig] ? opts.rig : 'soldier';
-  const rig = rigs[rigName];
-  const inst = SkeletonUtils.clone(rig.gltf.scene);
-  const target = 1.8 * (opts.scale || 1);
-  const sc = target / rig.height;
-  const bs = opts.bodyScale || [1, 1, 1];
-  inst.scale.set(sc * bs[0], sc * bs[1], sc * bs[2]);
-  const pivotG = new THREE.Group(); // turns the model so that it looks along +Z
-  if (rig.flip) pivotG.rotation.y = Math.PI;
-  pivotG.add(inst);
-  root.add(pivotG);
-  const mats = [];
-  inst.traverse((o) => {
-    if (o.isMesh) {
-      o.castShadow = true;
-      o.frustumCulled = false;
-      o.material = o.material.clone();
-      if (opts.tint != null && o.material.color) o.material.color.set(opts.tint);
-      if (opts.emissive != null) { o.material.emissive = new THREE.Color(opts.emissive); }
-      if (opts.opacity != null) { o.material.transparent = true; o.material.opacity = opts.opacity; o.castShadow = false; }
-      if (o.name.includes('visor') && opts.hideVisor) o.visible = false;
-      mats.push(o.material);
-    }
-  });
+  const scale = spec0.scale || 1;
+  const inner = new THREE.Group(); inner.scale.setScalar(scale); root.add(inner);
+  const body = new THREE.Group(); inner.add(body);
+  const bs = spec0.bodyScale || [1, 1, 1];
+  body.scale.set(bs[0], bs[1], bs[2]);
 
-  const mixer = new THREE.AnimationMixer(inst);
-  const cl = clipsFor(rigName);
-  const act = { idle: mixer.clipAction(cl.idle), walk: mixer.clipAction(cl.walk), run: mixer.clipAction(cl.run) };
-  Object.values(act).forEach((a) => { a.play(); a.setEffectiveWeight(0); });
-  act.idle.setEffectiveWeight(1);
-  const w = { idle: 1, walk: 0, run: 0 };
-
-  const bones = {
-    rightHand: findBone(inst, 'RightHand'), leftHand: findBone(inst, 'LeftHand'), head: findBone(inst, 'Head'),
-    spine: findBone(inst, 'Spine2'), rArm: findBone(inst, 'RightArm'), lArm: findBone(inst, 'LeftArm'),
-    rFore: findBone(inst, 'RightForeArm'), lFore: findBone(inst, 'LeftForeArm'), spine1: findBone(inst, 'Spine1'),
-    rShoulder: findBone(inst, 'RightShoulder'), lShoulder: findBone(inst, 'LeftShoulder'),
-    hips: findBone(inst, 'Hips'), lUpLeg: findBone(inst, 'LeftUpLeg'), rUpLeg: findBone(inst, 'RightUpLeg'),
-    lFoot: findBone(inst, 'LeftFoot'), rFoot: findBone(inst, 'RightFoot'),
+  const torsoW = spec0.female ? 0.42 : 0.5;
+  const mk = (t) => {
+    const m = new THREE.MeshLambertMaterial({ map: t });
+    if (spec.emissive != null) m.emissive = new THREE.Color(spec.emissive);
+    if (spec.opacity != null) { m.transparent = true; m.opacity = spec.opacity; }
+    return m;
   };
-  if (opts.headScale && bones.head) bones.head.scale.multiplyScalar(opts.headScale);
+  const part = (w, h, d) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), []); m.castShadow = spec0.opacity == null; return m; };
+
+  // legs
+  const legs = [], feetMeshes = [];
+  for (const x of [-0.125, 0.125]) {
+    const pv = new THREE.Group(); pv.position.set(x, 0.72, 0); body.add(pv);
+    const l = part(0.24, 0.72, 0.26); l.position.y = -0.36; pv.add(l);
+    const f = part(0.25, 0.1, 0.36); f.position.set(0, -0.67, 0.05); pv.add(f); feetMeshes.push(f);
+    legs.push({ pv, mesh: l });
+  }
+  const torso = part(torsoW, 0.66, spec0.female ? 0.26 : 0.3); torso.position.y = 1.05; body.add(torso);
+  const chestA = new THREE.Group(); chestA.position.y = 1.05; body.add(chestA);
+  const hipsA = new THREE.Group(); hipsA.position.y = 0.72; body.add(hipsA);
+  // arms (the character's right arm is on -x because the model looks along +z)
+  const arms = [];
+  for (const s of [-1, 1]) {
+    const pv = new THREE.Group(); pv.position.set(s * (torsoW / 2 + 0.09), 1.35, 0); body.add(pv);
+    const a = part(0.18, 0.66, 0.2); a.position.y = -0.33; pv.add(a);
+    const hand = new THREE.Group(); hand.position.set(0, -0.64, 0.02); pv.add(hand);
+    const sh = new THREE.Group(); pv.add(sh);
+    arms.push({ pv, mesh: a, hand, sh, s });
+  }
+  const armR = arms[0], armL = arms[1];
+  const headPv = new THREE.Group(); headPv.position.y = 1.38; body.add(headPv);
+  if (spec0.headScale) headPv.scale.setScalar(spec0.headScale);
+  const headMesh = part(0.42, 0.42, 0.42); headMesh.position.y = 0.21; headPv.add(headMesh);
+  const headA = new THREE.Group(); headA.position.y = 0.21; headPv.add(headA);
+
   const attached = [];
   const clear = () => { attached.forEach((o) => o.removeFromParent()); attached.length = 0; };
-  const put = (bone, obj, off, rot, scale) => { attach(bone, obj, off, rot, scale); attached.push(obj); };
+  const put = (parent, obj, pos = [0, 0, 0], rot = [0, 0, 0], sc = 1) => { obj.position.set(pos[0], pos[1], pos[2]); obj.rotation.set(rot[0], rot[1], rot[2]); obj.scale.setScalar(sc); parent.add(obj); attached.push(obj); };
+  const POINT = { sword: 1.2, dagger: 1.2, scimitar: 1.2, axe: 0.9, pick: 0.9, rifle: 0.9 };
 
-  // props & worn items; can be rebuilt when the equipment changes
-  function dress(spec) {
+  function dress(next) {
+    if (next) spec = next;
     clear();
+    const P = paletteOf(spec);
+    const A = { chest: spec.chest, legs: spec.legs, feet: spec.feet, hands: spec.hands, waist: spec.waist };
+    const T = (f) => mk(torsoTex(P, A, f));
+    torso.material = [T('side'), T('side'), T('side'), T('side'), T('front'), T('back')];
+    const hm = (f) => mk(headTex(P, f));
+    headMesh.material = [hm('sideR'), hm('sideL'), hm('top'), hm('bottom'), hm('front'), hm('back')];
+    const am = mk(armTex(P, A));
+    for (const a of arms) a.mesh.material = am;
+    const lm = mk(legTex(P, A));
+    for (const l of legs) l.mesh.material = lm;
+    const fm = mk(solidTex(spec.feet ? armorColor(spec.feet) : P.boots));
+    for (const f of feetMeshes) f.material = fm;
+
     for (const p of spec.props || []) {
       const obj = propFor(p.kind, p.id);
-      const rot = p.slot === 'left' ? (p.kind === 'shield' ? [0, Math.PI / 2, Math.PI / 2] : p.kind === 'bow' ? [0, 0, 0] : [Math.PI / 2, 0, 0]) : [Math.PI / 2, 0, 0];
-      const off = p.slot === 'left' ? [p.kind === 'shield' ? 0.14 : 0.0, 0.05, 0.02] : [0, 0.05, 0];
-      put(p.slot === 'left' ? bones.leftHand : bones.rightHand, obj, off, rot, p.scale || 1);
+      const left = p.slot === 'left';
+      const arm = left ? armL : armR;
+      if (left && p.kind === 'shield') put(arm.hand, obj, [0.13, 0.0, 0.05], [0, Math.PI / 2, 0], p.scale || 1);
+      else if (left && p.kind === 'bow') put(arm.hand, obj, [0.04, 0.0, 0.08], [0, -Math.PI / 2, 0], p.scale || 1);
+      else put(arm.hand, obj, [0, 0, 0.04], [POINT[p.kind] ?? 0, 0, 0], p.scale || 1);
     }
-    if (spec.head) put(bones.head, headPropFor(spec.head.kind, spec.head.id, spec.head.color), [0, 0.1, 0.02], [0, 0, 0], 1);
-    if (spec.shoulders) {
-      put(bones.rShoulder, shoulderProp(spec.shoulders, 'r'), [0, 0.13, 0], [0, 0, 0], 0.8);
-      put(bones.lShoulder, shoulderProp(spec.shoulders, 'l'), [0, 0.13, 0], [0, 0, 0], 0.8);
+    if (spec.head) put(headA, headPropFor(spec.head.kind, spec.head.id, spec.head.color));
+    if (spec.shoulders) for (const a of arms) put(a.sh, shoulderProp(spec.shoulders), [a.s * 0.02, 0.05, 0]);
+    if (spec.chest && kindOfItem(spec.chest) === 'cloth') { // robe: a skirt over the legs
+      const c = armorColor(spec.chest);
+      const sk = bx(torsoW + 0.1, 0.5, 0.38, c);
+      sk.material = mk(pixTex('skirt' + c, 8, 8, (p) => armorPanel(p, 8, 8, c, 'cloth', tierOf(spec.chest))));
+      put(hipsA, sk, [0, -0.12, 0]);
     }
-    if (spec.chest) put(bones.spine, chestPlate(spec.chest), [0, 0.02, 0.0], [0, 0, 0], 1);
-    if (spec.legs) { put(bones.lUpLeg, limbPiece(spec.legs, 0.42, 0.1), [0, 0, 0], [0, 0, 0], 1); put(bones.rUpLeg, limbPiece(spec.legs, 0.42, 0.1), [0, 0, 0], [0, 0, 0], 1); }
-    if (spec.feet) for (const b of [bones.lFoot, bones.rFoot]) { const bt = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.2, 0.28), M(armorColor(spec.feet))); put(b, bt, [0, 0.0, 0.04], [0, 0, 0], 1); }
-    if (spec.hands) for (const b of [bones.leftHand, bones.rightHand]) { const gl = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), M(armorColor(spec.hands))); put(b, gl, [0, 0.07, 0], [0, 0, 0], 1); }
-    if (spec.waist) { const belt = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.04, 6, 14), M(armorColor(spec.waist))); put(bones.hips, belt, [0, 0.12, 0], [Math.PI / 2, 0, 0], 1); }
-    if (spec.cloak) put(bones.spine, cloakProp(spec.cloak.id, spec.cloak.color), [0, 0.22, -0.18], [0, 0, 0], 1);
-    if (spec.extra) for (const ex of spec.extra) put(bones[ex.bone] || bones.spine, ex.obj, ex.off || [0, 0, 0], ex.rot || [0, 0, 0], ex.scale || 1);
+    if (spec.cloak) put(chestA, cloakProp(spec.cloak.id, spec.cloak.color), [0, 0.0, -0.2]);
+    if (spec.extra) for (const ex of spec.extra) put(ex.bone === 'head' ? headA : chestA, ex.obj, ex.off || [0, 0, 0], ex.rot || [0, 0, 0], ex.scale || 1);
   }
-  dress(opts);
+  dress(spec0);
 
-  let attackT = 0, castT = 0, hurt = 0, dead = 0;
-  const qa = new THREE.Quaternion(), ax = new THREE.Vector3(1, 0, 0), az = new THREE.Vector3(0, 0, 1);
-  const state = { phase: 0 };
+  let attackT = 0, castT = 0, dead = 0, phase = 0, t = Math.random() * 10, sw = 0;
   return {
-    obj: root, height: target + 0.1, kind: 'human', tintMats: mats, setTint(c) { mats.forEach((m) => m.color.set(c)); },
+    obj: root, height: 1.8 * scale * (bs[1] || 1) + 0.1, kind: 'human',
+    setTint(c) { spec = { ...spec, tint: c }; },
     dress,
     attack() { attackT = 0.01; },
     cast(on) { castT = on ? 1 : 0; },
     update(dt, st) {
-      // blend idle / walk / run
+      t += dt;
       const sp = st.speed;
-      let tIdle = 0, tWalk = 0, tRun = 0;
-      if (st.airborne) tIdle = 1;
-      else if (sp < 0.08) tIdle = 1;
-      else if (sp < 0.5) { tWalk = 1; } else tRun = 1;
-      const k = Math.min(1, dt * 10);
-      w.idle += (tIdle - w.idle) * k; w.walk += (tWalk - w.walk) * k; w.run += (tRun - w.run) * k;
-      act.idle.setEffectiveWeight(w.idle); act.walk.setEffectiveWeight(w.walk); act.run.setEffectiveWeight(w.run);
-      act.walk.setEffectiveTimeScale(Math.max(0.5, sp / 0.35) * (opts.slow ? 0.6 : 1));
-      act.run.setEffectiveTimeScale(Math.max(0.7, sp / 0.95) * (opts.slow ? 0.6 : 1));
-      mixer.update(dt);
-
-      // overlays on top of the animation
+      const moving = sp > 0.08 && !st.airborne;
+      const slow = spec.slow ? 0.6 : 1;
+      if (moving) phase += dt * Math.max(4, sp * 13) * slow;
+      sw += ((moving ? Math.min(1, 0.4 + sp * 0.6) * slow : 0) - sw) * Math.min(1, dt * 12);
+      const s = Math.sin(phase) * sw;
+      legs[0].pv.rotation.x = s * 0.9; legs[1].pv.rotation.x = -s * 0.9;
+      if (st.airborne) { legs[0].pv.rotation.x = -0.5; legs[1].pv.rotation.x = 0.4; }
+      const breathe = Math.sin(t * 1.8) * 0.03;
+      let rArm = -s * 0.8 + breathe, lArm = s * 0.8 - breathe;
+      if (spec.props?.some((p) => p.slot !== 'left')) rArm = rArm * 0.5 - 0.15; // holding a weapon
+      if (spec.armsForward) { rArm = -1.45 + s * 0.1; lArm = -1.45 - s * 0.1; }
+      if (castT > 0) { rArm = -1.7; lArm = -1.7; }
       if (attackT > 0) {
         attackT += dt;
-        const t = Math.min(1, attackT / 0.38);
-        const swing = Math.sin(t * Math.PI);
-        if (bones.rArm) { qa.setFromAxisAngle(ax, -swing * 1.9); bones.rArm.quaternion.premultiply(qa); }
-        if (bones.rFore) { qa.setFromAxisAngle(ax, swing * 0.6); bones.rFore.quaternion.premultiply(qa); }
-        if (bones.spine1) { qa.setFromAxisAngle(new THREE.Vector3(0, 1, 0), swing * 0.35); bones.spine1.quaternion.premultiply(qa); }
-        if (t >= 1) attackT = 0;
+        const k = Math.min(1, attackT / 0.4);
+        rArm = -0.4 - Math.sin(k * Math.PI) * 2.0;
+        body.rotation.y = Math.sin(k * Math.PI) * 0.3;
+        if (k >= 1) { attackT = 0; body.rotation.y = 0; }
       }
-      if (castT > 0 || opts.armsForward) {
-        for (const b of [bones.lArm, bones.rArm]) if (b) { qa.setFromAxisAngle(ax, -1.4); b.quaternion.premultiply(qa); }
-      }
-      // death: lie down
-      dead += ((st.dead ? 1 : 0) - dead) * Math.min(1, dt * 6);
-      inst.rotation.x = -dead * (Math.PI / 2);
-      inst.position.y = dead * 0.22;
-      if (st.dead && w.idle > 0.9) mixer.timeScale = 0; else mixer.timeScale = 1;
+      armR.pv.rotation.x = rArm; armL.pv.rotation.x = lArm;
+      armR.pv.rotation.z = 0.04; armL.pv.rotation.z = -0.04;
+      body.position.y = moving ? Math.abs(Math.sin(phase)) * 0.04 * sw : 0;
+      headPv.rotation.y = moving ? 0 : Math.sin(t * 0.6) * 0.12;
+      dead += ((st.dead ? 1 : 0) - dead) * Math.min(1, dt * 6); // death: lie on the back
+      inner.rotation.x = -dead * (Math.PI / 2);
+      inner.position.y = dead * 0.22 * scale;
     },
   };
 }

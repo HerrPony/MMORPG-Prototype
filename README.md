@@ -46,7 +46,7 @@ R Autorun · F mit Ziel interagieren · Enter Chat (`/p` Gruppenchat, `/einladen
 - Gruppen bis 5 Spieler: geteilte XP und Questfortschritt, persönliche Beute, eigene Dungeon-Instanz pro Gruppe.
 
 ## Assets
-Charaktermodelle (animiert, in `Client/assets`): `Soldier.glb`, `Michelle.glb`, `Xbot.glb` (Mixamo, aus den three.js-Beispielen, MIT) und `Fox.glb`
-(Khronos glTF-Sample-Models; Modell CC0 von PixelMannen, Rigging/Animation CC-BY 4.0 von @tomkranis) für Wölfe/Hyänen.
-Männliche Spieler, Wachen, Banditen: Soldat · weibliche Spieler, Hexen, Priesterinnen: Michelle · Skelette, Mumien, Elementare, Kobold-König: Xbot,
-jeweils mit eigenen Proportionen, Rüstungsteilen und Waffen. Alles andere (Welt, übrige Tiere, Greif, Musik) wird im Browser erzeugt.
+Alle Modelle sind selbst erzeugte Pixel-Modelle ohne fremde Dateien: Figuren und Tiere bestehen aus Quadern, deren Flächen zur Laufzeit
+mit kleinen Pixel-Texturen bemalt werden (`Client/js/world/human.js`, `beasts.js`, `creatures2.js`).
+Spieler zeigen gewählte Haut-/Haarfarbe und Geschlecht sowie die angelegte Ausrüstung; Skelette, Zombies, Mumien, Yetis, Kobolde,
+Elementare usw. haben eigene Stile und Proportionen. Welt, Musik und Effekte werden ebenfalls im Browser erzeugt.

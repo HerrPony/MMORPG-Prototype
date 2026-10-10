@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { SKIN, HAIR } from '../util.js';
+import { pixTex } from './human.js';
 
-const mat = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
+const mat = (c, o = {}) => new THREE.MeshLambertMaterial({ map: pixTex('n' + c, 4, 4, (p) => p.fill(c, 0.2)), ...o });
 const box = (w, h, d, m) => { const x = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); x.castShadow = true; return x; };
-const sph = (r, m, ws = 14, hs = 10) => { const x = new THREE.Mesh(new THREE.SphereGeometry(r, ws, hs), m); x.castShadow = true; return x; };
-const cyl = (rt, rb, h, m, s = 12) => { const x = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, s), m); x.castShadow = true; return x; };
+const sph = (r, m) => { const x = new THREE.Mesh(new THREE.BoxGeometry(r * 1.7, r * 1.7, r * 1.7), m); x.castShadow = true; return x; };
+const cyl = (rt, rb, h, m) => { const x = new THREE.Mesh(new THREE.BoxGeometry(Math.max(rt, rb) * 1.8, h, Math.max(rt, rb) * 1.8), m); x.castShadow = true; return x; };
 
 function pivot(x, y, z) { const g = new THREE.Group(); g.position.set(x, y, z); return g; }
 
