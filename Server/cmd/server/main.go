@@ -1,0 +1,67 @@
+package main
+
+import (
+	"context"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"time"
+
+	"mmorpg/internal/auth"
+	"mmorpg/internal/config"
+	"mmorpg/internal/game"
+	"mmorpg/internal/gateway"
+	"mmorpg/internal/storage"
+)
+
+func noCache(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		h.ServeHTTP(w, r)
+	})
+}
+
+func main() {
+	cfg := config.Load()
+
+	store, err := storage.OpenJSON(cfg.DataDir)
+	if err != nil {
+		log.Fatalf("storage: %v", err)
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	world := game.New(cfg, store)
+	worldDone := make(chan struct{})
+	go func() { world.Run(ctx); close(worldDone) }()
+
+	gw := gateway.New(store, auth.New(store), world)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/ws", gw.ServeWS)
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok")) })
+	if cfg.ClientDir != "" { // empty: API-only mode (client served by a separate container)
+		mux.Handle("/", noCache(http.FileServer(http.Dir(cfg.ClientDir))))
+	}
+
+	srv := &http.Server{Addr: cfg.Addr, Handler: mux}
+	go func() {
+		abs, _ := filepath.Abs(cfg.ClientDir)
+		log.Printf("Server läuft auf http://localhost%s (Client: %s)", cfg.Addr, abs)
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatalf("http: %v", err)
+		}
+	}()
+
+	<-ctx.Done()
+	log.Println("Fahre herunter…")
+	sctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	_ = srv.Shutdown(sctx)
+	<-worldDone
+	if err := store.Close(); err != nil {
+		log.Printf("store close: %v", err)
+	}
+}

@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Erlenwald Online</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/items.css">
+<link rel="stylesheet" href="css/world.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/jsm/" } }
+</script>
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<!-- ===== Menü-Bildschirme ===== -->
+<div id="screen-login" class="screen">
+  <div class="panel login-panel">
+    <h1>Erlenwald <span>Online</span></h1>
+    <div class="tabs">
+      <button id="tab-login" class="active">Anmelden</button>
+      <button id="tab-register">Account erstellen</button>
+    </div>
+    <label>Benutzername<input id="in-user" maxlength="20" autocomplete="username"></label>
+    <label>Passwort<input id="in-pass" type="password" maxlength="72" autocomplete="current-password"></label>
+    <label id="row-pass2" class="hidden">Passwort wiederholen<input id="in-pass2" type="password" maxlength="72"></label>
+    <div id="login-error" class="error"></div>
+    <button id="btn-login" class="big">Anmelden</button>
+    <p class="hint" id="login-status">Verbinde mit Server…</p>
+  </div>
+</div>
+
+<div id="screen-chars" class="screen hidden">
+  <div class="panel side-panel left">
+    <h2>Charaktere</h2>
+    <div id="char-list"></div>
+    <button id="btn-new-char" class="big">Neuen Charakter erstellen</button>
+    <button id="btn-account-out" class="small">Abmelden</button>
+  </div>
+  <div class="panel side-panel right" id="char-detail">
+    <h2 id="cd-name">–</h2>
+    <p id="cd-info"></p>
+    <button id="btn-enter" class="big" disabled>Welt betreten</button>
+    <button id="btn-delete" class="small danger" disabled>Charakter löschen</button>
+  </div>
+</div>
+
+<div id="screen-create" class="screen hidden">
+  <div class="panel side-panel left wide">
+    <h2>Charakter erstellen</h2>
+    <h3>Rasse</h3>
+    <div id="race-list" class="cards"></div>
+    <h3>Klasse</h3>
+    <div id="class-list" class="cards"></div>
+    <h3>Aussehen</h3>
+    <div class="look-row">
+      <span>Geschlecht</span>
+      <button id="g-m" class="small active">♂ Männlich</button>
+      <button id="g-f" class="small">♀ Weiblich</button>
+    </div>
+    <div class="look-row"><span>Haarfarbe</span><div id="hair-list" class="swatches"></div></div>
+    <div class="look-row"><span>Hautton</span><div id="skin-list" class="swatches"></div></div>
+    <label>Name<input id="in-charname" maxlength="16" autocomplete="off"></label>
+    <div id="create-error" class="error"></div>
+    <div class="row">
+      <button id="btn-create" class="big">Erstellen</button>
+      <button id="btn-create-back" class="small">Zurück</button>
+    </div>
+  </div>
+  <div class="panel side-panel right" id="class-detail"></div>
+</div>
+
+<!-- ===== Spiel-Oberfläche ===== -->
+<div id="hud" class="hidden">
+  <div id="labels"></div>
+  <div id="fct"></div>
+
+  <div id="errmsg"></div>
+  <div id="zonebanner" class="hidden"><div id="zb-zone"></div><div id="zb-sub"></div></div>
+  <div id="flightbar" class="hidden">🦅 Flug nach <b id="fb-dest"></b></div>
+  <div id="partyframes"></div>
+  <div id="petframes"></div>
+  <div id="invite" class="hidden"><div id="inv-text"></div><div class="invbtns"><button id="inv-yes" class="small">Annehmen</button><button id="inv-no" class="small">Ablehnen</button></div></div>
+  <div id="playermenu" class="hidden"></div>
+
+  <!-- Spieler & Ziel -->
+  <div id="pframe" class="uframe">
+    <div class="portrait" id="pf-portrait"><span class="pemoji"></span><div class="lvl" id="pf-lvl">1</div></div>
+    <div class="bars">
+      <div class="uname" id="pf-name"></div><div class="stance hidden" id="pf-stance"></div>
+      <div class="bar hp"><div class="fill"></div><span class="txt"></span></div>
+      <div class="bar res"><div class="fill"></div><span class="txt"></span></div>
+      <div class="buffs" id="pf-buffs"></div>
+    </div>
+  </div>
+  <div id="tframe" class="uframe target hidden">
+    <div class="bars">
+      <div class="uname" id="tf-name"></div><div class="tag-row" id="tf-tag"></div>
+      <div class="bar hp"><div class="fill"></div><span class="txt"></span></div>
+      <div class="buffs" id="tf-buffs"></div>
+    </div>
+    <div class="portrait" id="tf-portrait"><span class="pemoji"></span><div class="lvl" id="tf-lvl">1</div></div>
+  </div>
+
+  <!-- Minimap & Quest-Tracker -->
+  <div id="topright">
+    <div id="zonebar"><span id="zone-name">Erlenwald</span><span id="clock"></span></div>
+    <div id="minimap-wrap"><canvas id="minimap" width="300" height="300"></canvas><div id="mm-north">N</div></div>
+    <div id="tracker">
+      <div class="th">Alle Ziele</div>
+      <div id="tracker-body"></div>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div id="chat" data-f="all">
+    <div id="chat-tabs"><button data-f="all" class="active">Allgemein</button><button data-f="combat">Kampf</button><button data-f="loot">Beute</button></div>
+    <div id="chat-log"></div>
+    <input id="chat-input" maxlength="200" placeholder="Nachricht… (Enter)" autocomplete="off">
+  </div>
+
+  <!-- Zauberleiste, XP -->
+  <div id="castbar" class="hidden"><div class="fill"></div><span></span></div>
+  <div id="bottom">
+    <div id="xpbar"><div id="xpfill"></div><span id="xptext"></span></div>
+    <div id="bar-wrap">
+      <div class="cap left"><span>🦁</span></div>
+      <div id="actionbar"></div>
+      <div id="micro">
+        <button data-win="char" title="Charakter (C)">🧍</button>
+        <button data-win="map" title="Weltkarte (M)">🗺️</button>
+        <button data-win="party" title="Gruppe (O)">👥</button>
+        <button data-win="spellbook" title="Zauberbuch (P)">📖</button>
+        <button data-win="quests" title="Questlog (L)">📜</button>
+        <button data-win="bags" title="Taschen (B)">🎒</button>
+        <button data-win="menu" title="Menü (Esc)">⚙️</button>
+      </div>
+      <div class="cap right"><span>🦁</span></div>
+    </div>
+  </div>
+
+  <!-- Fenster -->
+  <div id="dialog" class="win hidden">
+    <div class="wtitle"><span id="dlg-title"></span><button class="x" data-close="dialog">✕</button></div>
+    <div id="dlg-tabs"></div>
+    <div class="wbody parchment">
+      <h4 id="dlg-quest"></h4>
+      <div id="dlg-text"></div>
+      <div id="dlg-obj"></div>
+      <div id="dlg-reward"></div>
+      <div id="dlg-list"></div>
+    </div>
+    <div class="wfoot"><button id="dlg-main" class="big"></button><button class="small" data-close="dialog">Schließen</button></div>
+  </div>
+
+  <div id="lootwin" class="win hidden">
+    <div class="wtitle"><span id="loot-title">Beute</span><button class="x" data-close="lootwin">✕</button></div>
+    <div class="wbody" id="loot-body"></div>
+    <div class="wfoot"><button id="loot-all" class="small">Alles nehmen</button></div>
+  </div>
+
+  <div id="vendorwin" class="win hidden">
+    <div class="wtitle"><span id="vendor-title">Händler</span><button class="x" data-close="vendorwin">✕</button></div>
+    <div class="wbody">
+      <label class="chk"><input type="checkbox" id="vendor-only" checked> Nur für meine Klasse</label>
+      <div id="vendor-list"></div>
+      <div class="vfoot"><button class="small" id="vendor-junk">Plunder verkaufen</button><span id="vendor-money"></span></div>
+      <div class="hint" style="text-align:left">Rechtsklick auf Gegenstände in deinen Taschen verkauft sie.</div>
+    </div>
+  </div>
+
+  <div id="bags" class="win hidden">
+    <div class="wtitle"><span>Taschen</span><button class="x" data-close="bags">✕</button></div>
+    <div class="wbody"><div id="bag-grid"></div><div id="bag-money"></div></div>
+  </div>
+
+  <div id="questlog" class="win hidden wide">
+    <div class="wtitle"><span>Questlog</span><button class="x" data-close="questlog">✕</button></div>
+    <div class="wbody split"><div id="ql-list"></div><div id="ql-detail" class="parchment"></div></div>
+  </div>
+
+  <div id="mapwin" class="win hidden">
+    <div class="wtitle"><span id="map-title">Weltkarte</span><button class="x" data-close="mapwin">✕</button></div>
+    <div class="wbody"><div id="map-wrap"><canvas id="mapcv" width="700" height="700"></canvas><div id="map-tip"></div></div>
+    <div id="map-legend"></div></div>
+  </div>
+
+  <div id="partywin" class="win hidden">
+    <div class="wtitle"><span>Gruppe</span><button class="x" data-close="partywin">✕</button></div>
+    <div class="wbody" id="party-body"></div>
+  </div>
+
+  <div id="spellbook" class="win hidden">
+    <div class="wtitle"><span>Zauberbuch</span><button class="x" data-close="spellbook">✕</button></div>
+    <div class="wbody" id="spell-body"></div>
+  </div>
+
+  <div id="charwin" class="win hidden">
+    <div class="wtitle"><span>Charakter</span><button class="x" data-close="charwin">✕</button></div>
+    <div class="wbody" id="char-body"></div>
+  </div>
+
+  <div id="menuwin" class="win hidden">
+    <div class="wtitle"><span>Menü</span><button class="x" data-close="menuwin">✕</button></div>
+    <div class="wbody menu">
+      <label>Lautstärke<input id="vol" type="range" min="0" max="1" step="0.05"></label>
+      <button id="m-fs" class="big">Vollbild an/aus</button>
+      <button id="m-controls" class="big">Steuerung</button>
+      <button id="m-logout" class="big">Zur Charakterauswahl</button>
+      <button class="big" data-close="menuwin">Zurück zum Spiel</button>
+      <div id="controls-help" class="hidden"></div>
+    </div>
+  </div>
+
+  <div id="deathbox" class="hidden">
+    <h2>Du bist gestorben</h2>
+    <button id="btn-revive" class="big">Wiederbeleben</button>
+  </div>
+
+  <div id="tooltip" class="hidden"></div>
+  <div id="levelup" class="hidden">STUFE <span id="levelup-n"></span>!</div>
+</div>
+
+<div id="sys-btns">
+  <button id="btn-fs" title="Vollbild (F11)">⛶</button>
+  <button id="btn-mute" title="Musik an/aus (N)">🔊</button>
+</div>
+<div id="toast"></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

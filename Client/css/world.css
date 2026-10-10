@@ -1,0 +1,48 @@
+/* zone banner, party, pets, map and misc HUD additions */
+#zonebanner { position: absolute; top: 14%; left: 50%; transform: translateX(-50%); text-align: center; animation: zb 4.2s ease-out forwards; pointer-events: none; }
+#zb-zone { font-family: var(--serif); font-size: 46px; font-weight: 700; color: #ffe9a8; text-shadow: 0 0 18px #c8801a, 0 3px 6px #000; letter-spacing: 2px; }
+#zb-sub { font-size: 17px; color: #e8d8b0; text-shadow: 0 2px 4px #000; margin-top: 2px; letter-spacing: 1px; }
+@keyframes zb { 0% { opacity: 0; transform: translateX(-50%) translateY(-12px); } 12% { opacity: 1; transform: translateX(-50%); } 78% { opacity: 1; } 100% { opacity: 0; } }
+#flightbar { position: absolute; top: 9%; left: 50%; transform: translateX(-50%); padding: 8px 22px; background: rgba(10, 8, 6, .75); border: 1px solid var(--edge); border-radius: 20px; font-size: 16px; color: var(--gold); }
+
+#partyframes { position: absolute; left: 12px; top: 90px; display: flex; flex-direction: column; gap: 6px; }
+#petframes { position: absolute; left: 24%; bottom: calc(20% - 62px); display: flex; gap: 6px; }
+.pf { width: 140px; padding: 4px 8px 5px; background: rgba(10, 9, 8, .78); border: 1px solid var(--edge-soft); border-radius: 4px; cursor: pointer; }
+.pf:hover { border-color: var(--gold); }
+.pf .pfn { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+.pf.pet .pfn { color: #b8f0b8; font-size: 11px; }
+.pf .pfb { height: 8px; background: #070707; border: 1px solid #000; border-radius: 2px; margin-bottom: 2px; overflow: hidden; }
+.pf .pfb i { display: block; height: 100%; width: 100%; }
+.pf .pfb.hp i { background: linear-gradient(#58e060, #1d9a2c); }
+.pf .pfb.res i { background: linear-gradient(#5aa0ff, #2060c0); }
+.pf.dead { opacity: .5; } .pf.far { opacity: .65; }
+#invite { position: absolute; top: 24%; left: 50%; transform: translateX(-50%); padding: 14px 20px; background: var(--glass); border: 1px solid var(--gold); border-radius: 6px; box-shadow: 0 10px 30px #000c; text-align: center; }
+#invite .invbtns { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+#invite .small { margin: 0; }
+#playermenu { position: absolute; z-index: 60; min-width: 180px; background: var(--glass); border: 1px solid var(--edge); border-radius: 5px; box-shadow: 0 8px 24px #000c; padding: 4px; pointer-events: auto !important; }
+#playermenu .pmn { padding: 5px 8px; font-weight: 700; border-bottom: 1px solid var(--edge-soft); margin-bottom: 3px; }
+#playermenu button { display: block; width: 100%; text-align: left; padding: 6px 8px; background: none; border: none; color: var(--text); font-size: 13px; border-radius: 3px; }
+#playermenu button:hover { background: rgba(240, 207, 122, .18); }
+.prow { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--edge-soft); }
+.prow .pi { width: 30px; height: 30px; border: 2px solid; border-radius: 50%; display: grid; place-items: center; }
+.prow .pn { flex: 1; } .prow .small { margin: 0; padding: 2px 8px; }
+#partywin { left: 4%; top: 25%; width: 280px; }
+
+.stance { font-size: 10.5px; color: #9fd0ff; margin: 0 0 2px; }
+.tag-row { font-size: 11px; font-weight: 700; color: #ff9a20; margin: -1px 0 1px; letter-spacing: 1px; }
+.uframe.elite .portrait { box-shadow: 0 0 0 3px #1a1408, 0 0 0 5px #ff9a20, 0 0 12px #ff9a20; }
+.nameplate.elite span:first-child { text-shadow: 0 0 6px #ff9a20, 0 0 3px #000, 1px 1px 2px #000; }
+.nameplate small.tag { color: #ff9a20; font-weight: 700; letter-spacing: 1px; }
+.qtag { font-size: 11px; background: #7a3a10; color: #ffd9a0; padding: 1px 6px; border-radius: 8px; vertical-align: middle; margin-left: 4px; font-family: var(--font); }
+.qmeta { font-size: 12px; color: #6a4a20; margin-bottom: 6px; }
+.win:not(.parchment) .qmeta { color: var(--muted); }
+#ql-detail .qmeta { color: #6a4a20; }
+.qtimer { color: #ffd650 !important; font-weight: 700; }
+.c-yell { color: #ff9a4a; font-weight: 700; } .c-party { color: #8ab8ff; }
+
+/* world map */
+#mapwin { width: 760px; }
+#map-wrap { position: relative; width: 700px; height: 700px; margin: 0 auto; }
+#mapcv { width: 700px; height: 700px; display: block; border-radius: 4px; }
+#map-tip { display: none; position: absolute; padding: 3px 8px; background: #000d; border: 1px solid var(--gold-dim); border-radius: 4px; font-size: 12px; pointer-events: none; white-space: nowrap; }
+#map-legend { display: flex; gap: 14px; justify-content: center; margin-top: 8px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }

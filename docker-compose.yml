@@ -1,0 +1,24 @@
+services:
+  server:
+    image: ghcr.io/herrpony/mmorpg-server:latest
+    build:
+      context: .
+      dockerfile: Server/Dockerfile
+    restart: unless-stopped
+    volumes:
+      - gamedata:/data
+    # Entwicklerbefehle (/dev tp, /dev level ...): command: ["-addr", ":8080", "-client", "", "-data", "/data", "-dev"]
+
+  client:
+    image: ghcr.io/herrpony/mmorpg-client:latest
+    build:
+      context: .
+      dockerfile: Client/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "8080:80"
+
+volumes:
+  gamedata:

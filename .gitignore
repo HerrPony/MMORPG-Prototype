@@ -1,0 +1,4 @@
+Server/data/
+Server/server.exe
+*.log
+.claude/
