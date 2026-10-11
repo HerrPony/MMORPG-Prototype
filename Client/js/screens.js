@@ -57,6 +57,8 @@ export class Preview {
     if (this.model) {
       if (!this.drag) this.yaw += dt * 0.5;
       this.model.obj.rotation.y = this.yaw;
+      this._atk = (this._atk || 0) + dt; // show the attack animation now and then
+      if (this._atk > 3.2) { this._atk = 0; this.model.attack?.(); }
       this.model.update(dt, { speed: 0, airborne: false, dead: false });
     }
   }

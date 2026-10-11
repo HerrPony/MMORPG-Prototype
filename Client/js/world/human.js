@@ -110,14 +110,36 @@ function propFor(kind, id) {
       return g;
     }
     case 'bow': {
-      // pixel bow: stepped arc along Y, bulging to +X
+      // pixel bow: a connected arc along Y that bulges towards +X (tips at x = 0)
       const col = tier > 2 ? tc : 0x6b4a22;
-      const mid = bx(0.06, 0.24, 0.05, col); mid.position.x = 0.14; g.add(mid);
-      for (const s of [-1, 1]) {
-        const a = bx(0.06, 0.2, 0.05, col); a.position.set(0.1, s * 0.2, 0); a.rotation.z = -s * 0.3; g.add(a);
-        const b = bx(0.06, 0.2, 0.05, col); b.position.set(0.0, s * 0.4, 0); b.rotation.z = -s * 0.6; g.add(b);
+      const arc = [];
+      for (let k = 0; k <= 8; k++) { const y = -0.5 + k / 8; arc.push([0.17 * (1 - Math.pow(y / 0.5, 2)), y]); }
+      for (let k = 0; k < 8; k++) {
+        const a = arc[k], b2 = arc[k + 1];
+        const seg = bx(0.07, Math.hypot(b2[0] - a[0], b2[1] - a[1]) + 0.03, 0.07, col);
+        seg.position.set((a[0] + b2[0]) / 2, (a[1] + b2[1]) / 2, 0);
+        seg.rotation.z = -Math.atan2(b2[0] - a[0], b2[1] - a[1]);
+        g.add(seg);
       }
-      const str = bx(0.012, 0.86, 0.012, 0xdddddd); str.position.x = -0.04; g.add(str);
+      const grip = bx(0.1, 0.2, 0.1, 0x3a2412); grip.position.set(0.17, 0, 0); g.add(grip);      // the string is two thin boxes from the tips to the nock; the nock slides back when the bow is drawn
+      const halves = [1, -1].map(() => { const h = bx(0.012, 1, 0.012, 0xdddddd); g.add(h); return h; });
+      const nock = new THREE.Group(); g.add(nock);
+      const shaft = bx(0.7, 0.014, 0.014, 0xd8d0b8); shaft.position.x = 0.35; nock.add(shaft);
+      const head = bx(0.08, 0.05, 0.03, 0xc0c4cc); head.position.x = 0.72; nock.add(head);
+      const fl = bx(0.1, 0.05, 0.012, 0xc83030); fl.position.x = 0.04; nock.add(fl);
+      // draw: how far the nock is pulled back (0..0.38); arrow: whether an arrow is nocked
+      g.userData.setDraw = (d, arrow) => {
+        const nx = -0.03 - d;
+        nock.position.x = nx; nock.visible = arrow;
+        halves.forEach((h, i) => {
+          const s = i === 0 ? 1 : -1;
+          const dx = nx - 0.0, dy = -s * 0.5; // from the tip (0, s*0.5) to the nock
+          const len = Math.hypot(dx, dy);
+          h.scale.y = len; h.position.set(dx / 2, s * 0.5 + dy / 2, 0);
+          h.rotation.z = Math.atan2(dy, dx) - Math.PI / 2;
+        });
+      };
+      g.userData.setDraw(0, true);
       return g;
     }
     case 'rifle': {
@@ -459,9 +481,11 @@ export function makeHumanoid(spec0 = {}) {
   const put = (parent, obj, pos = [0, 0, 0], rot = [0, 0, 0], sc = 1) => { obj.position.set(pos[0], pos[1], pos[2]); obj.rotation.set(rot[0], rot[1], rot[2]); obj.scale.setScalar(sc); parent.add(obj); attached.push(obj); };
   const POINT = { sword: 1.2, dagger: 1.2, scimitar: 1.2, axe: 0.9, pick: 0.9, rifle: 0.9 };
 
+  let bowObj = null;
   function dress(next) {
     if (next) spec = next;
     clear();
+    bowObj = null;
     const P = paletteOf(spec);
     const A = { chest: spec.chest, legs: spec.legs, feet: spec.feet, hands: spec.hands, waist: spec.waist };
     const T = (f) => mk(torsoTex(P, A, f));
@@ -480,7 +504,12 @@ export function makeHumanoid(spec0 = {}) {
       const left = p.slot === 'left';
       const arm = left ? armL : armR;
       if (left && p.kind === 'shield') put(arm.hand, obj, [0.13, 0.0, 0.05], [0, Math.PI / 2, 0], p.scale || 1);
-      else if (left && p.kind === 'bow') put(arm.hand, obj, [0.04, 0.0, 0.08], [0, -Math.PI / 2, 0], p.scale || 1);
+      else if (left && p.kind === 'bow') {
+        // the left arm points forward: hand-local +Z is up, -Y is forward; the bow stands upright with its belly facing the target
+        put(arm.hand, obj, [0, 0, 0.02], [0, 0, 0], (p.scale || 1) * 1.25);
+        obj.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(-1, 0, 0)));
+        bowObj = obj;
+      }
       else put(arm.hand, obj, [0, 0, 0.04], [POINT[p.kind] ?? 0, 0, 0], p.scale || 1);
     }
     if (spec.head) put(headA, headPropFor(spec.head.kind, spec.head.id, spec.head.color));
@@ -501,6 +530,7 @@ export function makeHumanoid(spec0 = {}) {
     obj: root, height: 1.8 * scale * (bs[1] || 1) + 0.1, kind: 'human',
     setTint(c) { spec = { ...spec, tint: c }; },
     dress,
+    bowDelay: spec0.props?.some((p) => p.kind === 'bow') ? 0.3 : 0, // the arrow leaves the string this long after the shot started
     attack() { attackT = 0.01; },
     cast(on) { castT = on ? 1 : 0; },
     update(dt, st) {
@@ -518,7 +548,23 @@ export function makeHumanoid(spec0 = {}) {
       if (spec.props?.some((p) => p.slot !== 'left')) rArm = rArm * 0.5 - 0.15; // holding a weapon
       if (spec.armsForward) { rArm = -1.45 + s * 0.1; lArm = -1.45 - s * 0.1; }
       if (castT > 0) { rArm = -1.7; lArm = -1.7; }
-      if (attackT > 0) {
+      let rYaw = 0;
+      if (bowObj) {
+        // archer stance: bow arm forward, string hand near the chest; attack = draw (0-0.3 s), release, recoil
+        lArm = -1.4; rArm = -1.3; rYaw = 0.55;
+        let draw = 0.04, arrow = true;
+        if (attackT > 0) {
+          attackT += dt;
+          const k = attackT / 0.3; // 0..1 = drawing
+          if (k < 1) { const e = k * k * (3 - 2 * k); draw = 0.04 + 0.34 * e; rYaw = 0.55 + 0.45 * e; }
+          else if (attackT < 0.42) { draw = 0.02; rYaw = 0.6 - ((attackT - 0.3) / 0.12) * 0.15; arrow = false; lArm = -1.4 + 0.08 * Math.sin((attackT - 0.3) * 60); }
+          else if (attackT < 0.65) { draw = 0.04; arrow = ((attackT - 0.42) / 0.23) > 0.4; }
+          else attackT = 0;
+          body.rotation.y = k < 1 ? -0.25 * k : -0.25 * Math.max(0, 1 - (attackT - 0.3) * 4);
+          if (!attackT) body.rotation.y = 0;
+        }
+        bowObj.userData.setDraw?.(draw, arrow);
+      } else if (attackT > 0) {
         attackT += dt;
         const k = Math.min(1, attackT / 0.4);
         rArm = -0.4 - Math.sin(k * Math.PI) * 2.0;
@@ -526,6 +572,7 @@ export function makeHumanoid(spec0 = {}) {
         if (k >= 1) { attackT = 0; body.rotation.y = 0; }
       }
       armR.pv.rotation.x = rArm; armL.pv.rotation.x = lArm;
+      armR.pv.rotation.y = rYaw; armL.pv.rotation.y = 0;
       armR.pv.rotation.z = 0.04; armL.pv.rotation.z = -0.04;
       body.position.y = moving ? Math.abs(Math.sin(phase)) * 0.04 * sw : 0;
       headPv.rotation.y = moving ? 0 : Math.sin(t * 0.6) * 0.12;

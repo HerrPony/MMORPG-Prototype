@@ -254,7 +254,11 @@ export class FX {
         this.rising(m.s, color, 1.1);
         break;
       default:
-        if (from && to) this.projectile(from, m.d, skill.style, skill.color);
+        if (from && to) {
+          const delay = skill.style === 'arrow' && src?.model?.bowDelay ? src.model.bowDelay * 1000 : 0;
+          if (delay) setTimeout(() => { const f2 = this.pos(m.s, 0.85); if (f2) this.projectile(f2, m.d, skill.style, skill.color); }, delay);
+          else this.projectile(from, m.d, skill.style, skill.color);
+        }
     }
   }
 
