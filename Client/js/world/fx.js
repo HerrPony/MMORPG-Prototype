@@ -16,16 +16,21 @@ function radialTex() {
 
 export class FX {
   constructor(scene, entities, getCamera) {
-    this.scene = scene;
     this.ents = entities;
     this.getCamera = getCamera;
-    this.list = [];
+    this.setScene(scene);
     this.tex = radialTex();
     this.fct = $('fct');
     this.charges = new Map(); // caster id -> sprite
   }
 
-  setScene(scene) { this.scene = scene; this.list = []; }
+  // all effects live in one group so that a scene change (preview -> world) cannot leave sprites behind
+  setScene(scene) {
+    if (this.root) this.root.removeFromParent();
+    this.scene = scene; this.list = [];
+    this.root = new THREE.Group();
+    scene.add(this.root);
+  }
 
   pos(id, f = 0.6) {
     const e = S.ents.get(id);
@@ -38,7 +43,7 @@ export class FX {
       map: this.tex, color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity,
     }));
     s.scale.setScalar(size);
-    this.scene.add(s);
+    this.root.add(s);
     return s;
   }
 
@@ -52,7 +57,7 @@ export class FX {
         const k = t / dur;
         s.scale.setScalar(size * (0.3 + k));
         s.material.opacity = Math.max(0, 1 - k);
-        if (k >= 1) { this.scene.remove(s); return false; }
+        if (k >= 1) { this.root.remove(s); return false; }
         return true;
       },
     });
@@ -65,7 +70,7 @@ export class FX {
     );
     m.rotation.x = -Math.PI / 2;
     m.position.copy(at);
-    this.scene.add(m);
+    this.root.add(m);
     let t = 0;
     this.list.push({
       update: (dt) => {
@@ -74,7 +79,7 @@ export class FX {
         m.scale.setScalar(r0 + (r1 - r0) * k);
         m.position.y = at.y + vertical * k;
         m.material.opacity = 0.9 * (1 - k);
-        if (k >= 1) { this.scene.remove(m); return false; }
+        if (k >= 1) { this.root.remove(m); return false; }
         return true;
       },
     });
@@ -95,16 +100,16 @@ export class FX {
       mesh.add(halo);
     }
     mesh.position.copy(from);
-    this.scene.add(mesh);
+    this.root.add(mesh);
     const speed = style === 'arrow' ? 42 : style === 'fire' ? 22 : 28;
     this.list.push({
       update: (dt) => {
         const to = this.pos(dstId, 0.6);
-        if (!to) { this.scene.remove(mesh); return false; }
+        if (!to) { this.root.remove(mesh); return false; }
         const d = to.clone().sub(mesh.position);
         const step = speed * dt;
         if (d.length() <= step + 0.3) {
-          this.scene.remove(mesh);
+          this.root.remove(mesh);
           this.burst(to, col, style === 'fire' ? 2.2 : 1.4);
           return false;
         }
@@ -123,9 +128,9 @@ export class FX {
     );
     m.position.copy(at);
     m.rotation.set(Math.random() * 0.8, Math.random() * 6, Math.random() * 3);
-    this.scene.add(m);
+    this.root.add(m);
     let t = 0;
-    this.list.push({ update: (dt) => { t += dt; m.scale.setScalar(1 + t * 4); m.material.opacity = 1 - t / 0.25; if (t > 0.25) { this.scene.remove(m); return false; } return true; } });
+    this.list.push({ update: (dt) => { t += dt; m.scale.setScalar(1 + t * 4); m.material.opacity = 1 - t / 0.25; if (t > 0.25) { this.root.remove(m); return false; } return true; } });
     this.burst(at, color, 1.0, 0.25);
   }
 
@@ -141,10 +146,10 @@ export class FX {
           t += dt;
           if (t < 0) return true;
           const p = this.pos(id, 0);
-          if (!p) { this.scene.remove(s); return false; }
+          if (!p) { this.root.remove(s); return false; }
           s.position.set(p.x + Math.cos(a + t * 4) * r, p.y + t * 2.2, p.z + Math.sin(a + t * 4) * r);
           s.material.opacity = 0.9 * Math.max(0, 1 - t / dur);
-          if (t > dur) { this.scene.remove(s); return false; }
+          if (t > dur) { this.root.remove(s); return false; }
           return true;
         },
       });
@@ -158,7 +163,7 @@ export class FX {
       new THREE.CylinderGeometry(0.9, 0.9, 7, 20, 1, true),
       new THREE.MeshBasicMaterial({ color: 0xffdd55, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, opacity: 0.7 }),
     );
-    this.scene.add(beam);
+    this.root.add(beam);
     let t = 0;
     this.list.push({
       update: (dt) => {
@@ -167,7 +172,7 @@ export class FX {
         if (q) beam.position.set(q.x, q.y + 3.5, q.z);
         beam.material.opacity = 0.7 * Math.max(0, 1 - t / 1.8);
         beam.scale.set(1 + t * 0.2, 1, 1 + t * 0.2);
-        if (t > 1.8) { this.scene.remove(beam); return false; }
+        if (t > 1.8) { this.root.remove(beam); return false; }
         return true;
       },
     });
@@ -196,13 +201,13 @@ export class FX {
       base.y = (S.ents.get(m.s)?.ry ?? 0);
       const col = new THREE.Color(m.color || '#aee4ff');
       const disc = new THREE.Mesh(new THREE.CircleGeometry(m.r, 32), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.25, depthWrite: false, side: THREE.DoubleSide }));
-      disc.rotation.x = -Math.PI / 2; disc.position.set(m.x, base.y + 0.15, m.z); this.scene.add(disc);
+      disc.rotation.x = -Math.PI / 2; disc.position.set(m.x, base.y + 0.15, m.z); this.root.add(disc);
       let t = 0;
       this.list.push({ update: (dt) => {
         t += dt;
-        for (let i = 0; i < 3; i++) { const q = this.sprite(col, 0.5, 0.8); q.position.set(m.x + (Math.random() - 0.5) * m.r * 2, base.y + 4 + Math.random() * 2, m.z + (Math.random() - 0.5) * m.r * 2); let tt = 0; this.list.push({ update: (d2) => { tt += d2; q.position.y -= d2 * 5; q.material.opacity = 0.8 * (1 - tt / 0.9); if (tt > 0.9) { this.scene.remove(q); return false; } return true; } }); }
+        for (let i = 0; i < 3; i++) { const q = this.sprite(col, 0.5, 0.8); q.position.set(m.x + (Math.random() - 0.5) * m.r * 2, base.y + 4 + Math.random() * 2, m.z + (Math.random() - 0.5) * m.r * 2); let tt = 0; this.list.push({ update: (d2) => { tt += d2; q.position.y -= d2 * 5; q.material.opacity = 0.8 * (1 - tt / 0.9); if (tt > 0.9) { this.root.remove(q); return false; } return true; } }); }
         disc.material.opacity = 0.25 * Math.max(0, 1 - t / m.dur);
-        if (t > m.dur) { this.scene.remove(disc); return false; }
+        if (t > m.dur) { this.root.remove(disc); return false; }
         return true;
       } });
       return;
@@ -226,10 +231,10 @@ export class FX {
         update: (dt) => {
           t += dt;
           const q = this.pos(m.s, 0.9);
-          if (!q) { this.scene.remove(s); return false; }
+          if (!q) { this.root.remove(s); return false; }
           s.position.copy(q).add(new THREE.Vector3(Math.sin(src.rr) * 0.6, 0, Math.cos(src.rr) * 0.6));
           s.scale.setScalar(0.3 + Math.min(t, 1.5) * 0.6);
-          if (t > Math.max(0.8, skill.cast || 1)) { this.scene.remove(s); return false; }
+          if (t > Math.max(0.8, skill.cast || 1)) { this.root.remove(s); return false; }
           return true;
         },
       });
