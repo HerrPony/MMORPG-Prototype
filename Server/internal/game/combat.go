@@ -153,6 +153,17 @@ func (w *World) tryCast(e *Entity, id string) {
 	if sk.Basic {
 		p.Auto = true
 	}
+	w.hunterAuto(e, sk, t)
+}
+
+// hunterAuto: hunters start their auto shot with any offensive skill used on a mob.
+func (w *World) hunterAuto(e *Entity, sk *gamedata.Skill, t *Entity) {
+	if e.P.Class.ID != "hunter" || sk.Basic || (sk.Power <= 0 && sk.DotPower <= 0) {
+		return
+	}
+	if t != nil && t.Kind == KindMob && !t.Dead {
+		e.P.Auto = true
+	}
 }
 
 // finishCast re-checks a skill when its cast time ran out.

@@ -199,3 +199,26 @@ func TestLevelCap40(t *testing.T) {
 		t.Fatal("level 40 skill could not be learned")
 	}
 }
+
+func TestHunterSkillStartsAutoShot(t *testing.T) {
+	w := newTestWorld(t)
+	e, _ := addPlayer(t, w, "Anna", "hunter", 5)
+	wolf := findMob(w, "wolf")
+	e.X, e.Z = wolf.X-10, wolf.Z
+	e.Y = gamedata.Height(e.X, e.Z)
+	e.P.Target = wolf.ID
+	e.P.Char.Skills = append(e.P.Char.Skills, "h_aimed")
+	w.tryCast(e, "h_aimed")
+	run(w, 3)
+	if !e.P.Auto {
+		t.Fatal("an offensive skill should start the hunter's auto shot")
+	}
+	m, _ := addPlayer(t, w, "Bert", "mage", 5)
+	m.X, m.Z, m.Y = e.X, e.Z, e.Y
+	m.P.Target = wolf.ID
+	w.tryCast(m, "m_bolt")
+	run(w, 3)
+	if m.P.Auto {
+		t.Fatal("only hunters start auto attacks with skills")
+	}
+}

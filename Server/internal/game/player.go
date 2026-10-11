@@ -88,6 +88,7 @@ func (w *World) tickPlayer(e *Entity) {
 		t := w.ents[c.Target]
 		if sk != nil && w.finishCast(e, sk, t) {
 			w.execSkill(e, sk, t)
+			w.hunterAuto(e, sk, t)
 		}
 	}
 	// auto attack
