@@ -1,11 +1,15 @@
 package gamedata
 
-const MaxLevel = 20
+const MaxLevel = 40
 
 // XPToNext is the XP needed to advance from the given level.
+// Up to level 20 the curve is quadratic, beyond it grows linearly so that level 40 stays reachable.
 func XPToNext(level int) int {
 	if level >= MaxLevel {
 		return 0
+	}
+	if level > 20 {
+		return 9600 + 700*(level-20)
 	}
 	return 80*level + 20*level*level
 }

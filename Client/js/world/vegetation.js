@@ -59,6 +59,37 @@ function parts() {
     { geo: new THREE.SphereGeometry(0.2, 6, 5).translate(0.6, 0.15, 0.1), mat: mat(0xe6dcc0) },
   ];
   K.stalag = [{ geo: new THREE.ConeGeometry(0.7, 3.5, 6).translate(0, 1.75, 0), mat: white, tint: 'rock' }];
+
+  // ---- second continent ----
+  const glowM = new THREE.MeshBasicMaterial({ color: 0xff6a20 });
+  K.jtree = [
+    { geo: trunk(0.3, 0.5, 7.5, 6), mat: mat(0x5a4028) },
+    { geo: new THREE.IcosahedronGeometry(3.4, 0).scale(1, 0.45, 1).translate(0, 8.2, 0), mat: white, tint: 'leaf' },
+    { geo: new THREE.IcosahedronGeometry(2.4, 0).scale(1, 0.5, 1).translate(2.2, 6.6, 1), mat: white, tint: 'leaf' },
+    { geo: new THREE.CylinderGeometry(0.05, 0.05, 4, 4).translate(1.8, 5.8, 0.4), mat: mat(0x2f7a2a) },
+  ];
+  K.fern = [0, 1, 2, 3, 4].map((i) => ({ geo: new THREE.ConeGeometry(0.22, 1.7, 4).rotateZ(1.0).rotateY(i * 1.26).translate(Math.cos(i * 1.26) * 0.55, 0.5, Math.sin(i * 1.26) * 0.55), mat: white, tint: 'leaf' }));
+  K.bamboo = [0, 1, 2, 3, 4, 5].map((i) => ({ geo: new THREE.CylinderGeometry(0.07, 0.09, 6 + (i % 3) * 1.4, 5).translate(Math.cos(i * 1.9) * 0.6, 3.2 + (i % 3) * 0.7, Math.sin(i * 1.9) * 0.6), mat: mat(0x8cb24a) }))
+    .concat([0, 1, 2].map((i) => ({ geo: new THREE.ConeGeometry(0.6, 1.2, 5).translate(Math.cos(i * 2.1) * 0.5, 6.4 + i * 0.5, Math.sin(i * 2.1) * 0.5), mat: mat(0x5a9a30) })));
+  K.sakura = [
+    { geo: trunk(0.2, 0.36, 3.6, 6), mat: mat(0x4a3228) },
+    { geo: new THREE.IcosahedronGeometry(2.4, 0).translate(0, 4.8, 0), mat: white, tint: 'leaf' },
+    { geo: new THREE.IcosahedronGeometry(1.6, 0).translate(1.5, 4.0, 0.7), mat: white, tint: 'leaf' },
+    { geo: new THREE.IcosahedronGeometry(1.4, 0).translate(-1.3, 4.3, -0.6), mat: white, tint: 'leaf' },
+  ];
+  K.mesapillar = [
+    { geo: new THREE.CylinderGeometry(1.5, 2.0, 3.2, 7).translate(0, 1.6, 0), mat: mat(0xb0502e) },
+    { geo: new THREE.CylinderGeometry(1.0, 1.4, 2.6, 7).translate(0.1, 4.4, 0), mat: mat(0xc86a3c) },
+    { geo: new THREE.CylinderGeometry(1.6, 0.9, 1.2, 7).translate(0.15, 6.3, 0), mat: mat(0xd8803f) },
+  ];
+  K.drybush = [{ geo: new THREE.IcosahedronGeometry(0.7, 0).scale(1.2, 0.7, 1.2).translate(0, 0.4, 0), mat: mat(0x8a6a38) }];
+  K.charred = [
+    { geo: trunk(0.1, 0.28, 4.4, 5), mat: mat(0x1c1618) },
+    { geo: new THREE.CylinderGeometry(0.04, 0.1, 1.8, 4).rotateZ(1.0).translate(0.8, 3.2, 0), mat: mat(0x1c1618) },
+    { geo: new THREE.CylinderGeometry(0.04, 0.09, 1.4, 4).rotateZ(-0.9).translate(-0.6, 2.6, 0.2), mat: mat(0x1c1618) },
+  ];
+  K.obsidian = [0, 1, 2].map((i) => ({ geo: new THREE.ConeGeometry(0.45, 3.2 - i * 0.7, 5).rotateZ((i - 1) * 0.25).translate((i - 1) * 0.7, (3.2 - i * 0.7) / 2, i * 0.2), mat: mat(0x14141c) }));
+  K.ember = [{ geo: new THREE.IcosahedronGeometry(0.25, 0).translate(0, 0.25, 0), mat: glowM }, { geo: new THREE.IcosahedronGeometry(0.18, 0).translate(0.4, 0.15, 0.2), mat: glowM }];
   return K;
 }
 
@@ -70,6 +101,10 @@ const TINTS = {
 };
 
 const BIOME_LEAF = {
+  6: () => new THREE.Color().setHSL(0.33 + Math.random() * 0.05, 0.65, 0.2 + Math.random() * 0.09),
+  7: () => new THREE.Color().setHSL(0.93 + Math.random() * 0.05, 0.6, 0.74 + Math.random() * 0.1),
+  8: () => new THREE.Color().setHSL(0.1 + Math.random() * 0.03, 0.35, 0.28 + Math.random() * 0.06),
+  9: () => new THREE.Color().setHSL(0.04, 0.2, 0.1 + Math.random() * 0.05),
   1: () => new THREE.Color().setHSL(0.31 + Math.random() * 0.03, 0.45, 0.17 + Math.random() * 0.08),
   2: () => new THREE.Color().setHSL(0.24 + Math.random() * 0.04, 0.5, 0.26 + Math.random() * 0.08),
   3: () => new THREE.Color().setHSL(0.22 + Math.random() * 0.04, 0.35, 0.16 + Math.random() * 0.06),
@@ -108,11 +143,12 @@ export function buildVegetation(scene, sc) {
     }
   };
 
-  for (let z = -W.half + 4; z < W.half - 4; z += STEP) {
-    for (let x = -W.half + 4; x < W.half - 4; x += STEP) {
+  const xEnd = W.x0 + (W.nx - 1) * W.cell - 4, zEnd = W.z0 + (W.nz - 1) * W.cell - 4;
+  for (let z = W.z0 + 4; z < zEnd; z += STEP) {
+    for (let x = W.x0 + 4; x < xEnd; x += STEP) {
       const px = x + (r() - 0.5) * STEP, pz = z + (r() - 0.5) * STEP;
       const b = biomeAt(px, pz);
-      if (b === 0) continue;
+      if (b === 0 || b === 10) continue;
       const h = heightAt(px, pz);
       if (h < 0.35) {
         if (b === 3 && h > -1.0 && h < 0.35 && r() < 0.12 && !blocked(px, pz)) add('reed', px, pz, 0.9 + r() * 0.8, b, 0);
@@ -156,6 +192,36 @@ export function buildVegetation(scene, sc) {
           else if (u < 0.105) add('bones', px, pz, s, b, 0);
           else if (u < 0.15) add('bush', px, pz, s * 0.7, b, 0);
           break;
+        case 6: // jungle: dense and tall
+          if (u < 0.46) add('jtree', px, pz, s * 1.05, b, 0.7);
+          else if (u < 0.51 && h < 2.2) add('palm', px, pz, s, b, 0.4);
+          else if (u < 0.68) add('fern', px, pz, s, b, 0);
+          else if (u < 0.76) add('bamboo', px, pz, s * 0.9, b, 0.4);
+          else if (u < 0.82) add('bush', px, pz, s, b, 0.4);
+          else if (u < 0.88) add('flower', px, pz, s, b, 0);
+          else if (u < 0.9) add('rock', px, pz, s, b, 0.6);
+          break;
+        case 7: // cherry blossom groves
+          if (u < 0.2) add('sakura', px, pz, s, b, 0.5);
+          else if (u < 0.28) add('bamboo', px, pz, s, b, 0.4);
+          else if (u < 0.32) add('bush', px, pz, s * 0.8, b, 0.4);
+          else if (u < 0.34) add('rock', px, pz, s * 0.8, b, 0.6);
+          else if (u < 0.58) add('tuft', px, pz, s, b, 0);
+          else if (u < 0.72) add('flower', px, pz, s, b, 0);
+          break;
+        case 8: // red canyons
+          if (u < 0.045 && slope < 2.5) add('mesapillar', px, pz, s * 1.2, b, 1.3);
+          else if (u < 0.12) add('rock', px, pz, s * 1.1, b, 0.8);
+          else if (u < 0.16) add('cactus', px, pz, s, b, 0.5);
+          else if (u < 0.26) add('drybush', px, pz, s, b, 0);
+          else if (u < 0.28) add('bones', px, pz, s, b, 0);
+          break;
+        case 9: // volcanic ash
+          if (u < 0.12 && slope < 3) add('charred', px, pz, s, b, 0.4);
+          else if (u < 0.25) add('rock', px, pz, s * 1.2, b, 0.8);
+          else if (u < 0.32) add('obsidian', px, pz, s, b, 0.7);
+          else if (u < 0.36) add('ember', px, pz, s, b, 0);
+          break;
       }
     }
   }
@@ -178,6 +244,9 @@ export function buildVegetation(scene, sc) {
             else col.copy(TINTS[part.tint][0]());
             if (part.tint === 'rock' && it.biome === 4) col.offsetHSL(0, 0, 0.25);
             if (part.tint === 'rock' && it.biome === 5) col.setHSL(0.1, 0.35, 0.5);
+            if (part.tint === 'rock' && it.biome === 8) col.setHSL(0.04, 0.55, 0.3 + Math.random() * 0.12);
+            if (part.tint === 'rock' && it.biome === 9) col.setHSL(0.02, 0.2, 0.08 + Math.random() * 0.06);
+            if (part.tint === 'rock' && it.biome === 7) col.setHSL(0.08, 0.1, 0.5);
             if (part.tint === 'grass' && it.biome === 5) col.setHSL(0.14, 0.4, 0.45);
             im.setColorAt(i, col);
           }

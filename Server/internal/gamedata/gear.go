@@ -14,18 +14,26 @@ var EquipSlots = []string{"head", "neck", "shoulder", "back", "chest", "wrist", 
 var PrimaryStat = map[string]string{"warrior": "str", "hunter": "agi", "mage": "int"}
 
 const (
-	tiers      = 10
+	tiers      = 20
 	statHP     = 5
 	statMana   = 4
 	statDamage = 0.01  // damage bonus per point of the primary stat
 	weaponDmg  = 0.012 // damage bonus per weapon damage point
 )
 
-var tierNames = [tiers]string{"Rekruten", "Wächter", "Veteranen", "Helden", "Gardisten", "Kämpfer", "Eliten", "Meister", "Champions", "Legenden"}
-var tierRarity = [tiers]string{"common", "uncommon", "uncommon", "rare", "rare", "rare", "rare", "epic", "epic", "epic"}
-var weaponDmgTier = [tiers]int{4, 7, 11, 16, 22, 29, 37, 46, 56, 68}
+var tierNames = [tiers]string{"Rekruten", "Wächter", "Veteranen", "Helden", "Gardisten", "Kämpfer", "Eliten", "Meister", "Champions", "Legenden",
+	"Jadewächter", "Lotus", "Tempelhüter", "Kaiserliche", "Drachenreiter", "Himmelsklingen", "Weltenhüter", "Aschenbezwinger", "Glutgeborene", "Ewige"}
+var tierRarity = [tiers]string{"common", "uncommon", "uncommon", "rare", "rare", "rare", "rare", "epic", "epic", "epic",
+	"rare", "rare", "rare", "epic", "epic", "epic", "epic", "epic", "epic", "epic"}
+var weaponDmgTier = [tiers]int{4, 7, 11, 16, 22, 29, 37, 46, 56, 68, 80, 93, 107, 122, 138, 155, 173, 192, 212, 233}
 
-func tierPrice(t float64) float64 { return 12 * math.Pow(1.85, t) }
+// tierPrice is the vendor price of an item of power tier t (growth slows down beyond tier 9).
+func tierPrice(t float64) float64 {
+	if t <= 9 {
+		return 12 * math.Pow(1.85, t)
+	}
+	return 12 * math.Pow(1.85, 9) * math.Pow(1.4, t-9)
+}
 
 type armorKind struct {
 	id, label, class, prim string
@@ -59,8 +67,8 @@ var armorSlots = []slotDef{
 // pools of generated gear by tier, used for random drops and vendors
 var gearPool [tiers][]string
 
-// dungeonPool holds the epic dungeon set (Schwarzfels).
-var dungeonPool []string
+// dungeonPools holds the epic dungeon sets by set id (bf = Schwarzfels, ns = Nebelschlange, gk = Glutkern).
+var dungeonPools = map[string][]string{}
 
 func add(it *Item) {
 	if it.Stack == 0 {
@@ -152,10 +160,21 @@ func init() {
 	for t := 0; t < tiers; t++ {
 		gearPool[t] = genSet(gearSet{prefix: tierNames[t], suffix: fmt.Sprint(t), t: float64(t), req: t*2 + 1, rarity: tierRarity[t]})
 	}
-	// the dungeon set is a bit stronger than the open world tier of the same level
-	dungeonPool = genSet(gearSet{prefix: "Schwarzfels", suffix: "bf", t: 8.6, req: 17, rarity: "epic"})
-	for _, id := range dungeonPool {
-		Items[id].Desc = "Aus den Tiefen der Schwarzfelsmine."
+	// the dungeon sets are a bit stronger than the open world tier of the same level
+	for _, d := range []struct {
+		id, prefix, desc string
+		t                float64
+		req              int
+	}{
+		{"bf", "Schwarzfels", "Aus den Tiefen der Schwarzfelsmine.", 8.6, 17},
+		{"ns", "Nebelschlangen", "Aus dem versunkenen Nebeltempel.", 14.6, 29},
+		{"gk", "Glutkern", "Geschmiedet im Feuerschlund.", 18.7, 37},
+	} {
+		ids := genSet(gearSet{prefix: d.prefix, suffix: d.id, t: d.t, req: d.req, rarity: "epic"})
+		for _, id := range ids {
+			Items[id].Desc = d.desc
+		}
+		dungeonPools[d.id] = ids
 	}
 
 	// --- consumables ---
@@ -163,6 +182,8 @@ func init() {
 	add(&Item{ID: "potion_hp2", Name: "Heiltrank", Icon: "⚗️", Rarity: "uncommon", Desc: "Stellt sofort 200 Lebenspunkte wieder her.", Heal: 200, Stack: 10, Buy: 90, Sell: 22, Req: 5})
 	add(&Item{ID: "potion_hp3", Name: "Großer Heiltrank", Icon: "🍶", Rarity: "rare", Desc: "Stellt sofort 450 Lebenspunkte wieder her.", Heal: 450, Stack: 10, Buy: 260, Sell: 65, Req: 11})
 	add(&Item{ID: "potion_hp4", Name: "Meisterheiltrank", Icon: "🏺", Rarity: "rare", Desc: "Stellt sofort 800 Lebenspunkte wieder her.", Heal: 800, Stack: 10, Buy: 700, Sell: 175, Req: 17})
+	add(&Item{ID: "potion_hp5", Name: "Jadeheiltrank", Icon: "🧉", Rarity: "rare", Desc: "Stellt sofort 1400 Lebenspunkte wieder her.", Heal: 1400, Stack: 10, Buy: 1500, Sell: 375, Req: 25})
+	add(&Item{ID: "potion_hp6", Name: "Drachenheiltrank", Icon: "🍵", Rarity: "epic", Desc: "Stellt sofort 2400 Lebenspunkte wieder her.", Heal: 2400, Stack: 10, Buy: 3600, Sell: 900, Req: 33})
 
 	// --- quest reward items get real stats ---
 	set := func(id, slot, typ string, armor int, stats map[string]int, req int, classes ...string) {
@@ -194,9 +215,12 @@ func RandomGear(level int, class string, rng *rand.Rand) string {
 }
 
 // DungeonGear picks a piece of the dungeon set usable by the class.
-func DungeonGear(class string, rng *rand.Rand) string {
+func DungeonGear(set, class string, rng *rand.Rand) string {
+	if set == "" {
+		set = "bf"
+	}
 	var usable []string
-	for _, id := range dungeonPool {
+	for _, id := range dungeonPools[set] {
 		it := Items[id]
 		if len(it.Classes) == 0 || slices.Contains(it.Classes, class) {
 			usable = append(usable, id)

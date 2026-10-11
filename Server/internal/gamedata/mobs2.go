@@ -21,7 +21,7 @@ func addMob(m *Mob) {
 		m.RespawnSec = 45
 	}
 	if m.XPBase == 0 {
-		m.XPBase = 20
+		m.XPBase = 20 + 8*max(0, m.LevelMin-20) // higher level mobs are worth more
 	}
 	if m.Scale == 0 {
 		m.Scale = 1
@@ -165,6 +165,10 @@ type SpawnGroup struct {
 }
 
 func groups() []SpawnGroup {
+	return append(groups1(), groups2()...)
+}
+
+func groups1() []SpawnGroup {
 	return []SpawnGroup{
 		// Erlenwald elite
 		{"bear_elder", 70, 40, 1, 2},
@@ -211,7 +215,7 @@ func buildSpawns() {
 				r := math.Sqrt(rng.Float64()) * rad
 				x, z = g.X+math.Cos(a)*r, g.Z+math.Sin(a)*r
 			}
-			if Height(x, z) < 0.8 || nearNPC(x, z, 7) || inTownCore(x, z) {
+			if Height(x, z) < 0.8 || nearNPC(x, z, 7) || inTownCore(x, z) || DistToRoad(x, z) < roadClear || BiomeAt(x, z) == BiomeLava {
 				continue
 			}
 			tooClose := false
@@ -228,6 +232,25 @@ func buildSpawns() {
 			placed++
 		}
 	}
+}
+
+// roadClear is the distance mobs keep from roads when they spawn.
+const roadClear = 5.0
+
+// offRoad moves a point away from the nearest road until it is clear of it (keeps points that already are).
+func offRoad(x, z float64) (float64, float64) {
+	if DistToRoad(x, z) >= roadClear {
+		return x, z
+	}
+	for r := 2.0; r <= 24; r += 2 {
+		for a := 0.0; a < 2*math.Pi; a += math.Pi / 8 {
+			nx, nz := x+math.Cos(a)*r, z+math.Sin(a)*r
+			if DistToRoad(nx, nz) >= roadClear && Height(nx, nz) >= 0.8 && BiomeAt(nx, nz) != BiomeLava {
+				return nx, nz
+			}
+		}
+	}
+	return x, z
 }
 
 func nearNPC(x, z, r float64) bool {

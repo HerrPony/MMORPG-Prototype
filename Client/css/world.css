@@ -46,3 +46,7 @@
 #mapcv { width: 700px; height: 700px; display: block; border-radius: 4px; }
 #map-tip { display: none; position: absolute; padding: 3px 8px; background: #000d; border: 1px solid var(--gold-dim); border-radius: 4px; font-size: 12px; pointer-events: none; white-space: nowrap; }
 #map-legend { display: flex; gap: 14px; justify-content: center; margin-top: 8px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+
+#map-tabs { display: flex; gap: 6px; margin-bottom: 6px; }
+#map-tabs button { flex: 1; padding: 4px 8px; background: #1c1710; color: #d8c89a; border: 1px solid #5a4a2a; border-radius: 4px; cursor: pointer; font-family: Georgia, serif; }
+#map-tabs button.on { background: #4a3a1c; color: #fff2c8; border-color: #c8a24a; }

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { heightAt } from '../util.js';
+import { makeShip } from './ship.js';
 
 const M = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
 const box = (w, h, d, m) => { const x = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); x.castShadow = x.receiveShadow = true; return x; };
@@ -11,6 +12,10 @@ const STYLES = {
   stilt: { wall: 0x5a4a32, roof: 0x6a7a3a, trim: 0x3a2e1e },
   lodge: { wall: 0x6a4a30, roof: 0xdde8f0, trim: 0x3a2a1c },
   adobe: { wall: 0xd8b878, roof: 0xc89858, trim: 0x8a6a3a },
+  bamboo: { wall: 0xcdbc7a, roof: 0x9c8a3c, trim: 0x7a6a30 },
+  jade: { wall: 0xb8362a, roof: 0x2f9a78, trim: 0xe8c860 },
+  redrock: { wall: 0xc8693f, roof: 0xb4583a, trim: 0x8a4628 },
+  obsidian: { wall: 0x2c2c38, roof: 0x14141c, trim: 0xff6a20 },
 };
 
 function house(b, hh) {
@@ -32,6 +37,25 @@ function house(b, hh) {
     const top = box(b.w + 0.4, 0.5, b.d + 0.4, M(st.roof)); top.position.y = lift + b.h + 0.25; g.add(top);
     const dome = new THREE.Mesh(new THREE.SphereGeometry(Math.min(b.w, b.d) * 0.28, 12, 8, 0, 6.283, 0, 1.57), M(0xe8d8a8));
     dome.position.y = lift + b.h + 0.5; g.add(dome);
+  } else if (b.s === 'redrock') { // flat clay roof with beam ends
+    const top = box(b.w + 0.6, 0.6, b.d + 0.6, M(st.roof)); top.position.y = lift + b.h + 0.3; g.add(top);
+    const rim = box(b.w + 0.9, 0.35, b.d + 0.9, M(st.trim)); rim.position.y = lift + b.h + 0.75; g.add(rim);
+    for (let i = -2; i <= 2; i++) { const beam = cyl(0.14, 0.14, b.d + 1.6, M(0x5a3a22), 6); beam.rotation.x = Math.PI / 2; beam.position.set(i * b.w / 5, lift + b.h - 0.2, 0); g.add(beam); }
+    const step = box(b.w * 0.45, 0.4, b.d * 0.4, M(st.wall)); step.position.set(0, lift + b.h + 0.95, 0); g.add(step);
+  } else if (b.s === 'jade') { // two-tier roof with upturned corners
+    const r1 = new THREE.Mesh(new THREE.ConeGeometry(1, 1.5, 4), M(st.roof));
+    r1.rotation.y = Math.PI / 4; r1.scale.set((b.w / 2 + 1.6) * Math.SQRT2, 1, (b.d / 2 + 1.6) * Math.SQRT2); r1.position.y = lift + b.h + 0.75; r1.castShadow = true; g.add(r1);
+    const r2 = new THREE.Mesh(new THREE.ConeGeometry(1, 1.5, 4), M(st.roof));
+    r2.rotation.y = Math.PI / 4; r2.scale.set((b.w / 2 + 0.2) * Math.SQRT2 * 0.7, 1, (b.d / 2 + 0.2) * Math.SQRT2 * 0.7); r2.position.y = lift + b.h + 2.0; g.add(r2);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const tip = box(0.4, 0.4, 0.4, M(st.trim)); tip.position.set(sx * (b.w / 2 + 1.5), lift + b.h + 0.55, sz * (b.d / 2 + 1.5)); tip.rotation.z = sx * 0.6; g.add(tip); }
+    const fin = box(0.2, 0.9, 0.2, M(st.trim)); fin.position.y = lift + b.h + 3.0; g.add(fin);
+  } else if (b.s === 'obsidian') { // sharp black roof with glowing seams
+    const rf = new THREE.Mesh(new THREE.ConeGeometry(1, 3.6, 5), M(st.roof));
+    rf.scale.set(b.w / 2 + 0.6, 1, b.d / 2 + 0.6); rf.position.y = lift + b.h + 1.8; rf.castShadow = true; g.add(rf);
+    const seam = box(b.w + 0.2, 0.2, b.d + 0.2, new THREE.MeshBasicMaterial({ color: 0xff6a20 })); seam.position.y = lift + b.h + 0.1; g.add(seam);
+  } else if (b.s === 'bamboo') { // thatched cone roof
+    const rf = new THREE.Mesh(new THREE.ConeGeometry(1, 3.2, 8), M(st.roof));
+    rf.scale.set((Math.max(b.w, b.d) / 2 + 1.2), 1, (Math.max(b.w, b.d) / 2 + 1.2)); rf.position.y = lift + b.h + 1.6; rf.castShadow = true; g.add(rf);
   } else {
     const long = b.w >= b.d;
     const roof = new THREE.Mesh(new THREE.ConeGeometry(1, 2.4 + (b.h > 5 ? 0.5 : 0), 4), M(st.roof));
@@ -44,7 +68,7 @@ function house(b, hh) {
   }
   // door and windows on the south side
   const door = box(1.3, 2.2, 0.2, M(0x3a2410)); door.position.set(0, lift + 1.1, b.d / 2 + 0.05); g.add(door);
-  const wm = M(0xffe9a0, { emissive: 0x5a4a1a });
+  const wm = b.s === 'obsidian' ? new THREE.MeshBasicMaterial({ color: 0xff7a30 }) : M(0xffe9a0, { emissive: 0x5a4a1a });
   for (const sx of [-1, 1]) { const w = box(0.9, 0.9, 0.2, wm); w.position.set(sx * b.w * 0.28, lift + b.h * 0.6, b.d / 2 + 0.05); g.add(w); }
   if (b.k === 'hut') { const st2 = box(2.2, 0.3, 2.0, trim); st2.position.set(0, 0.5, b.d / 2 + 1.3); g.add(st2); }
   g.position.set(b.x, hh, b.z);
@@ -79,11 +103,11 @@ function wall(b, hh) {
 
 function keep(b, hh) {
   const g = new THREE.Group();
-  const stone = M(b.s === 'adobe' ? 0xd8b878 : 0xcfc9bc);
+  const stone = M(b.s === 'adobe' ? 0xd8b878 : b.s === 'redrock' ? 0xc8693f : 0xcfc9bc);
   const body = box(b.w, b.h, b.d, stone); body.position.y = b.h / 2; g.add(body);
-  const roof = new THREE.Mesh(new THREE.ConeGeometry(1, 5, 4), M(b.s === 'adobe' ? 0xc89858 : 0x3a5a9a));
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(1, 5, 4), M(b.s === 'adobe' ? 0xc89858 : b.s === 'redrock' ? 0xa84e2e : 0x3a5a9a));
   roof.rotation.y = Math.PI / 4; roof.scale.set(b.w / 2 * Math.SQRT2, 1, b.d / 2 * Math.SQRT2); roof.position.y = b.h + 2.5; roof.castShadow = true; g.add(roof);
-  if (b.s !== 'adobe') for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+  if (b.s !== 'adobe' && b.s !== 'redrock') for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
     const t = cyl(2.2, 2.4, b.h + 4, stone, 12); t.position.set(sx * b.w / 2, (b.h + 4) / 2, sz * b.d / 2); g.add(t);
     const tr = new THREE.Mesh(new THREE.ConeGeometry(3, 4, 12), M(0xc8a24a)); tr.position.set(sx * b.w / 2, b.h + 6, sz * b.d / 2); g.add(tr);
   }
@@ -131,18 +155,105 @@ function tent(b, hh) {
 
 function cave(b, hh) {
   const g = new THREE.Group();
-  const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 1), M(0x5a5650));
+  const kind = b.s || 'mine';
+  const rockC = kind === 'fire' ? 0x24181c : kind === 'temple' ? 0x6a8a78 : 0x5a5650;
+  const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1, 1), M(rockC));
   rock.scale.set(b.w * 0.6, b.h * 0.8, b.d * 0.9); rock.position.set(0, b.h * 0.3, -b.d * 0.3); rock.castShadow = true; g.add(rock);
   const front = b.d * 0.62;
   const dark = box(b.w * 0.34, b.h * 0.55, 0.3, M(0x050505)); dark.position.set(0, b.h * 0.28, front); g.add(dark);
   for (const sx of [-1, 1]) { const p = box(0.9, b.h * 0.62, 0.9, M(0x7a746a)); p.position.set(sx * b.w * 0.2, b.h * 0.31, front + 0.1); g.add(p); }
   const lintel = box(b.w * 0.5, 0.9, 1.0, M(0x7a746a)); lintel.position.set(0, b.h * 0.62, front + 0.1); g.add(lintel);
-  const torch = new THREE.PointLight(0xff9040, 1.2, 14); torch.position.set(0, 3, front + 1.5); g.add(torch);
+  const torch = new THREE.PointLight(kind === 'temple' ? 0x60ffb0 : 0xff9040, 1.2, 14); torch.position.set(0, 3, front + 1.5); g.add(torch);
+  if (kind === 'temple') { // carved columns and a jade lintel
+    for (const sx of [-1, 1]) { const col = cyl(0.55, 0.65, b.h * 0.8, M(0x9ac8b0), 8); col.position.set(sx * b.w * 0.3, b.h * 0.4, front + 0.6); g.add(col); }
+    const arch = box(b.w * 0.8, 0.8, 1.2, M(0x2f9a78)); arch.position.set(0, b.h * 0.82, front + 0.6); g.add(arch);
+  } else if (kind === 'fire') { // glowing maw
+    const glow = box(b.w * 0.3, b.h * 0.45, 0.2, new THREE.MeshBasicMaterial({ color: 0xff5a1a })); glow.position.set(0, b.h * 0.25, front + 0.2); g.add(glow);
+    for (let i = 0; i < 5; i++) { const sp = new THREE.Mesh(new THREE.ConeGeometry(0.5, 2.4, 5), M(0x14141c)); sp.position.set((i - 2) * b.w * 0.16, b.h * 0.85, front - 0.5); g.add(sp); }
+  }
   g.position.set(b.x, hh, b.z);
   return g;
 }
 
-const BUILD = { house, hut: house, tower, wall, keep, fountain, pad, tent, cave };
+// ---- Jadereich: pagodas, gates, ponds, lanterns, harbor ----
+function pagoda(b, hh) {
+  const g = new THREE.Group();
+  const st = STYLES[b.s] || STYLES.jade;
+  const base = box(b.w + 5, 1.2, b.d + 5, M(0xb8a898)); base.position.y = 0.6; g.add(base);
+  const steps = box(b.w * 0.5, 0.6, 3, M(0xc8b8a8)); steps.position.set(0, 0.3, b.d / 2 + 3.4); g.add(steps);
+  const tiers = Math.max(3, Math.round(b.h / 4.4));
+  let y = 1.2, w = b.w, d = b.d;
+  for (let i = 0; i < tiers; i++) {
+    const hgt = i === 0 ? 4.6 : 3.4;
+    const body = box(w * 0.82, hgt, d * 0.82, M(st.wall)); body.position.y = y + hgt / 2; g.add(body);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const pil = cyl(0.3, 0.3, hgt, M(st.trim), 6); pil.position.set(sx * w * 0.41, y + hgt / 2, sz * d * 0.41); g.add(pil); }
+    const win = box(w * 0.3, 1.1, 0.2, M(0xffe9a0, { emissive: 0x6a5a20 })); win.position.set(0, y + hgt * 0.55, d * 0.41 + 0.05); g.add(win);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1, 1.8, 4), M(st.roof));
+    roof.rotation.y = Math.PI / 4; roof.scale.set((w / 2 + 1.6) * Math.SQRT2, 1, (d / 2 + 1.6) * Math.SQRT2); roof.position.y = y + hgt + 0.9; roof.castShadow = true; g.add(roof);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const tip = box(0.5, 0.5, 0.5, M(st.trim)); tip.position.set(sx * (w / 2 + 1.5), y + hgt + 0.6, sz * (d / 2 + 1.5)); tip.rotation.z = sx * 0.7; g.add(tip); }
+    y += hgt + 1.1; w *= 0.8; d *= 0.8;
+  }
+  const spire = cyl(0.12, 0.3, 3.6, M(st.trim), 6); spire.position.y = y + 1.4; g.add(spire);
+  const orb = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 6), M(0xe8c040, { emissive: 0x443300 })); orb.position.y = y + 3.4; g.add(orb);
+  g.position.set(b.x, hh, b.z);
+  return g;
+}
+
+function gate(b, hh) { // torii
+  const g = new THREE.Group();
+  const red = M(0xc0302a), black = M(0x201a1a);
+  for (const s of [-1, 1]) { const p = cyl(0.5, 0.6, b.h, red, 8); p.position.set(s * b.w / 2.4, b.h / 2, 0); g.add(p); }
+  const beam1 = box(b.w + 4, 0.7, 1.0, black); beam1.position.y = b.h + 0.3; g.add(beam1);
+  const beam2 = box(b.w + 1.2, 0.5, 0.8, red); beam2.position.y = b.h - 1.4; g.add(beam2);
+  for (const s of [-1, 1]) { const tip = box(1.4, 0.5, 1.0, black); tip.position.set(s * (b.w / 2 + 2.2), b.h + 0.7, 0); tip.rotation.z = s * 0.35; g.add(tip); }
+  g.rotation.y = b.r ? 0 : Math.PI / 2; // the beam spans the street
+  g.position.set(b.x, hh, b.z);
+  return g;
+}
+
+function pond(b, hh) {
+  const g = new THREE.Group();
+  const rim = box(b.w + 1.2, 0.6, b.d + 1.2, M(0xb8a898)); rim.position.y = 0.2; g.add(rim);
+  const water = box(b.w, 0.2, b.d, new THREE.MeshPhongMaterial({ color: 0x3aa8b8, transparent: true, opacity: 0.85, shininess: 90 })); water.position.y = 0.55; g.add(water);
+  for (let i = 0; i < 7; i++) { const pad = cyl(0.55, 0.55, 0.06, M(0x3f8a3a), 8); pad.position.set(((i * 37) % 17 - 8) / 8 * b.w * 0.4, 0.7, ((i * 53) % 13 - 6) / 6 * b.d * 0.38); g.add(pad); }
+  // arched red bridge
+  const deck = box(3, 0.4, b.d + 4, M(0xc0302a)); deck.position.y = 1.2; g.add(deck);
+  const hump = box(3, 0.4, b.d * 0.5, M(0xc0302a)); hump.position.y = 1.7; g.add(hump);
+  for (const s of [-1, 1]) { const rail = box(0.2, 0.8, b.d + 4, M(0xe8c860)); rail.position.set(s * 1.4, 1.8, 0); g.add(rail); }
+  g.position.set(b.x, hh, b.z);
+  return g;
+}
+
+function lantern(b, hh) {
+  const g = new THREE.Group();
+  const post = cyl(0.14, 0.18, b.h, M(0x3a2a22), 6); post.position.y = b.h / 2; g.add(post);
+  const lamp = box(0.7, 0.8, 0.7, new THREE.MeshBasicMaterial({ color: 0xffb040 })); lamp.position.y = b.h + 0.3; g.add(lamp);
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.7, 0.5, 4), M(0xc0302a)); cap.rotation.y = Math.PI / 4; cap.position.y = b.h + 0.95; g.add(cap);
+  g.position.set(b.x, hh, b.z);
+  return g;
+}
+
+function dock(b, hh) {
+  const g = new THREE.Group();
+  const plank = M(0x8a6a40);
+  const deck = box(b.w, 0.35, b.d, plank); deck.position.y = 1.03; g.add(deck);
+  for (let x = -b.w / 2 + 1.5; x <= b.w / 2; x += 4) for (const z of [-1, 1]) { const pile = cyl(0.25, 0.3, 4.2, M(0x4a3220), 6); pile.position.set(x, -0.6, z * (b.d / 2 - 0.3)); g.add(pile); }
+  g.position.set(b.x, 0, b.z);
+  return g;
+}
+
+function ship(b, hh) {
+  const s = makeShip(b.s === 'bamboo' ? 'junk' : 'cog');
+  const g = new THREE.Group();
+  g.add(s.obj);
+  g.rotation.y = b.r === 1 ? Math.PI / 2 : -Math.PI / 2; // sideways along the pier
+  g.position.set(b.x, -0.1, b.z);
+  g.userData.ship = s;
+  return g;
+}
+
+const BUILD = { house, hut: house, tower, wall, keep, fountain, pad, tent, cave, pagoda, gate, pond, lantern, dock, ship };
+const NO_SOLID = new Set(['pad', 'dock', 'ship', 'lantern', 'pond', 'gate']);
 
 // Builds the cabin at the world origin with its door and furniture (from the first server release).
 export function buildCabin(boxes, scene) {
@@ -178,6 +289,7 @@ export function buildCabin(boxes, scene) {
 }
 
 // Builds every town building and returns collision boxes.
+export const ships = [];
 export function buildTowns(scene, buildings) {
   const solids = [];
   const g = new THREE.Group();
@@ -185,8 +297,10 @@ export function buildTowns(scene, buildings) {
     const fn = BUILD[b.k];
     if (!fn) continue;
     const hh = heightAt(b.x, b.z);
-    g.add(fn(b, b.k === 'pad' ? hh : hh - 0.3));
-    if (b.k !== 'pad') solids.push({ x: b.x, z: b.z, w: b.k === 'tent' ? b.w * 0.9 : b.w, d: b.k === 'tent' ? b.d * 0.9 : b.d, tower: b.k === 'tower' });
+    const obj = fn(b, b.k === 'pad' ? hh : hh - 0.3);
+    g.add(obj);
+    if (obj.userData.ship) ships.push(obj.userData.ship);
+    if (!NO_SOLID.has(b.k)) solids.push({ x: b.x, z: b.z, w: b.k === 'tent' ? b.w * 0.9 : b.w, d: b.k === 'tent' ? b.d * 0.9 : b.d, tower: b.k === 'tower' });
   }
   scene.add(g);
   return solids;

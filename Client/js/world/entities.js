@@ -97,8 +97,9 @@ export class Entities {
     group.rotation.y = v.r;
     const sc = v.sc || 1;
     group.scale.setScalar(sc);
+    const hitR = model.kind === 'ship' ? 6 : 0.7;
     const hit = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.7, 0.7, model.height, 8),
+      new THREE.CylinderGeometry(hitR, hitR, model.height, 8),
       new THREE.MeshBasicMaterial({ visible: false }),
     );
     hit.position.y = model.height / 2;
@@ -144,7 +145,7 @@ export class Entities {
     if (e.fl && !e.mount) {
       e.mount = makeGriffin();
       e.group.add(e.mount.obj);
-      e.model.obj.position.set(0, e.mount.seatY, e.mount.seatZ);
+      e.model.obj.position.set(e.mount.seatX || 0, e.mount.seatY, e.mount.seatZ);
     } else if (!e.fl && e.mount) {
       e.mount.obj.removeFromParent();
       e.mount = null;
@@ -169,6 +170,7 @@ export class Entities {
     if (e.k === 'player') color = CLASS_COLORS[e.c] || '#fff';
     else if (e.k === 'npc') { color = '#ffe27a'; sub = `<small>&lt;${esc(e.ti || '')}&gt;</small>`; }
     else if (e.k === 'pet') { color = '#9fe89f'; sub = `<small>Begleiter</small>`; }
+    else if (e.k === 'ship') { color = '#9fd8ff'; sub = `<small>${esc(e.ti || '')}</small>`; }
     else if (e.k === 'obj') { color = e.q && S.quests.some((q) => q.status === 'active' && this.questNeeds(q.id, e)) ? '#ffe14a' : '#cccccc'; }
     else { color = e.d ? '#888' : '#ffe14a'; if (e.el) { cls += ' elite'; sub = `<small class="tag">${e.bs ? 'Boss' : 'Elite'}</small>`; } }
     const isT = S.me.tg === e.id;

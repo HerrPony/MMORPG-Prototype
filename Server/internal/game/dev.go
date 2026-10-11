@@ -26,6 +26,7 @@ func (w *World) devCommand(e *Entity, a []string) {
 		if e.Inst != 0 {
 			return
 		}
+		e.P.Aboard = 0
 		e.X, e.Z = num(1), num(2)
 		w.correctPlayer(e)
 	case "level":

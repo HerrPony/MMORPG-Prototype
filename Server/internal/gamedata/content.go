@@ -93,6 +93,8 @@ type Mob struct {
 	Tameable  bool
 	Abilities []string // boss abilities, see game/boss.go
 	Faction   string
+	Set       string // dungeon gear set a boss drops from (bf, ns, gk)
+	Final     bool   // last boss of a dungeon: two set items
 }
 
 var Mobs = map[string]*Mob{
@@ -145,6 +147,7 @@ type NPC struct {
 	StockLo int
 	StockHi int
 	Flight  bool     // griffin master
+	Ship    bool     // ferry captain (sea route between the harbors)
 	TurnIn  []string // quests this NPC only accepts hand-ins for
 	Greet   string
 }
@@ -209,6 +212,10 @@ type Quest struct {
 	GrantSkill []string `json:"grantSkill,omitempty"` // skills granted on accept
 	Giver      string   `json:"giver,omitempty"`
 	Hand       string   `json:"hand,omitempty"` // NPC to hand in to (empty = giver)
+
+	// map areas (filled in by Init): where the objectives can be completed and where to hand in
+	Areas  [][]QArea `json:"areas,omitempty"`
+	HandIn *QArea    `json:"handIn,omitempty"`
 }
 
 var Quests = map[string]*Quest{

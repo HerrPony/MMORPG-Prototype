@@ -151,10 +151,16 @@ export function quiverProp() {
 // head props are centered on the middle of the (0.42 m) head
 function headPropFor(kind, id, color) {
   const tier = tierOf(id);
-  const mc = id ? metalColor(id) : 0xb9bec8;
+  const mc = kind === 'helmet' && color ? color : id ? metalColor(id) : 0xb9bec8;
   const g = new THREE.Group();
   const add = (m, x = 0, y = 0, z = 0) => { m.position.set(x, y, z); g.add(m); return m; };
   switch (kind) {
+    case 'captainhat': {
+      add(bx(0.62, 0.14, 0.62, 0x1a1a24), 0, 0.22, 0);
+      add(bx(0.46, 0.18, 0.46, 0x1a1a24), 0, 0.34, 0);
+      add(bx(0.48, 0.05, 0.48, 0xe8c040), 0, 0.27, 0);
+      return g;
+    }
     case 'helmet': {
       add(bx(0.48, 0.18, 0.48, mc, { emissive: 0x111111 }), 0, 0.15, 0);
       add(bx(0.06, 0.22, 0.48, mc), 0.21, 0.0, 0); add(bx(0.06, 0.22, 0.48, mc), -0.21, 0.0, 0);
@@ -258,6 +264,12 @@ function paletteOf(spec) {
     case 'gold': P.skin = 0xd8b038; P.shirt = 0xe0b840; P.pants = 0xc89c30; P.boots = 0xb08828; P.hairOn = false; break;
     case 'fur': P.skin = spec.tint ?? 0xe8f2ff; P.shirt = P.skin; P.pants = shade(P.skin, 0.94); P.boots = shade(P.skin, 0.85); P.hairOn = false; break;
     case 'kobold': P.skin = 0xa8663a; P.hairOn = false; P.eyes = 0xffd020; break;
+    case 'lizard': P.skin = 0x3f9a5a; P.hairOn = false; P.eyes = 0xffd020; break;
+    case 'ghost': P.skin = 0xbcd8f0; P.shirt = spec.tint ?? 0x9ab8e0; P.pants = shade(P.shirt, 0.8); P.boots = P.pants; P.hairOn = false; P.eyes = 0xffffff; break;
+    case 'stone': P.skin = spec.tint ?? 0x8c8c86; P.shirt = P.skin; P.pants = shade(P.skin, 0.92); P.boots = shade(P.skin, 0.8); P.hairOn = false; P.eyes = 0xffa030; break;
+    case 'lava': P.skin = 0x2e1c1a; P.shirt = P.skin; P.pants = P.skin; P.boots = 0x1a1010; P.hairOn = false; P.eyes = 0xffe040; break;
+    case 'obsidian': P.skin = 0x1c1c26; P.shirt = 0x242432; P.pants = 0x1a1a24; P.boots = 0x101018; P.hairOn = false; P.eyes = 0xff7a30; break;
+    case 'demon': P.skin = 0xa02c24; P.hairOn = false; P.eyes = 0xffe040; P.pants = 0x3a1410; break;
     case 'water': P.skin = spec.tint ?? 0x2a6ad8; P.shirt = P.skin; P.pants = P.skin; P.boots = P.skin; P.hairOn = false; P.eyes = 0xffffff; break;
   }
   return P;
@@ -298,6 +310,12 @@ function headTex(P, face) { // face: front | back | top | bottom | sideR | sideL
     if (P.style === 'gold') { p.rect(1, 4, 2, 1, 0x101018); p.rect(5, 4, 2, 1, 0x101018); p.rect(0, 3, 8, 1, 0x2a4aa8); p.rect(3, 6, 2, 1, shade(P.skin, 0.6)); return; }
     if (P.style === 'fur') { p.rect(1, 3, 6, 4, shade(P.skin, 0.82)); p.px(2, 4, 0x2a4a8a); p.px(5, 4, 0x2a4a8a); p.rect(2, 6, 4, 1, 0x555a66); p.px(2, 6, 0xffffff); p.px(5, 6, 0xffffff); return; }
     if (P.style === 'water') { for (let i = 0; i < 10; i++) p.px((i * 5) % 8, (i * 3) % 8, shade(P.skin, 1.5)); p.rect(1, 3, 2, 2, 0xffffff); p.rect(5, 3, 2, 2, 0xffffff); return; }
+    if (P.style === 'lizard') { p.rect(0, 3, 8, 1, shade(P.skin, 0.75)); p.px(1, 4, P.eyes); p.px(2, 4, 0x101008); p.px(5, 4, 0x101008); p.px(6, 4, P.eyes); p.rect(2, 6, 4, 1, 0x1a3a20); p.px(2, 7, 0xf0f0e0); p.px(5, 7, 0xf0f0e0); return; }
+    if (P.style === 'stone') { p.rect(1, 3, 2, 1, P.eyes); p.rect(5, 3, 2, 1, P.eyes); p.rect(2, 6, 4, 1, 0x1c1c1c); p.px(0, 1, shade(P.skin, 0.6)); p.px(1, 2, shade(P.skin, 0.6)); p.px(7, 5, 0x5a7a3a); p.px(6, 6, 0x5a7a3a); return; }
+    if (P.style === 'lava') { for (let i = 0; i < 8; i++) p.px((i * 3) % 8, (i * 5 + 1) % 8, 0xff6a10); p.rect(1, 3, 2, 1, P.eyes); p.rect(5, 3, 2, 1, P.eyes); p.rect(2, 6, 4, 1, 0xff8a20); return; }
+    if (P.style === 'obsidian') { p.rect(0, 0, 8, 1, 0x3a3a50); p.rect(1, 4, 6, 1, P.eyes); p.px(0, 4, 0x3a3a50); p.px(7, 4, 0x3a3a50); p.rect(2, 7, 4, 1, 0x3a3a50); return; }
+    if (P.style === 'demon') { p.rect(1, 3, 2, 1, 0x101008); p.rect(5, 3, 2, 1, 0x101008); p.px(1, 4, P.eyes); p.px(2, 4, P.eyes); p.px(5, 4, P.eyes); p.px(6, 4, P.eyes); p.rect(2, 6, 4, 1, 0x2a0a08); p.px(2, 7, 0xf0f0e0); p.px(5, 7, 0xf0f0e0); return; }
+    if (P.style === 'ghost') { p.rect(1, 3, 2, 2, 0xffffff); p.rect(5, 3, 2, 2, 0xffffff); p.rect(3, 6, 2, 2, 0x203050); return; }
     if (P.style === 'kobold') { p.px(1, 4, P.eyes); p.px(2, 4, 0x201008); p.px(5, 4, 0x201008); p.px(6, 4, P.eyes); p.rect(3, 5, 2, 1, shade(P.skin, 0.75)); p.rect(2, 6, 4, 1, 0x5a2a14); p.px(3, 6, 0xffffff); p.px(5, 6, 0xffffff); return; }
     if (P.style === 'zombie') { p.px(1, 4, 0xddddaa); p.px(2, 4, P.eyes); p.px(5, 4, P.eyes); p.px(6, 4, 0xddddaa); p.rect(2, 6, 4, 1, 0x2a1a1a); p.px(0, 5, 0x4a5a3a); p.px(7, 3, 0x4a5a3a); return; }
     // normal
@@ -323,19 +341,34 @@ function armorPanel(p, w, h, base, kind, tier) {
   if (tier >= 5) for (let i = 0; i < w; i += 2) p.px(i, 1, TIER_COLORS[Math.min(9, tier)]);
 }
 
+// style specific speckles (scales, cracks, lava veins ...)
+function decorate(p, P, w, h) {
+  const speck = (c, n) => { for (let i = 0; i < n; i++) p.px(Math.floor(p.r() * w), Math.floor(p.r() * h), c); };
+  const n = Math.floor(w * h * 0.16);
+  switch (P.style) {
+    case 'lizard': speck(shade(P.skin, 0.7), n); speck(shade(P.skin, 1.2), n >> 1); break;
+    case 'stone': speck(shade(P.skin, 0.62), n); speck(0x5a7a3a, n >> 2); speck(shade(P.skin, 1.15), n >> 1); break;
+    case 'lava': speck(0xff6a10, n); speck(0xffb030, n >> 2); break;
+    case 'obsidian': speck(0x4a4a66, n); speck(0x6a3a8a, n >> 3); break;
+    case 'ghost': speck(0xe8f4ff, n); break;
+    case 'demon': speck(0x6a1814, n); break;
+  }
+}
+
 function torsoTex(P, A, face) { // face: front | back | side
   const chest = A.chest;
   const w = face === 'side' ? 4 : 8;
   return pixTex('t' + face + SPEC_KEY(P, `${chest}|${A.waist}`), w, 12, (p) => {
     if (chest) armorPanel(p, w, 12, armorColor(chest), kindOfItem(chest), tierOf(chest));
     else p.fill(P.shirt, P.style === 'normal' ? 0.14 : 0.2);
+    if (!chest) decorate(p, P, w, 12);
     if (!chest && P.style === 'skeleton') { for (const y of [2, 4, 6]) p.rect(face === 'side' ? 0 : 1, y, face === 'side' ? 4 : 6, 1, 0x4a4638); if (face !== 'side') p.rect(3, 1, 2, 7, 0xb8b4a0); }
     if (!chest && P.style === 'bandage') for (let y = 1; y < 12; y += 2) p.rect(0, y, w, 1, 0xb8b090);
     if (!chest && P.style === 'zombie' && face === 'front') { p.rect(1, 3, 3, 2, 0x4a3a2a); p.rect(5, 6, 2, 3, 0x4a3a2a); }
     if (!chest && P.style === 'water') for (let i = 0; i < 8; i++) p.px((i * 3) % w, (i * 5) % 12, shade(P.shirt, 1.5));
     if (!chest && P.style === 'fur') for (let i = 0; i < 14; i++) p.px((i * 3) % w, (i * 5) % 12, shade(P.shirt, 0.88));
     if (!chest && P.style === 'normal' && face === 'front') { p.px(3, 0, P.skin); p.px(4, 0, P.skin); p.px(3, 1, shade(P.shirt, 0.8)); p.px(4, 1, shade(P.shirt, 0.8)); }
-    const clothed = P.style === 'normal' || P.style === 'zombie' || P.style === 'kobold';
+    const clothed = P.style === 'normal' || P.style === 'zombie' || P.style === 'kobold' || P.style === 'lizard' || P.style === 'demon';
     if (A.waist) { p.rect(0, 9, w, 1, armorColor(A.waist)); if (face === 'front') p.px(3, 9, 0xe8c040); }
     else if (clothed) { p.rect(0, 9, w, 1, 0x4a3520); if (face === 'front') p.px(3, 9, 0xc8a040); }
     if (!chest && clothed) p.fill(P.pants, 0.12, 0, 10, w, 2);
@@ -345,11 +378,12 @@ function torsoTex(P, A, face) { // face: front | back | side
 function armTex(P, A) {
   const chest = A.chest, hands = A.hands;
   return pixTex('a' + SPEC_KEY(P, `${chest}|${hands}`), 4, 12, (p) => {
-    const clothed = P.style === 'normal' || P.style === 'kobold' || P.style === 'zombie';
+    const clothed = P.style === 'normal' || P.style === 'kobold' || P.style === 'zombie' || P.style === 'lizard' || P.style === 'demon';
     const sleeve = chest ? 9 : (clothed ? 5 : 12);
     p.fill(P.skin, 0.12);
     if (chest) armorPanel(p, 4, sleeve, armorColor(chest), kindOfItem(chest), tierOf(chest));
     else p.fill(P.shirt, 0.14, 0, 0, 4, sleeve);
+    if (!chest) decorate(p, P, 4, 12);
     if (!chest && P.style === 'skeleton') { p.fill(0xe6e2d0, 0.1); p.rect(1, 0, 2, 12, 0xc8c4b0); }
     if (!chest && P.style === 'bandage') for (let y = 1; y < 12; y += 2) p.rect(0, y, 4, 1, 0xb8b090);
     if (hands) { p.fill(armorColor(hands), 0.12, 0, 9, 4, 3); p.rect(0, 9, 4, 1, shade(armorColor(hands), 1.25)); }
@@ -360,7 +394,7 @@ function armTex(P, A) {
 function legTex(P, A) {
   const legs = A.legs, feet = A.feet;
   return pixTex('l' + SPEC_KEY(P, `${legs}|${feet}`), 4, 12, (p) => {
-    if (legs) armorPanel(p, 4, 9, armorColor(legs), kindOfItem(legs), tierOf(legs)); else p.fill(P.pants, 0.14, 0, 0, 4, 9);
+    if (legs) armorPanel(p, 4, 9, armorColor(legs), kindOfItem(legs), tierOf(legs)); else { p.fill(P.pants, 0.14, 0, 0, 4, 9); decorate(p, P, 4, 9); }
     if (!legs && P.style === 'skeleton') { p.fill(0xe6e2d0, 0.1, 0, 0, 4, 9); p.rect(1, 0, 2, 9, 0xc8c4b0); }
     if (!legs && P.style === 'bandage') for (let y = 1; y < 9; y += 2) p.rect(0, y, 4, 1, 0xb8b090);
     if (!legs && P.style === 'zombie') p.rect(0, 4, 2, 2, 0x3a3a2a);

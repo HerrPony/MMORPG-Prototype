@@ -30,6 +30,10 @@ func (w *World) onMove(e *Entity, m protocol.Move) {
 	if e.Dead || p.Flight != nil || !finite(m.X, m.Y, m.Z, m.R) {
 		return
 	}
+	if p.Aboard != 0 {
+		w.movePassenger(e, m)
+		return
+	}
 	dt := math.Min(w.now-p.LastMove, 2.0)
 	p.LastMove = w.now
 	allowed := (dt+0.1)*MaxMoveSpeed + 1.5
@@ -44,12 +48,20 @@ func (w *World) onMove(e *Entity, m protocol.Move) {
 		}
 		e.X, e.Z, e.Y = m.X, m.Z, clampf(m.Y, -0.3, 4)
 	} else {
+		if ship := w.shipAtPos(m.X, m.Z); ship != nil { // stepped onto the deck of the ferry
+			w.boardShip(e, ship, m.X, m.Z)
+			e.R = m.R
+			return
+		}
 		if !gamedata.Walkable(m.X, m.Z) {
 			w.send(e, protocol.M{"t": "correct", "x": e.X, "y": e.Y, "z": e.Z})
 			return
 		}
 		e.X, e.Z = m.X, m.Z
 		h := gamedata.Height(e.X, e.Z)
+		if gamedata.OnDock(e.X, e.Z) {
+			h = deckY
+		}
 		e.Y = clampf(m.Y, h-0.3, h+4)
 	}
 	e.R = m.R
@@ -287,6 +299,9 @@ func (w *World) onInteract(e *Entity, id int) {
 	if t == nil || e.Dead || t.Inst != e.Inst || e.P.Flight != nil {
 		return
 	}
+	if t.Kind == KindShip {
+		return // the ferry is boarded by walking onto it
+	}
 	if dist(e, t) > InteractDist {
 		w.errMsg(e, "Du bist zu weit entfernt.")
 		return
@@ -472,6 +487,9 @@ func (w *World) sendDialog(e, n *Entity) {
 	}
 	if n.N.Flight {
 		m["flight"] = w.flightInfo(e, n)
+	}
+	if n.N.Ship {
+		m["ferry"] = w.ferryInfo(e)
 	}
 	if n.N.Trainer != "" {
 		cls := gamedata.Classes[n.N.Trainer]

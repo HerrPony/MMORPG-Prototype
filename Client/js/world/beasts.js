@@ -19,6 +19,15 @@ const KINDS = {
   polarbear: { L: 1.2, W: 0.7, H: 0.7, G: 0.45, hs: 0.42, sn: 0.24, color: 0xf0f0ec, belly: 0xffffff, ears: 'round', tail: 0.12, eye: 0x202020, s: 1 },
   polarbear_big: { L: 1.2, W: 0.7, H: 0.7, G: 0.45, hs: 0.42, sn: 0.24, color: 0xe2eaf2, belly: 0xf6fbff, ears: 'round', tail: 0.12, eye: 0xff4020, s: 1.35 },
   bull: { L: 1.3, W: 0.6, H: 0.65, G: 0.55, hs: 0.36, sn: 0.22, color: 0x7a4a2a, belly: 0x8a5a38, pat: 'patch', mark: 0xf0e8d8, ears: 'point', horns: true, tail: 0.5, eye: 0x201010, s: 1 },
+  tiger: { L: 1.25, W: 0.44, H: 0.5, G: 0.5, hs: 0.36, sn: 0.2, color: 0xd8862a, belly: 0xf0e2c4, pat: 'stripes', mark: 0x2a1a0a, ears: 'round', tail: 0.7, eye: 0xffd040, s: 1.05 },
+  whitetiger: { L: 1.25, W: 0.44, H: 0.5, G: 0.5, hs: 0.36, sn: 0.2, color: 0xf2eee2, belly: 0xffffff, pat: 'stripes', mark: 0x55658a, ears: 'round', tail: 0.7, eye: 0x40a0ff, s: 1.45 },
+  panther: { L: 1.15, W: 0.38, H: 0.44, G: 0.46, hs: 0.32, sn: 0.16, color: 0x1c1c24, belly: 0x2a2a34, ears: 'round', tail: 0.8, eye: 0xa0ff40, s: 1.0 },
+  kitsune: { L: 1.0, W: 0.34, H: 0.4, G: 0.42, hs: 0.3, sn: 0.2, color: 0xe88a30, belly: 0xfff0d8, pat: 'tips', mark: 0xffffff, ears: 'point', earBig: true, tail: 0.9, tw: 2.2, eye: 0xffe060, s: 1.05 },
+  panda: { L: 1.2, W: 0.72, H: 0.7, G: 0.42, hs: 0.42, sn: 0.16, color: 0xf2f2ee, belly: 0xffffff, pat: 'panda', mark: 0x1a1a1a, legColor: 0x1a1a1a, earColor: 0x1a1a1a, ears: 'round', tail: 0.1, eye: 0x202020, s: 1.0 },
+  sandcat: { L: 1.05, W: 0.38, H: 0.44, G: 0.48, hs: 0.32, sn: 0.16, color: 0xd8b068, belly: 0xf2e0b8, ears: 'point', tail: 0.75, eye: 0xffd040, s: 1.05 },
+  bison: { L: 1.5, W: 0.7, H: 0.7, G: 0.55, hs: 0.42, sn: 0.2, color: 0x4a3426, belly: 0x5a4434, ears: 'point', horns: true, hump: true, tail: 0.4, eye: 0x201010, s: 1.15 },
+  lizard: { L: 1.3, W: 0.36, H: 0.3, G: 0.2, hs: 0.3, sn: 0.3, color: 0x4a9a5a, belly: 0xc8d890, pat: 'scales', mark: 0x2a6a3a, ears: 'none', tail: 1.1, eye: 0xffd020, s: 1.0 },
+  ashhound: { L: 1.05, W: 0.4, H: 0.44, G: 0.46, hs: 0.34, sn: 0.22, color: 0x2a2224, belly: 0x4a2a20, pat: 'embers', mark: 0xff6a20, ears: 'point', tail: 0.5, eye: 0xff6a20, s: 1.1 },
   sheep: { L: 0.8, W: 0.5, H: 0.5, G: 0.35, hs: 0.26, sn: 0.12, color: 0xf2f2ec, belly: 0xe4e4dc, pat: 'wool', head: 0x3a3a3a, ears: 'round', tail: 0.1, eye: 0xe0e0e0, s: 1 },
 };
 
@@ -31,6 +40,11 @@ function bodyTex(K, c, key) {
     if (K.pat === 'spots') for (let i = 0; i < 14; i++) p.rect((i * 5 + 2) % 15, 1 + (i * 3) % 5, 1 + (i % 2), 1 + (i % 2), K.mark);
     if (K.pat === 'bristle') { p.rect(0, 0, 16, 1, K.mark); for (let x = 0; x < 16; x += 2) p.px(x, 1, K.mark); }
     if (K.pat === 'patch') { p.rect(2, 2, 4, 3, K.mark); p.rect(9, 1, 5, 3, K.mark); p.rect(7, 4, 2, 2, K.mark); }
+    if (K.pat === 'stripes') for (let x = 1; x < 16; x += 3) { p.rect(x, 0, 1, 5, K.mark); p.px(x + 1, 3, K.mark); }
+    if (K.pat === 'panda') { p.fill(K.mark, 0.1, 9, 0, 7, 8); p.fill(K.mark, 0.1, 0, 5, 3, 3); }
+    if (K.pat === 'scales') for (let i = 0; i < 40; i++) p.px((i * 7) % 16, (i * 3) % 8, K.mark);
+    if (K.pat === 'embers') for (let i = 0; i < 26; i++) p.px((i * 5 + 2) % 16, (i * 3) % 8, i % 3 ? K.mark : 0xffb040);
+    if (K.pat === 'tips') p.fill(K.mark, 0.1, 0, 6, 16, 2);
   });
 }
 
@@ -60,23 +74,27 @@ export function makePixelBeast(kind = 'wolf', seed = 0) {
   // head, snout, ears
   const head = new THREE.Group(); head.position.set(0, G + H * 0.85, L / 2 + hs * 0.2); body.add(head);
   const hm = mat(pixTex('bh' + headCol, 4, 4, (p) => p.fill(headCol, 0.14)));
+  const earCol = K.earColor ?? shade(headCol, 0.9);
   const face = mat(faceTex(K, headCol, kind));
   const skull = box(hs, hs, hs, [hm, hm, hm, hm, face, hm]); skull.position.set(0, 0, hs * 0.3); head.add(skull);
   const snout = box(hs * 0.62, hs * 0.5, sn, flat(shade(headCol, 1.1))); snout.position.set(0, -hs * 0.18, hs * 0.8 + sn / 2); head.add(snout);
   const nose = box(hs * 0.22, hs * 0.16, 0.04, flat(0x111111)); nose.position.set(0, -hs * 0.06, hs * 0.8 + sn); head.add(nose);
   for (const s of [-1, 1]) {
-    if (K.ears === 'point') { const e = box(hs * 0.22, hs * 0.38, hs * 0.1, flat(shade(headCol, 0.9))); e.position.set(s * hs * 0.34, hs * 0.5, hs * 0.2); head.add(e); }
-    else if (K.ears === 'round') { const e = box(hs * 0.24, hs * 0.24, hs * 0.14, flat(shade(headCol, 0.9))); e.position.set(s * hs * 0.4, hs * 0.42, hs * 0.2); head.add(e); }
+    if (K.ears === 'point') { const e = box(hs * (K.earBig ? 0.3 : 0.22), hs * (K.earBig ? 0.6 : 0.38), hs * 0.1, flat(earCol)); e.position.set(s * hs * 0.34, hs * 0.5, hs * 0.2); head.add(e); }
+    else if (K.ears === 'round') { const e = box(hs * 0.24, hs * 0.24, hs * 0.14, flat(earCol)); e.position.set(s * hs * 0.4, hs * 0.42, hs * 0.2); head.add(e); }
     if (K.tusks) { const t = box(0.05, 0.12, 0.05, flat(0xf0e6c8)); t.position.set(s * hs * 0.24, -hs * 0.36, hs * 0.8 + sn * 0.8); head.add(t); }
     if (K.horns) { const h1 = box(0.07, 0.07, 0.2, flat(0xe8e0c8)); h1.position.set(s * hs * 0.55, hs * 0.38, hs * 0.2); head.add(h1); const h2 = box(0.07, 0.2, 0.07, flat(0xe8e0c8)); h2.position.set(s * hs * 0.7, hs * 0.5, hs * 0.25); head.add(h2); }
   }
   // tail
   const tail = new THREE.Group(); tail.position.set(0, G + H * 0.85, -L / 2); body.add(tail);
   const tl = K.tail * S;
-  const tb = box(W * 0.25, W * 0.25, tl, flat(shade(col, 0.9))); tb.position.set(0, -tl * 0.2, -tl / 2); tail.add(tb); tail.rotation.x = -0.5;
+  const tw = W * 0.25 * (K.tw ?? 1);
+  const tb = box(tw, tw, tl, flat(K.pat === 'tips' ? shade(col, 1.0) : shade(col, 0.9))); tb.position.set(0, -tl * 0.2, -tl / 2); tail.add(tb); tail.rotation.x = -0.5;
   // legs
   const legs = [];
-  const lm = mat(pixTex('bl' + col, 4, 8, (p) => { p.fill(col, 0.14); p.fill(shade(col, 0.6), 0.14, 0, 6, 4, 2); }));
+  if (K.hump) { const hu = box(W * 0.9, H * 0.45, L * 0.3, mat(bodyTex(K, col, kind))); hu.position.set(0, G + H + H * 0.2, L * 0.2); body.add(hu); }
+  const legCol = K.legColor ?? col;
+  const lm = mat(pixTex('bl' + legCol, 4, 8, (p) => { p.fill(legCol, 0.14); p.fill(shade(legCol, 0.6), 0.14, 0, 6, 4, 2); }));
   for (const [x, z] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]) {
     const pv = new THREE.Group(); pv.position.set(x * (W / 2 - W * 0.14), G, z * (L / 2 - W * 0.18)); body.add(pv);
     const lw = Math.max(0.1, W * 0.3);

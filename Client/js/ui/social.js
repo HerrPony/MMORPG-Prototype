@@ -40,7 +40,7 @@ export function initSocial(net) {
   });
   $('inv-yes').onclick = () => { net.send('inviteReply', { accept: true }); $('invite').classList.add('hidden'); };
   $('inv-no').onclick = () => { net.send('inviteReply', { accept: false }); $('invite').classList.add('hidden'); };
-  net.on('flightStart', (m) => { $('fb-dest').textContent = m.dest; $('flightbar').classList.remove('hidden'); });
+  net.on('flightStart', (m) => { $('fb-dest').textContent = (m.ship ? '⛵ ' : '') + m.dest; $('flightbar').classList.remove('hidden'); });
   net.on('flightEnd', () => $('flightbar').classList.add('hidden'));
   document.addEventListener('mousedown', (e) => { if (!e.target.closest('#playermenu')) $('playermenu').classList.add('hidden'); });
 }

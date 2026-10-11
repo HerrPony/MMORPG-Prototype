@@ -48,7 +48,7 @@ func (w *World) sendInstanceInfo(e *Entity, in *Instance) {
 		w.send(e, protocol.M{"t": "instance", "on": false})
 		return
 	}
-	w.send(e, protocol.M{"t": "instance", "on": true, "name": in.Def.Name, "rooms": in.Def.Rooms,
+	w.send(e, protocol.M{"t": "instance", "on": true, "name": in.Def.Name, "rooms": in.Def.Rooms, "style": in.Def.Style,
 		"origin": in.Def.Origin, "start": in.Def.Start})
 }
 
@@ -79,7 +79,7 @@ func (w *World) enterDungeon(e *Entity, dungeonID string) {
 	w.sendInstanceInfo(e, in)
 	w.correctPlayer(e)
 	w.sysChat(e, "sys", "Du betrittst: "+def.Name)
-	w.send(e, protocol.M{"t": "zone", "zone": def.Name, "sub": "", "lo": def.MinLevel, "hi": 20, "instance": true})
+	w.send(e, protocol.M{"t": "zone", "zone": def.Name, "sub": "", "lo": def.MinLevel, "hi": def.MaxLevel, "instance": true})
 }
 
 func (w *World) exitDungeon(e *Entity) {

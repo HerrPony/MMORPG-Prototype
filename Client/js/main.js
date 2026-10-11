@@ -104,7 +104,7 @@ net.on('instance', (m) => {
   if (!game) return;
   if (m.on) {
     S.instance = { name: m.name, rooms: m.rooms, origin: m.origin };
-    const d = game.world.enterDungeon({ rooms: m.rooms, origin: m.origin });
+    const d = game.world.enterDungeon({ rooms: m.rooms, origin: m.origin, style: m.style });
     setActiveScene(d.scene, d);
     audio.setMode('dungeon');
   } else {

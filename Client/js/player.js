@@ -218,14 +218,28 @@ export class Controller {
         L.r += d * Math.min(1, dt * 14);
       }
     }
+    // The ferry lies alongside the pier: you walk onto its deck and off again. While you are aboard the deck
+    // moves with the ship; on a sailing ship you cannot leave the deck.
+    const ship = S.me.ab ? S.ents.get(S.me.ab) : null;
+    if (ship) {
+      if (this._abId === ship.id) { L.x += ship.rx - this._abX; L.z += ship.rz - this._abZ; }
+      this._abId = ship.id; this._abX = ship.rx; this._abZ = ship.rz;
+    } else this._abId = 0;
     let nx = L.x + dx * speed * dt, nz = L.z + dz * speed * dt;
-    if (speed > 0) [nx, nz] = this.dungeon ? this.dungeon.collide(nx, nz) : this.world.collide(nx, nz, L.x, L.z);
+    let deck = null;
+    if (!this.dungeon) {
+      const cand = ship || this.nearShip(L.x, L.z);
+      if (cand && ((ship && cand.fl) || this.onDeck(cand, nx, nz, 0.3))) deck = cand;
+    }
+    this._deck = deck;
+    if (deck) [nx, nz] = this.clampDeck(deck, nx, nz, deck.fl ? 0 : 0.3);
+    else if (speed > 0) [nx, nz] = this.dungeon ? this.dungeon.collide(nx, nz) : this.world.collide(nx, nz, L.x, L.z);
     const moved = Math.hypot(nx - L.x, nz - L.z) / Math.max(dt, 1e-4);
     L.x = nx; L.z = nz;
     L.speed = moved / RUN;
 
     // vertical
-    const ground = heightAt(L.x, L.z);
+    const ground = deck ? deck.ry + 1.2 : this.world.onDock(L.x, L.z) ? 1.2 : heightAt(L.x, L.z);
     if (this.grounded) {
       if (k.jump && !dead && !S.typing) { this.vy = JUMP; this.grounded = false; }
       else if (L.y - ground > 0.35) { this.grounded = false; this.vy = 0; }
@@ -242,6 +256,29 @@ export class Controller {
     this.updateCamera();
   }
 
+  // world position -> deck coordinates of a ship, clamped to the deck and back
+  toDeck(ship, x, z) {
+    const s = Math.sin(ship.rr), c = Math.cos(ship.rr), wx = x - ship.rx, wz = z - ship.rz;
+    return [wx * c - wz * s, wx * s + wz * c];
+  }
+
+  onDeck(ship, x, z, margin) {
+    const [lx, lz] = this.toDeck(ship, x, z);
+    return Math.abs(lx) <= 1.5 + margin && Math.abs(lz) <= 6 + margin;
+  }
+
+  nearShip(x, z) {
+    for (const e of S.ents.values()) if (e.k === 'ship' && Math.hypot(e.rx - x, e.rz - z) < 25) return e;
+    return null;
+  }
+
+  clampDeck(ship, x, z, margin = 0) {
+    let [lx, lz] = this.toDeck(ship, x, z);
+    lx = Math.max(-1.5 - margin, Math.min(1.5 + margin, lx)); lz = Math.max(-6 - margin, Math.min(6 + margin, lz));
+    const s = Math.sin(ship.rr), c = Math.cos(ship.rr);
+    return [ship.rx + lx * c + lz * s, ship.rz - lx * s + lz * c];
+  }
+
   sendMove() {
     const L = S.local, t = performance.now();
     if (t - this.lastSend < 50) return;
@@ -250,6 +287,12 @@ export class Controller {
     if (!changed && t - this.lastSend < 600) return;
     this.lastSend = t;
     Object.assign(s, { x: L.x, y: L.y, z: L.z, r: L.r });
+    const ship = S.me.ab && this._deck ? this._deck : null; // aboard and standing on the deck
+    if (ship) {
+      const [lx, lz] = this.toDeck(ship, L.x, L.z);
+      S.net.send('move', { x: +L.x.toFixed(2), y: +L.y.toFixed(2), z: +L.z.toFixed(2), r: +L.r.toFixed(3), ab: true, lx: +lx.toFixed(2), lz: +lz.toFixed(2) });
+      return;
+    }
     S.net.send('move', { x: +L.x.toFixed(2), y: +L.y.toFixed(2), z: +L.z.toFixed(2), r: +L.r.toFixed(3) });
   }
 

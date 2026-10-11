@@ -30,13 +30,22 @@ func Roll(m *gamedata.Mob, mobLevel int, who Looter, rng *rand.Rand) *Bag {
 	}
 	if m.Boss {
 		n := 1
-		if m.ID == "kobold_king" {
+		if m.Final || m.ID == "kobold_king" {
 			n = 2
 		}
 		for i := 0; i < n; i++ {
-			b.Items = append(b.Items, storage.ItemStack{Item: gamedata.DungeonGear(who.Class, rng), Count: 1})
+			b.Items = append(b.Items, storage.ItemStack{Item: gamedata.DungeonGear(m.Set, who.Class, rng), Count: 1})
 		}
-		b.Items = append(b.Items, storage.ItemStack{Item: "potion_hp3", Count: 2})
+		potion := "potion_hp3"
+		switch {
+		case m.LevelMin >= 35:
+			potion = "potion_hp6"
+		case m.LevelMin >= 27:
+			potion = "potion_hp5"
+		case m.LevelMin >= 20:
+			potion = "potion_hp4"
+		}
+		b.Items = append(b.Items, storage.ItemStack{Item: potion, Count: 2})
 	}
 	if m.CopperMax > 0 {
 		b.Copper = m.CopperMin + rng.Intn(m.CopperMax-m.CopperMin+1)

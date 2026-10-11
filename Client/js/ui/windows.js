@@ -1,7 +1,7 @@
 import { S } from '../state.js';
-import { $, esc, fmtCopper, toast, CLASS_COLORS } from '../util.js';
+import { $, esc, fmtCopper, toast, CLASS_COLORS, contOf } from '../util.js';
 import { renderTracker } from './hud.js';
-import { drawWorldMap } from './worldmap.js';
+import { drawWorldMap, setMapCont } from './worldmap.js';
 import { renderPartyWindow } from './social.js';
 
 // ---------- tooltip ----------
@@ -64,7 +64,8 @@ export function openMap() {
   w.style.left = Math.max(10, innerWidth / 2 - 380) + 'px';
   w.style.top = Math.max(10, innerHeight / 2 - 400) + 'px';
   w.style.transform = 'none';
-  const sz = Math.max(300, Math.min(700, innerHeight - 150));
+  setMapCont(contOf(S.local.x));
+  const sz = Math.max(300, Math.min(700, innerHeight - 190));
   $('mapcv').style.width = $('mapcv').style.height = sz + 'px';
   $('map-wrap').style.width = $('map-wrap').style.height = sz + 'px';
   drawWorldMap();
@@ -121,6 +122,7 @@ function dialogViews(m) {
   if (m.quests?.length) v.push(['quest', m.quests.some((q) => q.state === 'ready') ? '❓ Quests' : '❗ Quests']);
   if (m.trainer) v.push(['trainer', '📚 Training']);
   if (m.flight) v.push(['flight', '🦅 Greifenflug']);
+  if (m.ferry?.ship) v.push(['ferry', '⛵ Fähre']);
   return v;
 }
 
@@ -129,7 +131,7 @@ function openDialog(m) {
   if (!(S.dlg && S.dlg.npc === m.npc && visible('dialog'))) dlgQuest = null;
   S.dlg = m;
   S.dialogNpc = m.npc;
-  if (m.vendor && !m.quests?.length && !m.trainer && !m.flight) { hide('dialog'); openVendor(m); return; }
+  if (m.vendor && !m.quests?.length && !m.trainer && !m.flight && !m.ferry?.ship) { hide('dialog'); openVendor(m); return; }
   $('dlg-title').textContent = m.name + (m.title ? ` – ${m.title}` : '');
   const views = dialogViews(m);
   dlgView = views.find((v) => v[0] === prev) ? prev : (views[0]?.[0] || 'greet');
@@ -208,15 +210,20 @@ function renderDialog() {
       back.className = 'small'; back.textContent = '‹ Alle Quests'; back.onclick = () => { dlgQuest = null; renderDialog(); };
       $('dlg-list').appendChild(back);
     }
+  } else if (dlgView === 'ferry') {
+    const f = m.ferry;
+    $('dlg-text').innerHTML = `<b>${esc(f.status)}</b><br><br>Die Fähre pendelt im festen Takt zwischen Sturmhafen und Lotushafen und liegt dabei längsseits am Steg. Geh einfach über den Steg auf das Schiff, bewege dich frei an Deck und steige im Zielhafen wieder über den Steg aus.`;
   } else if (dlgView === 'flight') {
     const f = m.flight;
-    $('dlg-text').innerHTML = `Du bist in <b>${esc(f.hereName)}</b>. Dein Flugpunkt hier ist freigeschaltet. Dein Geld: ${fmtCopper(S.copper)}`;
+    $('dlg-text').innerHTML = f.ship
+      ? ''
+      : `Du bist in <b>${esc(f.hereName)}</b>. Dein Flugpunkt hier ist freigeschaltet. Dein Geld: ${fmtCopper(S.copper)}`;
     const list = $('dlg-list');
-    if (!f.points.length) list.innerHTML = '<div style="padding:8px;color:#6a5a3a">Du kennst noch keinen anderen Flugpunkt. Sprich mit den Greifenmeistern in anderen Städten, um sie freizuschalten.</div>';
+    if (!f.points.length) list.innerHTML = '<div style="padding:8px;color:#6a5a3a">Du kennst noch keinen anderen Flugpunkt. Sprich mit den Greifenmeistern in anderen Städten, um sie freizuschalten. Greifen fliegen nur auf demselben Kontinent.</div>';
     for (const p of f.points) {
       const row = document.createElement('div');
       row.className = 'trow sell';
-      row.innerHTML = `<div class="ti">🦅</div><div class="tn"><b>${esc(p.name)}</b></div><div class="tp">${fmtCopper(p.price)}</div>`;
+      row.innerHTML = `<div class="ti">${f.ship ? '⛵' : '🦅'}</div><div class="tn"><b>${esc(p.name)}</b></div><div class="tp">${fmtCopper(p.price)}</div>`;
       row.onclick = () => { if (S.copper >= p.price) { S.net.send('flight', { npc: m.npc, dest: p.id }); hide('dialog'); S.dialogNpc = 0; } else toast('Du hast nicht genug Geld.'); };
       list.appendChild(row);
     }

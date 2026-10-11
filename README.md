@@ -19,11 +19,15 @@ Dann http://localhost:8080 öffnen. Accounts/Charaktere liegen im Volume `gameda
 Fertige Images (werden per GitHub Actions gebaut): `ghcr.io/herrpony/mmorpg-server` und `ghcr.io/herrpony/mmorpg-client` – `docker compose pull && docker compose up`.
 
 ## Welt
-600 × 600 m Kontinent, vom Server als Höhen- und Biomkarte erzeugt (`gamedata/world.go`):
-Erlenwald (1–6), Goldene Ebenen (6–10), Düstermoor (10–14), Eisgipfel (14–18), Glutwüste (17–20).
-Hauptstadt Sonnenburg + Dörfer Eichenhain, Moorbruck, Frostwacht, Sandfurt. Dungeon: Schwarzfelsmine (Stufe 15+, 5 Spieler).
-Orte lösen beim Betreten ein Namensbanner aus und werden auf der Weltkarte (M) aufgedeckt.
-
+Zwei Kontinente (je ca. 600 × 600 m), vom Server als Höhen- und Biomkarte erzeugt (`gamedata/world.go`):
+- **Erlenmark** (Stufe 1–20): Erlenwald, Goldene Ebenen, Düstermoor, Eisgipfel, Glutwüste. Hauptstadt Sonnenburg, Dörfer Eichenhain, Moorbruck, Frostwacht, Sandfurt, Hafen Sturmhafen. Dungeon: Schwarzfelsmine (ab Stufe 15).
+- **Jadereich** (Stufe 20–40): Smaragddschungel, Kirschblütenhain, Rotkluft-Canyon, Aschenlande (mit Lava). Hauptstadt Himmelspforte (Pagoden-Stadt), Dörfer Lotushafen (Hafen), Bambushain, Kirschbach, Rotfels, Aschenwacht – jeweils mit Greifenmeister.
+  Dungeons: Versunkener Nebeltempel (Stufe 26–30) und Feuerschlund (Stufe 36–40), je 2 Minibosse, Trash und Endboss für 5 Spieler.
+- **Fähre:** Ein Schiff pendelt im festen Takt (45 s Liegezeit) zwischen Sturmhafen und Lotushafen. Es liegt längsseits am Steg:
+  einfach hinüberlaufen, an Deck frei bewegen und im Zielhafen wieder über den Steg von Bord gehen.
+- Orte lösen beim Betreten ein Namensbanner aus und werden auf der Weltkarte (M, Reiter pro Kontinent) aufgedeckt.
+  Aktive Quests markieren ihr Zielgebiet golden auf Weltkarte und Minimap.
+- Gegner spawnen nie auf Straßen. Maximalstufe 40, alle 2 Stufen eine neue Fertigkeit beim Klassenlehrer.
 ## Aufbau Server (Server/internal)
 - `config` Flags · `protocol` Nachrichten · `storage` Store-Interface + JSON-Dateien (`Server/data`)
 - `auth` Registrierung/Login · `gateway` WebSocket, Account-/Charakter-Verwaltung

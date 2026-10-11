@@ -128,6 +128,10 @@ type Move struct {
 	Y float64 `json:"y"`
 	Z float64 `json:"z"`
 	R float64 `json:"r"`
+	// aboard a ferry: position on the deck instead of in the world
+	AB bool    `json:"ab,omitempty"`
+	LX float64 `json:"lx,omitempty"`
+	LZ float64 `json:"lz,omitempty"`
 }
 
 type TargetMsg struct {

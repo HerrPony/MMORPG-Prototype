@@ -1,6 +1,7 @@
 import { makeHumanoid, loadHumanAssets as loadRigs, quiverProp } from './human.js';
 import { loadBeastAssets, makePixelBeast } from './beasts.js';
 import { makeSpider } from './proc.js';
+import { makeShip } from './ship.js';
 import { SKIN, HAIR } from '../util.js';
 import { makeCroc, makeScorpion, makeWisp, makeGriffin, makeObject } from './creatures2.js';
 
@@ -86,6 +87,29 @@ const HUMANOIDS = {
   tomb_guardian: { tint: 0xd8b038, emissive: 0x302200, hideVisor: true, head: { kind: 'pharaoh' }, props: [{ kind: 'spear', slot: 'right', scale: 1.1 }] },
   water_elem: { tint: 0x2a6ad8, emissive: 0x0a2a6a, opacity: 0.72, hideVisor: true, scale: 1.1 },
   water_elem_pet: { tint: 0x4aaaff, emissive: 0x1a5a9a, opacity: 0.72, hideVisor: true, scale: 0.95 },
+
+  // ---- Jadereich ----
+  captain: { tint: 0x2a4a8a, head: { kind: 'captainhat' }, props: [{ kind: 'dagger', slot: 'right' }] },
+  empress: { tint: 0xb8362a, head: { kind: 'crown' } },
+  monk: { tint: 0xe0a040, bald: true, props: [{ kind: 'staff', id: 'staff_0', slot: 'right' }] },
+  samurai: { tint: 0x8a2a2a, head: { kind: 'helmet', color: 0x2a2a30 }, props: [{ kind: 'sword', id: 'sword_3', slot: 'right' }] },
+  ape: { style: 'fur', tint: 0x4a3426 },
+  poacher: { tint: 0x4a6a3a, head: { kind: 'hood', color: 0x3a4a22 }, props: [{ kind: 'rifle', slot: 'right' }] },
+  lizardman: { style: 'lizard', tint: 0x7a5a2a, props: [{ kind: 'spear', slot: 'right' }] },
+  lizard_shaman: { style: 'lizard', tint: 0x3a6a9a, head: { kind: 'horns' }, props: [{ kind: 'witchstaff', slot: 'right' }] },
+  ronin: { tint: 0x5a3a3a, head: { kind: 'straw' }, props: [{ kind: 'scimitar', slot: 'right' }] },
+  ghost_warrior: { style: 'ghost', tint: 0x8aaed8, opacity: 0.7, emissive: 0x102040, head: { kind: 'helmet', color: 0x8aaed8 }, props: [{ kind: 'sword', id: 'sword_2', slot: 'right' }] },
+  stone_golem: { style: 'stone', tint: 0x8c8c86 },
+  canyon_bandit: { tint: 0xa84a2a, head: { kind: 'mask', color: 0xc03a2a }, props: [{ kind: 'axe', slot: 'right' }] },
+  cultist: { tint: 0x6a1a14, emissive: 0x200404, head: { kind: 'hood', color: 0x4a1010 }, props: [{ kind: 'witchstaff', slot: 'right' }] },
+  fire_imp: { style: 'demon', tint: 0x5a2410, emissive: 0x200804, head: { kind: 'horns' }, scale: 0.7 },
+  magma_golem: { style: 'lava', emissive: 0x3a1204 },
+  lava_elem: { style: 'lava', emissive: 0x601c06, scale: 1.1 },
+  obsidian_knight: { style: 'obsidian', emissive: 0x0c0818, head: { kind: 'helmet', color: 0x23232e }, props: [{ kind: 'axe', slot: 'right', scale: 1.3 }] },
+  naga_warrior: { style: 'lizard', tint: 0x2f9a78, head: { kind: 'helmet', color: 0x2f7a68 }, props: [{ kind: 'spear', slot: 'right' }] },
+  naga_priest: { style: 'lizard', tint: 0x5a2ab8, head: { kind: 'turban', color: 0x6a2ab8 }, props: [{ kind: 'witchstaff', slot: 'right' }] },
+  snake_emperor: { style: 'lizard', tint: 0xe0b040, emissive: 0x302200, head: { kind: 'crown' }, props: [{ kind: 'scimitar', slot: 'right', scale: 1.3 }] },
+  demon_lord: { style: 'demon', tint: 0x2a1018, emissive: 0x2a0804, head: { kind: 'horns' }, props: [{ kind: 'axe', slot: 'right', scale: 1.8 }] },
 };
 
 // painted style, gender and proportions (bodyScale x,y,z ; headScale) of NPCs and monsters
@@ -93,8 +117,11 @@ const STYLE_OF = {
   skeleton: 'skeleton', zombie: 'zombie', zombie_giant: 'zombie', mummy: 'bandage', tomb_guardian: 'gold', yeti: 'fur', yeti_chief: 'fur',
   kobold: 'kobold', kobold_shaman: 'kobold', kobold_boss: 'kobold', kobold_king: 'kobold', water_elem: 'water', water_elem_pet: 'water',
 };
-const FEMALE_NPC = new Set(['priest', 'herbalist', 'witch', 'hag', 'scholar', 'merchant', 'trainer_mage', 'fisher']);
+const FEMALE_NPC = new Set(['priest', 'herbalist', 'witch', 'hag', 'scholar', 'merchant', 'trainer_mage', 'fisher', 'empress']);
 const BODY_OF = {
+  ape: { b: [1.4, 0.95, 1.3], h: 0.95 }, stone_golem: { b: [1.5, 1.05, 1.4] }, magma_golem: { b: [1.5, 1.05, 1.4] }, lava_elem: { b: [1.15, 1.0, 1.15] }, fire_imp: { b: [0.9, 0.9, 0.9], h: 1.3 },
+  lizardman: { b: [1.0, 1.0, 1.0], h: 1.05 }, snake_emperor: { b: [1.25, 1.0, 1.2] }, demon_lord: { b: [1.4, 1.05, 1.3], h: 1.1 }, obsidian_knight: { b: [1.2, 1.0, 1.15] },
+  samurai: { b: [1.08, 1, 1.06] }, canyon_bandit: { b: [1.05, 1, 1.05] }, ghost_warrior: { b: [1.0, 1.05, 1.0] }, empress: { b: [0.95, 1, 0.95] },
   guard: { b: [1.12, 1, 1.1] }, trainer_warrior: { b: [1.14, 1, 1.12] }, smith: { b: [1.2, 0.97, 1.2] }, mayor: { b: [1.25, 0.95, 1.3] }, elder: { b: [0.95, 0.92, 0.95] },
   bandit_chief: { b: [1.2, 1, 1.15] }, farmer: { b: [1.05, 1, 1.1] }, merchant: { b: [1.0, 1, 1.0] },
   kobold: { b: [1.1, 0.95, 1.1], h: 1.3 }, kobold_shaman: { b: [1.0, 0.95, 1.0], h: 1.3 }, kobold_boss: { b: [1.35, 0.95, 1.3], h: 1.25 }, kobold_king: { b: [1.4, 0.98, 1.35], h: 1.2 },
@@ -102,11 +129,13 @@ const BODY_OF = {
   skeleton: { b: [0.8, 1.0, 0.8] }, zombie_giant: { b: [1.6, 1.0, 1.45] },
   tomb_guardian: { b: [1.35, 1.0, 1.3] }, water_elem: { b: [1.3, 1.0, 1.3] }, water_elem_pet: { b: [1.1, 1.0, 1.1] }, hag: { b: [0.9, 0.92, 0.9] },
 };
-const QUAD = new Set(['wolf', 'wolf_alpha', 'icewolf', 'hyena', 'boar', 'bear', 'bear_big', 'polarbear', 'polarbear_big', 'bull', 'sheep']);
+const QUAD = new Set(['wolf', 'wolf_alpha', 'icewolf', 'hyena', 'boar', 'bear', 'bear_big', 'polarbear', 'polarbear_big', 'bull', 'sheep',
+  'tiger', 'whitetiger', 'panther', 'kitsune', 'panda', 'sandcat', 'bison', 'lizard', 'ashhound']);
 
 export function makeModel(ent) {
   const k = ent.k, m = ent.m;
   if (k === 'obj') return makeObject(m);
+  if (k === 'ship') return makeShip(m === 'ship_junk' ? 'junk' : 'cog');
   if (QUAD.has(m)) return makePixelBeast(m, ent.id);
   switch (m) {
     case 'spider': return makeSpider(ent.id);
@@ -128,7 +157,7 @@ export function makeModel(ent) {
   const bo = BODY_OF[m];
   const id = ent.id || 0;
   return makeHumanoid({
-    ...spec, style: STYLE_OF[m], female: FEMALE_NPC.has(m), bodyScale: bo?.b, headScale: bo?.h,
+    ...spec, style: spec.style ?? STYLE_OF[m], female: FEMALE_NPC.has(m), bodyScale: bo?.b, headScale: bo?.h,
     skin: SKIN[id % 4], hair: HAIR[(id >> 1) % 6],
   });
 }

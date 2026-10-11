@@ -19,6 +19,8 @@ type Dungeon struct {
 	ID       string
 	Name     string
 	MinLevel int
+	MaxLevel int
+	Style    string     // look of the dungeon: mine | temple | fire
 	Origin   [2]float64 // world position of the dungeon's local (0,0)
 	Entrance [2]float64 // world position of the entrance portal in the open world
 	Rooms    []Rect     // local coordinates

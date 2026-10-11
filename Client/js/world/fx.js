@@ -97,7 +97,6 @@ export class FX {
     mesh.position.copy(from);
     this.scene.add(mesh);
     const speed = style === 'arrow' ? 42 : style === 'fire' ? 22 : 28;
-    let trail = 0;
     this.list.push({
       update: (dt) => {
         const to = this.pos(dstId, 0.6);
@@ -112,14 +111,6 @@ export class FX {
         d.normalize();
         mesh.position.addScaledVector(d, step);
         if (style === 'arrow') mesh.lookAt(to);
-        trail += dt;
-        if (style !== 'arrow' && trail > 0.025) {
-          trail = 0;
-          const p = this.sprite(col, 0.6, 0.8);
-          p.position.copy(mesh.position);
-          let t = 0;
-          this.list.push({ update: (dt2) => { t += dt2; p.material.opacity = 0.8 * (1 - t / 0.3); p.scale.setScalar(0.6 * (1 - t / 0.35)); if (t > 0.3) { this.scene.remove(p); return false; } return true; } });
-        }
         return true;
       },
     });

@@ -73,12 +73,21 @@ func flightPrice(a, b *gamedata.Town) int {
 	return max(15, int(math.Hypot(ax-bx, az-bz)*0.4))
 }
 
+// shipPrice is the fare of the ferry between the two harbors.
+func shipPrice(a, b *gamedata.Town) int {
+	ax, az := gamedata.PadPos(a)
+	bx, bz := gamedata.PadPos(b)
+	return 120 + int(math.Hypot(ax-bx, az-bz)*0.5)
+}
+
+const griffinSpeed = 34.0
+
 func (w *World) flightInfo(e *Entity, n *Entity) protocol.M {
 	here := townOfNPC(n.N)
 	var list []protocol.M
 	for _, id := range e.P.Char.FlightPoints {
 		t := gamedata.TownByID(id)
-		if t == nil || t.ID == here.ID {
+		if t == nil || t.ID == here.ID || t.Harbor || t.Cont != here.Cont {
 			continue
 		}
 		list = append(list, protocol.M{"id": t.ID, "name": t.Name, "price": flightPrice(here, t)})
@@ -104,7 +113,11 @@ func (w *World) onFlight(e *Entity, m protocol.FlightMsg) {
 	}
 	here := townOfNPC(n.N)
 	dest := gamedata.TownByID(m.Dest)
-	if dest == nil || dest.ID == here.ID || !slices.Contains(e.P.Char.FlightPoints, dest.ID) {
+	switch {
+	case dest == nil || dest.ID == here.ID:
+		w.errMsg(e, "Dorthin geht es nicht.")
+		return
+	case !slices.Contains(e.P.Char.FlightPoints, dest.ID) || dest.Harbor || dest.Cont != here.Cont:
 		w.errMsg(e, "Dorthin kennst du noch keinen Flugpunkt.")
 		return
 	}
@@ -121,9 +134,9 @@ func (w *World) onFlight(e *Entity, m protocol.FlightMsg) {
 	e.P.Auto = false
 	dx, dz := gamedata.PadPos(dest)
 	d := math.Hypot(dx-e.X, dz-e.Z)
-	e.P.Flight = &Flight{Dest: dest.ID, SX: e.X, SZ: e.Z, DX: dx, DZ: dz, Dist: d, Speed: 34}
+	e.P.Flight = &Flight{Dest: dest.ID, SX: e.X, SZ: e.Z, DX: dx, DZ: dz, Dist: d, Speed: griffinSpeed}
 	w.sysChat(e, "sys", "Du fliegst nach "+dest.Name+".")
-	w.send(e, protocol.M{"t": "flightStart", "dest": dest.Name, "dur": d / 34})
+	w.send(e, protocol.M{"t": "flightStart", "dest": dest.Name, "dur": d / griffinSpeed})
 }
 
 func (w *World) tickFlight(e *Entity) {

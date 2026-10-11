@@ -67,7 +67,11 @@ var (
 func Init() {
 	initOnce.Do(func() {
 		buildSpawns()
-		spawnsAll = append(append([]Spawn(nil), Spawns...), generatedSpawns...)
+		spawnsAll = append([]Spawn(nil), Spawns...)
+		for i := range spawnsAll { // the hand placed spawns also keep off the roads
+			spawnsAll[i].X, spawnsAll[i].Z = offRoad(spawnsAll[i].X, spawnsAll[i].Z)
+		}
+		spawnsAll = append(spawnsAll, generatedSpawns...)
 		for _, g := range objGroups {
 			h := fnv.New32a()
 			h.Write([]byte(g.obj))
@@ -84,7 +88,7 @@ func Init() {
 				} else if Height(x, z) < 0.8 {
 					continue
 				}
-				if nearNPC(x, z, 4) {
+				if nearNPC(x, z, 4) || !Walkable(x, z) {
 					continue
 				}
 				ObjectSpawns = append(ObjectSpawns, ObjectSpawn{g.obj, x, z})
@@ -92,6 +96,8 @@ func Init() {
 			}
 		}
 		ObjectSpawns = append(ObjectSpawns, ObjectSpawn{"portal_mine", -175, -198})
+		ObjectSpawns = append(ObjectSpawns, extraObjectSpawns...)
+		computeQuestAreas()
 		// vendor stock
 		for _, n := range NPCs {
 			if !n.Vendor || n.StockK == "" {

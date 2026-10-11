@@ -19,6 +19,7 @@ const (
 	KindMob    = "mob"
 	KindPet    = "pet"
 	KindObj    = "obj"
+	KindShip   = "ship"
 
 	MaxInventory = 28
 	InteractDist = 8.0
@@ -62,11 +63,12 @@ type Entity struct {
 	PolyUntil   float64 // polymorph: ends when damaged
 	HPBoostEnd  float64 // "Letztes Gefecht"
 
-	P   *Player
-	M   *Mob
-	N   *gamedata.NPC
-	O   *Obj
-	Pet *Pet
+	P    *Player
+	M    *Mob
+	N    *gamedata.NPC
+	O    *Obj
+	Pet  *Pet
+	Ship *Ferry
 }
 
 type CastState struct {
@@ -103,6 +105,8 @@ type Player struct {
 	PetEnt         int // entity id of the summoned pet (0 = none)
 	ElemEnt        int // entity id of the water elemental
 	LastQuestCheck float64
+	Aboard         int     // entity id of the ferry the player rides on (0 = none)
+	DeckX, DeckZ   float64 // position on the deck in ship coordinates
 }
 
 type Invite struct {

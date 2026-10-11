@@ -15,7 +15,9 @@ type Town struct {
 	FlatR  float64 `json:"-"`
 	BlendR float64 `json:"-"`
 	H      float64 `json:"-"`
-	Style  string  `json:"style"` // building style: timber, plaster, stilt, lodge, adobe
+	Style  string  `json:"style"` // building style: timber, plaster, stilt, lodge, adobe, bamboo, jade, redrock, obsidian
+	Harbor bool    `json:"harbor,omitempty"`
+	Cont   int     `json:"cont"`
 }
 
 var Towns = []*Town{
@@ -25,6 +27,16 @@ var Towns = []*Town{
 	{ID: "frostwacht", Name: "Frostwacht", Kind: "village", X: -110, Z: -215, FlatR: 24, BlendR: 46, H: 9, Style: "lodge"},
 	{ID: "sandfurt", Name: "Sandfurt", Kind: "village", X: 190, Z: 190, FlatR: 24, BlendR: 44, H: 2.6, Style: "adobe"},
 	{ID: "rabenfels", Name: "Rabenfels", Kind: "site", X: -175, Z: -196, FlatR: 11, BlendR: 22, H: 11, Style: "lodge"},
+	{ID: "sturmhafen", Name: "Sturmhafen", Kind: "village", X: 232, Z: 40, FlatR: 18, BlendR: 40, H: 1.6, Style: "timber", Harbor: true},
+	// second continent
+	{ID: "lotushafen", Name: "Lotushafen", Kind: "village", X: 612, Z: 20, FlatR: 20, BlendR: 40, H: 1.8, Style: "bamboo", Harbor: true, Cont: 1},
+	{ID: "himmelspforte", Name: "Himmelspforte", Kind: "capital", X: 830, Z: -10, FlatR: 66, BlendR: 100, H: 5.0, Style: "jade", Cont: 1},
+	{ID: "bambushain", Name: "Bambushain", Kind: "village", X: 688, Z: 118, FlatR: 24, BlendR: 44, H: 3.2, Style: "bamboo", Cont: 1},
+	{ID: "kirschbach", Name: "Kirschbach", Kind: "village", X: 810, Z: 150, FlatR: 24, BlendR: 44, H: 3.6, Style: "jade", Cont: 1},
+	{ID: "rotfels_dorf", Name: "Rotfels", Kind: "village", X: 1000, Z: 120, FlatR: 24, BlendR: 44, H: 6.5, Style: "redrock", Cont: 1},
+	{ID: "aschenwacht", Name: "Aschenwacht", Kind: "village", X: 940, Z: -100, FlatR: 24, BlendR: 46, H: 7, Style: "obsidian", Cont: 1},
+	{ID: "nebeltempel", Name: "Nebeltempel", Kind: "site", X: 768, Z: -112, FlatR: 12, BlendR: 24, H: 4.5, Style: "jade", Cont: 1},
+	{ID: "feuerschlund", Name: "Feuerschlund", Kind: "site", X: 1000, Z: -198, FlatR: 12, BlendR: 24, H: 8, Style: "obsidian", Cont: 1},
 }
 
 func TownByID(id string) *Town {
@@ -121,7 +133,33 @@ var (
 	buildingList  []Building
 )
 
+// jadeCapital is the second capital: an open terraced city without walls, built around a five-tier palace.
+func jadeCapital(t *Town) []Building {
+	var b []Building
+	cx, cz := t.X, t.Z
+	b = append(b, Building{Kind: "pagoda", Style: "jade", X: cx, Z: cz - 30, W: 26, D: 22, H: 22})
+	for _, p := range [][2]float64{{-34, -34}, {34, -34}, {-38, 30}, {38, 30}} {
+		b = append(b, Building{Kind: "pagoda", Style: "jade", X: cx + p[0], Z: cz + p[1], W: 11, D: 11, H: 13})
+	}
+	b = append(b, Building{Kind: "pond", X: cx, Z: cz + 4, W: 24, D: 16, H: 0.5})
+	for _, g := range [][3]float64{{-52, 0, 0}, {52, 0, 0}, {0, 48, 1}, {0, -46, 1}} {
+		b = append(b, Building{Kind: "gate", Style: "jade", X: cx + g[0], Z: cz + g[1], W: 12, D: 3, H: 9, Rot: int(g[2])})
+	}
+	for i := -4; i <= 4; i++ {
+		if i == 0 {
+			continue
+		}
+		d := float64(i) * 11
+		b = append(b, Building{Kind: "lantern", X: cx + d, Z: cz - 8, W: 1, D: 1, H: 3.2}, Building{Kind: "lantern", X: cx + d, Z: cz + 8, W: 1, D: 1, H: 3.2})
+		b = append(b, Building{Kind: "lantern", X: cx - 8, Z: cz + d, W: 1, D: 1, H: 3.2}, Building{Kind: "lantern", X: cx + 8, Z: cz + d, W: 1, D: 1, H: 3.2})
+	}
+	return b
+}
+
 func capitalBuildings(t *Town) []Building {
+	if t.Style == "jade" {
+		return jadeCapital(t)
+	}
 	var b []Building
 	cx, cz := t.X, t.Z
 	x0, x1, z0, z1 := cx-50, cx+50, cz-45, cz+45
@@ -152,6 +190,10 @@ func buildTown(t *Town, rng *rand.Rand, avoid [][3]float64) []Building {
 		out = capitalBuildings(t)
 		rx0, rx1, rz0, rz1 = t.X-44, t.X+44, t.Z-38, t.Z+38
 		count, plazaR = 26, 14
+		if t.Style == "jade" {
+			rx0, rx1, rz0, rz1 = t.X-50, t.X+50, t.Z-44, t.Z+44
+			count, plazaR = 30, 16
+		}
 	case "village":
 		rx0, rx1, rz0, rz1 = t.X-34, t.X+34, t.Z-34, t.Z+34
 		count, plazaR = 9, 12
@@ -159,7 +201,7 @@ func buildTown(t *Town, rng *rand.Rand, avoid [][3]float64) []Building {
 		return nil
 	}
 	hutKind := "house"
-	if t.Style == "stilt" {
+	if t.Style == "stilt" || t.Style == "bamboo" {
 		hutKind = "hut"
 	}
 	placed := 0
@@ -177,7 +219,14 @@ func buildTown(t *Town, rng *rand.Rand, avoid [][3]float64) []Building {
 		if math.Hypot(x-t.X, z-t.Z) < plazaR+r {
 			continue
 		}
-		if t.Kind == "capital" {
+		if t.Kind == "capital" && t.Style == "jade" {
+			if math.Abs(z-t.Z) < 12+d/2 || math.Abs(x-t.X) < 12+w/2 { // cross shaped avenues
+				continue
+			}
+			if math.Abs(x-t.X) < 20+w/2 && z < t.Z-10 { // palace court
+				continue
+			}
+		} else if t.Kind == "capital" {
 			if math.Abs(z-t.Z) < 11+d/2 && x < t.X { // road from the west gate
 				continue
 			}
@@ -213,6 +262,14 @@ func buildTown(t *Town, rng *rand.Rand, avoid [][3]float64) []Building {
 		out = append(out, Building{Kind: hutKind, Style: t.Style, X: x, Z: z, W: w, D: d, H: h, Rot: rot})
 		placed++
 	}
+	if t.Harbor { // a pier into the sea; the ferry berths next to it
+		dir := 1.0
+		if t.X > ContSplitX {
+			dir = -1
+		}
+		out = append(out, Building{Kind: "dock", Style: t.Style, X: t.X + dir*26, Z: t.Z, W: 28, D: 5, H: 1.2})
+		return out
+	}
 	// the griffin landing pad
 	out = append(out, Building{Kind: "pad", X: t.X + padOffset(t)[0], Z: t.Z + padOffset(t)[1], W: 9, D: 9, H: 0.4})
 	return out
@@ -224,8 +281,29 @@ func padOffset(t *Town) [2]float64 {
 		return [2]float64{26, 14}
 	case "eichenhain":
 		return [2]float64{14, 12}
+	case "sturmhafen":
+		return [2]float64{15, 0}
+	case "lotushafen":
+		return [2]float64{-15, 0}
+	case "himmelspforte":
+		return [2]float64{30, 20}
 	}
 	return [2]float64{16, 10}
+}
+
+// Berth is the place on the water where the ferry lies at the pier of a harbor.
+func Berth(t *Town) (float64, float64) {
+	dir := 1.0
+	if t.X > ContSplitX {
+		dir = -1
+	}
+	z := t.Z + 4
+	for d := 10.0; d < 90; d++ { // the first deep water in front of the pier
+		if Height(t.X+dir*d, z) < -1.2 {
+			return t.X + dir*(d+5), z
+		}
+	}
+	return t.X + dir*40, z
 }
 
 // PadPos is where the griffin master of a town stands.
@@ -270,6 +348,7 @@ func Buildings() []Building {
 			buildingList = append(buildingList, buildTown(t, rng, avoid)...)
 		}
 		buildingList = append(buildingList, extraBuildings()...)
+		buildingList = append(buildingList, extraBuildings2()...)
 	})
 	return buildingList
 }
@@ -298,9 +377,12 @@ type Bridge struct {
 }
 
 type Scenery struct {
-	Half      float64        `json:"half"`
+	X0        float64        `json:"x0"` // world position of grid column 0
+	Z0        float64        `json:"z0"`
 	Cell      float64        `json:"cell"`
-	N         int            `json:"n"`
+	NX        int            `json:"nx"`
+	NZ        int            `json:"nz"`
+	Conts     []Continent    `json:"conts"`
 	Heights   string         `json:"hm"`
 	Biomes    string         `json:"bm"`
 	Zones     []Zone         `json:"zones"`
@@ -377,7 +459,7 @@ func BuildScenery() Scenery {
 		roads[i] = r.Pts
 	}
 	return Scenery{
-		Half: WorldHalf, Cell: GridCell, N: GridN, Heights: HeightmapB64(), Biomes: BiomemapB64(),
+		X0: WorldMinX, Z0: WorldMinZ, Cell: GridCell, NX: GridNX, NZ: GridNZ, Conts: Continents, Heights: HeightmapB64(), Biomes: BiomemapB64(),
 		Zones: Zones, Towns: Towns, POIs: POIs, Buildings: Buildings(), House: house,
 		Roads: roads, Rivers: Rivers, Lakes: Lakes, Bridges: bridges(), Clears: clears,
 	}

@@ -91,6 +91,7 @@ func (w *World) spawnStatic() {
 	for _, o := range gamedata.ObjectSpawns {
 		w.newObject(o.Obj, o.X, o.Z, 0)
 	}
+	w.spawnFerry()
 }
 
 func (w *World) newMob(id string, x, z float64, inst int) *Entity {
@@ -149,6 +150,8 @@ func (w *World) tick() {
 			w.tickPet(e)
 		case KindObj:
 			w.tickObject(e)
+		case KindShip:
+			w.tickFerry(e)
 		}
 	}
 	w.tickGrounds()
@@ -246,7 +249,7 @@ var visualSlots = []string{"mainhand", "offhand", "head", "shoulder", "chest", "
 func (w *World) view(e *Entity) entView {
 	v := entView{ID: e.ID, K: e.Kind, N: e.Name, Ti: e.Title, M: e.Model, L: e.Level,
 		X: round2(e.X), Y: round2(e.Y), Z: round2(e.Z), R: round2(e.R), HP: e.HP, MH: e.MaxHP, D: e.Dead}
-	if e.Kind == KindNPC || e.Kind == KindObj {
+	if e.Kind == KindNPC || e.Kind == KindObj || e.Kind == KindShip {
 		v.HP, v.MH = 1, 1
 	}
 	if e.P != nil {
@@ -264,6 +267,9 @@ func (w *World) view(e *Entity) entView {
 			}
 		}
 		v.Pt = e.P.PartyID != 0
+	}
+	if e.Ship != nil {
+		v.Fl = e.Ship.Sailing
 	}
 	if e.M != nil {
 		v.Tg = e.M.Target
@@ -352,7 +358,7 @@ func (w *World) sendSnapshots() {
 		me := protocol.M{
 			"hp": pe.HP, "mh": pe.MaxHP, "res": int(p.Res), "rm": p.ResMax,
 			"xp": p.Char.XP, "xn": xpNext(pe.Level), "lvl": pe.Level,
-			"tg": p.Target, "auto": p.Auto, "d": pe.Dead, "fl": p.Flight != nil,
+			"tg": p.Target, "auto": p.Auto, "d": pe.Dead, "fl": p.Flight != nil, "ab": p.Aboard,
 		}
 		if p.Class.ID == "warrior" {
 			me["stance"] = p.Stance
@@ -461,7 +467,10 @@ func (w *World) leave(id int) {
 
 func (w *World) savePlayer(e *Entity) {
 	c := e.P.Char
-	if e.Inst != 0 { // inside a dungeon: remember the entrance
+	if ship := w.ents[e.P.Aboard]; e.P.Aboard != 0 && ship != nil && ship.Ship != nil { // on the ferry: remember the pier it left from
+		c.X, c.Z = gamedata.PadPos(ship.Ship.From)
+		c.Y = gamedata.Height(c.X, c.Z)
+	} else if e.Inst != 0 { // inside a dungeon: remember the entrance
 		c.X, c.Z = c.ReturnX, c.ReturnZ
 		c.Y = gamedata.Height(c.X, c.Z)
 	} else {
