@@ -208,7 +208,10 @@ export class Controller {
     }
     // facing
     if (!dead) {
-      if (this.rmb) L.r = this.camYaw;
+      // with the camera held (RMB) the character normally faces the camera direction; strafing forward/sideways
+      // (A/D, W+A, W+D) still turns it smoothly towards the direction it actually runs in
+      const strafe = this.rmb && len > 0.001 && rt !== 0 && fw >= 0;
+      if (this.rmb && !strafe) L.r = this.camYaw;
       else if (len > 0.001) {
         const want = Math.atan2(dx, dz);
         let d = ((want - L.r + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
