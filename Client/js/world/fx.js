@@ -287,6 +287,10 @@ export class FX {
   }
 
   update(dt) {
-    this.list = this.list.filter((f) => f.update(dt));
+    // effects started while updating (a projectile spawning its hit burst) are appended to this.list: keep them
+    const cur = this.list;
+    this.list = [];
+    const keep = cur.filter((f) => f.update(dt));
+    this.list = keep.concat(this.list);
   }
 }
