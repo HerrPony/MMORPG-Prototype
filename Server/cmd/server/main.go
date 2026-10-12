@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"mmorpg/internal/auth"
@@ -20,6 +21,20 @@ func noCache(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		h.ServeHTTP(w, r)
+	})
+}
+
+// updatesHandler serves the update tree of the native client: manifests are always revalidated, objects are
+// content-addressed and may be cached forever.
+func updatesHandler(dir string) http.Handler {
+	fs := http.StripPrefix("/updates/", http.FileServer(http.Dir(dir)))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/updates/objects/") {
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		} else {
+			w.Header().Set("Cache-Control", "no-cache")
+		}
+		fs.ServeHTTP(w, r)
 	})
 }
 
@@ -45,6 +60,10 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", gw.ServeWS)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok")) })
+	if cfg.UpdatesDir != "" {
+		mux.Handle("/updates/", updatesHandler(cfg.UpdatesDir))
+		log.Printf("Client-Updates unter /updates/ aus %s", cfg.UpdatesDir)
+	}
 	if cfg.ClientDir != "" { // empty: API-only mode (client served by a separate container)
 		mux.Handle("/", noCache(http.FileServer(http.Dir(cfg.ClientDir))))
 	}

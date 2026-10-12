@@ -18,6 +18,17 @@ docker compose up --build
 Dann http://localhost:8080 öffnen. Accounts/Charaktere liegen im Volume `gamedata`.
 Fertige Images (werden per GitHub Actions gebaut): `ghcr.io/herrpony/mmorpg-server` und `ghcr.io/herrpony/mmorpg-client` – `docker compose pull && docker compose up`.
 
+## Nativer Desktop-Client (Godot)
+
+Neben dem Web-Client gibt es einen **nativen Client für Windows und Linux** (`NativeClient/`, Godot 4.5, GDScript) mit besserer Grafik
+(Echtzeitschatten, SSAO, Bloom, Himmels- und Wasser-Shader, Low-Poly im Minecraft-Stil), vielen Grafik-/Audio-/Steuerungs-Einstellungen
+(inkl. Tastenbelegung und Gamepad) und flüssigerer Steuerung. Er nutzt dasselbe Protokoll – der Server bleibt unverändert.
+Dazu gehören ein **Launcher, der Updates selbst findet und installiert**, ein Windows-Installer (NSIS) und ein Linux-Installationsskript.
+Details, Bauen und Veröffentlichen: [`NativeClient/README.md`](NativeClient/README.md).
+
+* Spielen aus dem Quelltext: `godot --path NativeClient/game` (mit laufendem Server)
+* Update-Baum direkt vom Server ausliefern: `server -updates ./updates` (unter `/updates/`)
+
 ## Welt
 Zwei Kontinente (je ca. 600 × 600 m), vom Server als Höhen- und Biomkarte erzeugt (`gamedata/world.go`):
 - **Erlenmark** (Stufe 1–20): Erlenwald, Goldene Ebenen, Düstermoor, Eisgipfel, Glutwüste. Hauptstadt Sonnenburg, Dörfer Eichenhain, Moorbruck, Frostwacht, Sandfurt, Hafen Sturmhafen. Dungeon: Schwarzfelsmine (ab Stufe 15).

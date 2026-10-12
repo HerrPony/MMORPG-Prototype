@@ -2,3 +2,7 @@ Server/data/
 Server/server.exe
 *.log
 .claude/
+
+NativeClient/game/.godot/
+NativeClient/build/
+NativeClient/launcher/.godot/
