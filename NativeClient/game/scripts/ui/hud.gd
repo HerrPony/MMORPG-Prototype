@@ -130,21 +130,22 @@ func _name_label() -> Label:
 func _unit_frame(mirror: bool) -> Array:
 	# portrait + name + health bar + resource bar, no panel, like the reference screenshot
 	var f := Control.new()
-	f.size = Vector2(190, 66)
+	f.size = Vector2(240, 80)
 	f.mouse_filter = Control.MOUSE_FILTER_STOP
-	var pr := _circle(54, BRONZE)
-	var px := 134.0 if mirror else 0.0
+	var pr := _circle(66, BRONZE)
+	var px := 168.0 if mirror else 0.0
 	(pr[0] as Control).position = Vector2(px, 4)
-	var bx := 0.0 if mirror else 44.0
+	var bx := 0.0 if mirror else 56.0
 	var name_l := _name_label()
 	name_l.position = Vector2(bx + 4, 4)
-	name_l.custom_minimum_size = Vector2(120, 0)
-	var hp := Bar.new(126, 14, Color("3ccf4e"))
-	hp.position = Vector2(bx, 20)
-	var res := Bar.new(126, 8, Color("4a8ae0"))
-	res.position = Vector2(bx, 36)
+	name_l.custom_minimum_size = Vector2(150, 0)
+	name_l.add_theme_font_size_override("font_size", 13)
+	var hp := Bar.new(172, 18, Color("3ccf4e"))
+	hp.position = Vector2(bx, 24)
+	var res := Bar.new(172, 10, Color("4a8ae0"))
+	res.position = Vector2(bx, 44)
 	var buffs := UI.hbox(2)
-	buffs.position = Vector2(bx, 46)
+	buffs.position = Vector2(bx, 56)
 	f.add_child(hp)
 	f.add_child(res)
 	f.add_child(name_l)
@@ -164,7 +165,7 @@ func _build_frames() -> void:
 	p_res = pf[4]
 	p_buffs = pf[5]
 	p_stance = UI.label("", 10, UI.MUTED)
-	p_stance.position = Vector2(44, 56)
+	p_stance.position = Vector2(56, 66)
 	p_stance.add_theme_constant_override("outline_size", 3)
 	p_stance.add_theme_color_override("font_outline_color", Color.BLACK)
 	p_frame.add_child(p_stance)
@@ -180,7 +181,7 @@ func _build_frames() -> void:
 	t_res_unused.visible = false
 	t_buffs = tf[5]
 	t_tag = _name_label()
-	t_tag.position = Vector2(90, 4)
+	t_tag.position = Vector2(110, 4)
 	t_tag.add_theme_color_override("font_color", Color("ffb040"))
 	t_frame.add_child(t_tag)
 	party_box = UI.vbox(4)
@@ -393,10 +394,10 @@ func _layout() -> void:
 	size = vs
 	var W := vs.x
 	var H := vs.y
-	p_frame.position = Vector2(W * 0.5 - 465, H * 0.735)
-	t_frame.position = Vector2(W * 0.5 + 285, H * 0.735)
+	p_frame.position = Vector2(W * 0.5 - 520, H * 0.725)
+	t_frame.position = Vector2(W * 0.5 + 280, H * 0.725)
 	party_box.position = Vector2(16, 112)
-	pet_box.position = Vector2(W * 0.5 + 285, H * 0.735 + 70)
+	pet_box.position = Vector2(W * 0.5 + 285, H * 0.725 + 84)
 	minimap.position = Vector2(W - 208, 30)
 	zone_label.position = Vector2(W - 400 - 70, 6)
 	clock_label.position = Vector2(W - 70, 6)

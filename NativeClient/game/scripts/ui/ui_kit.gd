@@ -33,7 +33,10 @@ static func theme() -> Theme:
 	if _theme != null:
 		return _theme
 	var t := Theme.new()
-	var base := ThemeDB.fallback_font
+	# serif like the reference interface (Windows: Palatino/Georgia); falls back to the built-in font elsewhere
+	var base := SystemFont.new()
+	base.font_names = PackedStringArray(["Palatino Linotype", "Book Antiqua", "Georgia", "Cambria", "Times New Roman", "DejaVu Serif", "Liberation Serif", "serif"])
+	base.allow_system_fallback = true
 	var fv := FontVariation.new()
 	fv.base_font = base
 	if ResourceLoader.exists("res://assets/fonts/NotoColorEmoji.ttf"):
