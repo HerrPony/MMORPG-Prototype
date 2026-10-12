@@ -34,12 +34,13 @@ func (f *fakeOut) last(t string) map[string]any {
 
 func newTestWorld(t *testing.T) *World {
 	t.Helper()
-	store, err := storage.OpenJSON(t.TempDir())
+	dir := t.TempDir()
+	store, err := storage.OpenJSON(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = store.Close() })
-	return New(config.Config{TickRate: 50 * time.Millisecond, SnapshotEach: 2, AutosaveEach: time.Hour}, store)
+	return New(config.Config{TickRate: 50 * time.Millisecond, SnapshotEach: 2, AutosaveEach: time.Hour, DataDir: dir}, store)
 }
 
 func addPlayer(t *testing.T, w *World, name, class string, level int) (*Entity, *fakeOut) {
@@ -53,6 +54,18 @@ func addPlayer(t *testing.T, w *World, name, class string, level int) (*Entity, 
 func run(w *World, secs float64) {
 	for i := 0; i < int(secs/w.dt); i++ {
 		w.tick()
+	}
+}
+
+// drain runs the commands queued with Do (normally done by Run).
+func drain(w *World) {
+	for {
+		select {
+		case f := <-w.cmds:
+			f()
+		default:
+			return
+		}
 	}
 }
 
@@ -331,5 +344,76 @@ func TestMobsRespectObstaclesAndSpacing(t *testing.T) {
 	// no line of sight through the cabin wall (north wall at z=-4)
 	if !gamedata.LineBlocked(0, -8, 0, 0, false) {
 		t.Fatal("shot through the house wall")
+	}
+}
+
+func TestAdminEditsApplyAndReset(t *testing.T) {
+	w := newTestWorld(t)
+	e, out := addPlayer(t, w, "Anna", "warrior", 5)
+	_ = e
+	nSpawns := len(gamedata.AllSpawns())
+	nWolf := 0
+	for _, s := range gamedata.AllSpawns() {
+		if s.Mob == "wolf" {
+			nWolf++
+		}
+	}
+	h0 := gamedata.Height(30, 0)
+	save := func(body string) protocol.M {
+		o := &fakeOut{}
+		w.AdminSave(o, []byte(body))
+		drain(w)
+		if m := o.last("adminError"); m != nil {
+			t.Fatalf("adminError: %v", m)
+		}
+		return o.last("adminSaved")
+	}
+	// add a spawn, raise terrain, drop a tree, change a quest title
+	q, _ := json.Marshal(gamedata.Quests["wolf_plague"])
+	var qm map[string]any
+	_ = json.Unmarshal(q, &qm)
+	qm["title"] = "Neue Wolfsplage"
+	qb, _ := json.Marshal(qm)
+	gx, gz := int((30-gamedata.WorldMinX)/gamedata.GridCell), int((0-gamedata.WorldMinZ)/gamedata.GridCell)
+	body := `{"spawns":` + func() string {
+		l := append(append([]gamedata.Spawn(nil), gamedata.AllSpawns()...), gamedata.Spawn{Mob: "wolf", X: 31, Z: 40})
+		b, _ := json.Marshal(l)
+		return string(b)
+	}() + `,"heights":[[` + itoa(gx) + `,` + itoa(gz) + `,` + itoa(int(h0*20)+100) + `]],"quests":{"wolf_plague":` + string(qb) + `}}`
+	if save(body) == nil {
+		t.Fatal("not saved")
+	}
+	if len(gamedata.AllSpawns()) != nSpawns+1 {
+		t.Fatalf("spawn not added: %d", len(gamedata.AllSpawns()))
+	}
+	if gamedata.Height(30, 0) < h0+4.5 {
+		t.Fatalf("terrain edit not applied: %.2f -> %.2f", h0, gamedata.Height(30, 0))
+	}
+	if gamedata.Quests["wolf_plague"].Title != "Neue Wolfsplage" {
+		t.Fatal("quest edit not applied")
+	}
+	wolves := 0
+	for _, en := range w.ents {
+		if en.M != nil && en.M.Def.ID == "wolf" && en.Inst == 0 {
+			wolves++
+		}
+	}
+	if wolves != nWolf+1 {
+		t.Fatalf("world entities not rebuilt: %d wolves, want %d", wolves, nWolf+1)
+	}
+	if out.last("worldChanged") == nil {
+		t.Fatal("players were not told to reload")
+	}
+	// reset everything
+	save(`{"reset":["spawns","terrain","quests:wolf_plague"]}`)
+	if len(gamedata.AllSpawns()) != nSpawns || gamedata.Height(30, 0) != h0 || gamedata.Quests["wolf_plague"].Title == "Neue Wolfsplage" {
+		t.Fatalf("reset did not restore the defaults: spawns %d/%d height %v/%v title %q", len(gamedata.AllSpawns()), nSpawns, gamedata.Height(30, 0), h0, gamedata.Quests["wolf_plague"].Title)
+	}
+	// invalid edits are rejected and change nothing
+	o := &fakeOut{}
+	w.AdminSave(o, []byte(`{"spawns":[{"mob":"nonexistent","x":0,"z":0}]}`))
+	drain(w)
+	if o.last("adminError") == nil || len(gamedata.AllSpawns()) != nSpawns {
+		t.Fatal("invalid edit accepted")
 	}
 }

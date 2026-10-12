@@ -227,10 +227,14 @@ func TestHunterSkillStartsAutoShot(t *testing.T) {
 // clearShotPos returns a spot d metres from the mob with an unobstructed line to it.
 func clearShotPos(t *testing.T, mob *Entity, d float64) (float64, float64) {
 	t.Helper()
-	for a := 0.0; a < 6.28; a += 0.3 {
-		x, z := mob.X+math.Cos(a)*d, mob.Z+math.Sin(a)*d
-		if !gamedata.LineBlocked(x, z, mob.X, mob.Z, true) && gamedata.Walkable(x, z) {
-			return x, z
+	for _, dd := range []float64{d, d * 0.7, d * 0.5, d * 0.3} {
+		for a := 0.0; a < 6.28; a += 0.2 {
+			x, z := mob.X+math.Cos(a)*dd, mob.Z+math.Sin(a)*dd
+			if !gamedata.LineBlocked(x, z, mob.X, mob.Z, true) && gamedata.Walkable(x, z) {
+				if cx, cz := gamedata.Collide(x, z, 0.4); cx == x && cz == z { // not inside a tree
+					return x, z
+				}
+			}
 		}
 	}
 	t.Fatal("no clear line to the mob")

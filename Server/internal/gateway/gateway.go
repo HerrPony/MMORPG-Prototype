@@ -24,13 +24,18 @@ import (
 var nameRe = regexp.MustCompile(`^[A-Za-zÄÖÜäöüß]{2,16}$`)
 
 type Gateway struct {
-	store storage.Store
-	auth  *auth.Service
-	world *game.World
+	store  storage.Store
+	auth   *auth.Service
+	world  *game.World
+	admins map[string]bool // lower case account names
 }
 
-func New(store storage.Store, a *auth.Service, w *game.World) *Gateway {
-	return &Gateway{store: store, auth: a, world: w}
+func New(store storage.Store, a *auth.Service, w *game.World, admins []string) *Gateway {
+	g := &Gateway{store: store, auth: a, world: w, admins: map[string]bool{}}
+	for _, n := range admins {
+		g.admins[strings.ToLower(n)] = true
+	}
+	return g
 }
 
 type conn struct {
@@ -38,6 +43,7 @@ type conn struct {
 	out    chan []byte
 	cancel context.CancelFunc
 	acct   *storage.Account
+	admin  bool
 	entID  int
 	closed atomic.Bool
 }
@@ -132,8 +138,12 @@ func (g *Gateway) handle(c *conn, t string, data []byte) {
 			return
 		}
 		c.acct = acct
+		c.admin = g.admins[strings.ToLower(acct.User)]
+		if c.admin {
+			c.ws.SetReadLimit(32 << 20) // the map editor sends large edit sets
+		}
 		c.Send(protocol.M{
-			"t": "auth", "user": acct.User,
+			"t": "auth", "user": acct.User, "admin": c.admin,
 			"classes": gamedata.Classes, "classOrder": gamedata.ClassOrder,
 			"races": gamedata.Races, "raceOrder": gamedata.RaceOrder,
 			"skills": gamedata.Skills,
@@ -168,6 +178,16 @@ func (g *Gateway) handle(c *conn, t string, data []byte) {
 		}
 		e := g.world.Enter(ch, c)
 		c.entID = e.ID
+	case "adminGet", "adminSave":
+		if !c.admin { // checked on every message, not just at login
+			g.fail(c, "adminError", errString("Keine Admin-Rechte"))
+			return
+		}
+		if t == "adminGet" {
+			g.world.AdminGet(c)
+		} else {
+			g.world.AdminSave(c, data)
+		}
 	case protocol.CLogout:
 		if c.entID != 0 {
 			g.world.Leave(c.entID)

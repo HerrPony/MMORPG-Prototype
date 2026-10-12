@@ -29,7 +29,7 @@ var (
 
 // worldProps returns the (cached) prop list for a base scenery.
 func worldProps(sc Scenery) []Prop {
-	propsOnce.Do(func() { propList = generateProps(sc) })
+	propsOnce.Do(func() { propList = applyPropEdits(generateProps(sc)) })
 	return propList
 }
 
@@ -62,8 +62,20 @@ func qHeightAt(x, z float64) float64 {
 	return a + (b-a)*fx + (c-a)*fz + (a-b-c+d)*fx*fz
 }
 
+// cellSeed makes the random stream of one 3x3 m cell independent of all others, so a change in one place
+// (terrain edit, moved spawn) does not reshuffle the vegetation of the whole world.
+func cellSeed(i, j int) uint32 {
+	h := uint32(i)*73856093 ^ uint32(j)*19349663 ^ 2024
+	h ^= h >> 16
+	h *= 0x7feb352d
+	h ^= h >> 15
+	h *= 0x846ca68b
+	h ^= h >> 16
+	return h
+}
+
 func generateProps(sc Scenery) []Prop {
-	seed := uint32(2024)
+	var seed uint32
 	r := func() float64 { seed = seed*1664525 + 1013904223; return float64(seed) / 4294967296 }
 	const step = 3.0
 	blocked := func(x, z float64) bool {
@@ -101,8 +113,11 @@ func generateProps(sc Scenery) []Prop {
 	}
 	xEnd := WorldMinX + float64(GridNX-1)*GridCell - 4
 	zEnd := WorldMinZ + float64(GridNZ-1)*GridCell - 4
-	for z := WorldMinZ + 4; z < zEnd; z += step {
-		for x := WorldMinX + 4; x < xEnd; x += step {
+	for j := 0; WorldMinZ+4+float64(j)*step < zEnd; j++ {
+		z := WorldMinZ + 4 + float64(j)*step
+		for i := 0; WorldMinX+4+float64(i)*step < xEnd; i++ {
+			x := WorldMinX + 4 + float64(i)*step
+			seed = cellSeed(i, j)
 			px, pz := x+(r()-0.5)*step, z+(r()-0.5)*step
 			b := int(qBiome(px, pz))
 			if b == 0 || b == 10 {
@@ -257,4 +272,74 @@ func PropsB64(props []Prop) string {
 			byte(math.Round(p.S*100)), byte(math.Round(p.Ry/6.28*propRyQ)), byte(math.Round(p.Solid*100)))
 	}
 	return base64.StdEncoding.EncodeToString(buf)
+}
+
+// ---- manual prop edits (map editor) ----
+
+// PropEdit places one prop by hand.
+type PropEdit struct {
+	Kind string  `json:"k"`
+	X    float64 `json:"x"`
+	Z    float64 `json:"z"`
+	S    float64 `json:"s"`
+	Ry   float64 `json:"ry"`
+}
+
+// defaultSolid is the collision radius per unit scale of hand placed props.
+var defaultSolid = map[string]float64{"pine": 0.5, "oak": 0.5, "dead": 0.4, "snowpine": 0.5, "cactus": 0.5, "palm": 0.4,
+	"rock": 0.7, "bush": 0.4, "jtree": 0.7, "bamboo": 0.4, "sakura": 0.5, "mesapillar": 1.3, "charred": 0.4, "obsidian": 0.7}
+
+var (
+	propAdd []PropEdit
+	propDel [][2]float64
+)
+
+func propKey(x, z float64) [2]int {
+	return [2]int{int(math.Round((x - WorldMinX) * propPosQ)), int(math.Round((z - WorldMinZ) * propPosQ))}
+}
+
+func quantProp(k int, x, z, s, ry, solid float64) Prop {
+	qx, qz := math.Round((x-WorldMinX)*propPosQ), math.Round((z-WorldMinZ)*propPosQ)
+	ry = math.Mod(math.Mod(ry, 6.28)+6.28, 6.28)
+	return Prop{K: k, X: WorldMinX + qx/propPosQ, Z: WorldMinZ + qz/propPosQ, S: math.Min(2.55, math.Max(0.05, math.Round(s*100)/100)),
+		Ry: math.Round(ry/6.28*propRyQ) / propRyQ * 6.28, Solid: solid}
+}
+
+func applyPropEdits(gen []Prop) []Prop {
+	if len(propDel) > 0 {
+		del := map[[2]int]bool{}
+		for _, d := range propDel {
+			del[propKey(d[0], d[1])] = true
+		}
+		out := gen[:0:0]
+		for _, p := range gen {
+			if !del[propKey(p.X, p.Z)] {
+				out = append(out, p)
+			}
+		}
+		gen = out
+	}
+	for _, a := range propAdd {
+		if k := kindIndex2(a.Kind); k >= 0 {
+			gen = append(gen, quantProp(k, a.X, a.Z, a.S, a.Ry, defaultSolid[a.Kind]))
+		}
+	}
+	return gen
+}
+
+func kindIndex2(name string) int {
+	for i, k := range PropKinds {
+		if k == name {
+			return i
+		}
+	}
+	return -1
+}
+
+// ResetProps forgets the generated props and colliders (after the terrain, spawns or buildings changed).
+func resetProps() {
+	propsOnce = sync.Once{}
+	collOnce = sync.Once{}
+	propList = nil
+	circles, boxes, boxCircle = nil, nil, nil
 }

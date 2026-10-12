@@ -314,8 +314,9 @@ var Quests = map[string]*Quest{
 // ---- Spawns ----
 
 type Spawn struct {
-	Mob  string
-	X, Z float64
+	Mob string  `json:"mob"`
+	X   float64 `json:"x"`
+	Z   float64 `json:"z"`
 }
 
 var Spawns = []Spawn{

@@ -34,11 +34,14 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
+	if len(cfg.Admins) > 0 {
+		log.Printf("Admins (Map-Editor): %v", cfg.Admins)
+	}
 	world := game.New(cfg, store)
 	worldDone := make(chan struct{})
 	go func() { world.Run(ctx); close(worldDone) }()
 
-	gw := gateway.New(store, auth.New(store), world)
+	gw := gateway.New(store, auth.New(store), world, cfg.Admins)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", gw.ServeWS)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok")) })

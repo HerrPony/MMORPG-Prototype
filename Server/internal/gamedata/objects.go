@@ -33,8 +33,9 @@ var Objects = map[string]*ObjectDef{
 }
 
 type ObjectSpawn struct {
-	Obj  string
-	X, Z float64
+	Obj string  `json:"obj"`
+	X   float64 `json:"x"`
+	Z   float64 `json:"z"`
 }
 
 var ObjectSpawns []ObjectSpawn

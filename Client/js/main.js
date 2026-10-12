@@ -132,6 +132,13 @@ net.on('fx', (m) => {
 net.on('questDone', () => audio.sfx('quest'));
 net.on('skills', () => audio.sfx('learn'));
 net.on('loot', () => audio.sfx('loot'));
+// admin mode: accounts on the server's admin list get the map editor button; edits reload everyone's client
+net.on('auth', (m) => { S.admin = !!m.admin; $('btn-editor').classList.toggle('hidden', !S.admin); });
+$('btn-editor').onclick = () => {
+  const q = S.inWorld ? `?x=${S.local.x.toFixed(0)}&z=${S.local.z.toFixed(0)}` : '';
+  window.open('editor.html' + q, '_blank');
+};
+net.on('worldChanged', () => { alert('Ein Admin hat die Welt verändert. Das Spiel wird neu geladen.'); location.reload(); });
 net.on('kicked', (m) => { alert(m.text); location.reload(); });
 net.on('_close', () => { alert('Verbindung zum Server getrennt.'); location.reload(); });
 

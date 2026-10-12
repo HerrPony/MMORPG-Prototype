@@ -7,6 +7,9 @@ services:
     restart: unless-stopped
     volumes:
       - gamedata:/data
+    environment:
+      # Accounts mit Admin-Rechten (Map-Editor unter /editor.html), kommagetrennt. Den Account vorher selbst registrieren!
+      MMORPG_ADMINS: ""
     # Entwicklerbefehle (/dev tp, /dev level ...): command: ["-addr", ":8080", "-client", "", "-data", "/data", "-dev"]
 
   client:

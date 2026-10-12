@@ -45,6 +45,12 @@ type World struct {
 
 func New(cfg config.Config, store storage.Store) *World {
 	gamedata.Init()
+	if ed, err := gamedata.LoadEdits(editsPath(cfg)); err != nil {
+		log.Printf("world_edits.json: %v (ignoriert)", err)
+	} else if err := gamedata.ApplyEdits(ed); err != nil {
+		log.Printf("world_edits.json ungültig: %v (ignoriert)", err)
+		_ = gamedata.ApplyEdits(&gamedata.Edits{})
+	}
 	w := &World{
 		cfg:       cfg,
 		store:     store,
@@ -61,6 +67,13 @@ func New(cfg config.Config, store storage.Store) *World {
 		nextParty: 1,
 		dt:        cfg.TickRate.Seconds(),
 	}
+	w.refreshStatic()
+	w.spawnStatic()
+	return w
+}
+
+// refreshStatic rebuilds the cached scenery/definition payloads sent to clients.
+func (w *World) refreshStatic() {
 	w.sceneryJSON, _ = json.Marshal(gamedata.BuildScenery())
 	w.defsJSON, _ = json.Marshal(protocol.M{
 		"items":  gamedata.Items,
@@ -68,8 +81,6 @@ func New(cfg config.Config, store storage.Store) *World {
 		"skills": gamedata.Skills,
 		"pois":   gamedata.POIs,
 	})
-	w.spawnStatic()
-	return w
 }
 
 func (w *World) newID() int {

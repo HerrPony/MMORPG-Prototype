@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Erlenwald – Map-Editor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="css/editor.css">
+</head>
+<body>
+<div id="login" class="overlay">
+  <div class="box">
+    <h1>🛠 Map-Editor</h1>
+    <p class="muted">Nur für Admin-Accounts (Server-Option <code>-admins</code> / <code>MMORPG_ADMINS</code>).</p>
+    <label>Benutzername<input id="l-user" autocomplete="username"></label>
+    <label>Passwort<input id="l-pass" type="password" autocomplete="current-password"></label>
+    <div id="l-err" class="err"></div>
+    <button id="l-go" class="primary">Anmelden</button>
+    <p id="l-status" class="muted">Verbinde…</p>
+  </div>
+</div>
+
+<header id="top">
+  <b>🛠 Map-Editor</b>
+  <button id="b-save" class="primary" title="Änderungen auf dem Server speichern und anwenden (Strg+S)">💾 Speichern</button>
+  <button id="b-reload" title="Verwirft alle ungespeicherten Änderungen">↻ Neu laden</button>
+  <button id="b-undo" title="Strg+Z">↶</button><button id="b-redo" title="Strg+Y">↷</button>
+  <span id="dirty" class="muted"></span>
+  <span class="grow"></span>
+  <span id="layers"></span>
+  <span id="coords" class="muted"></span>
+</header>
+
+<nav id="tabs">
+  <button data-tab="map" class="on">Karte</button><button data-tab="quests">Quests</button><button data-tab="mobs">Mobs</button>
+  <button data-tab="npcs">NPCs</button><button data-tab="check">Prüfen</button>
+</nav>
+
+<main id="tab-map">
+  <aside id="tools">
+    <button data-tool="select" class="on" title="Auswählen / Verschieben (V)">🖱<small>Wählen</small></button>
+    <button data-tool="spawn" title="Mob-Spawn setzen (S)">🐺<small>Spawn</small></button>
+    <button data-tool="object" title="Sammelobjekt / Portal setzen (O)">🌿<small>Objekt</small></button>
+    <button data-tool="building" title="Gebäude setzen (B)">🏠<small>Gebäude</small></button>
+    <button data-tool="prop" title="Bäume, Felsen … malen (P)">🌲<small>Props</small></button>
+    <button data-tool="erase" title="Props wegradieren (E)">🧽<small>Radierer</small></button>
+    <button data-tool="height" title="Gelände formen (H)">⛰<small>Höhe</small></button>
+    <button data-tool="biome" title="Biom malen (G)">🎨<small>Biom</small></button>
+  </aside>
+  <div id="stage"><canvas id="cv"></canvas><div id="hint"></div></div>
+  <aside id="side">
+    <section id="opts"></section>
+    <section id="inspector"></section>
+  </aside>
+</main>
+
+<main id="tab-quests" class="defs hidden"></main>
+<main id="tab-mobs" class="defs hidden"></main>
+<main id="tab-npcs" class="defs hidden"></main>
+<main id="tab-check" class="hidden"><div id="check-body"></div></main>
+<div id="toast"></div>
+<script type="module" src="js/editor/editor.js"></script>
+</body>
+</html>

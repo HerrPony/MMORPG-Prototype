@@ -3,6 +3,8 @@ package config
 
 import (
 	"flag"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -13,7 +15,8 @@ type Config struct {
 	TickRate     time.Duration // simulation step
 	SnapshotEach int           // send a world snapshot every N ticks
 	AutosaveEach time.Duration
-	Dev          bool // enables /tp, /level, /gold ... test commands
+	Admins       []string // account names that may use the map editor
+	Dev          bool     // enables /tp, /level, /gold ... test commands
 }
 
 // Load parses command line flags.
@@ -27,6 +30,12 @@ func Load() Config {
 	flag.StringVar(&c.ClientDir, "client", "../Client", "path to client directory (empty = WebSocket API only)")
 	flag.BoolVar(&c.Dev, "dev", false, "enable developer chat commands (/tp x z, /level n, /gold n, /unlock)")
 	flag.StringVar(&c.DataDir, "data", "data", "path to data directory")
+	admins := flag.String("admins", os.Getenv("MMORPG_ADMINS"), "comma separated account names with admin rights (map editor); default: env MMORPG_ADMINS")
 	flag.Parse()
+	for _, a := range strings.Split(*admins, ",") {
+		if a = strings.TrimSpace(a); a != "" {
+			c.Admins = append(c.Admins, a)
+		}
+	}
 	return c
 }
