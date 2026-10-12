@@ -2,14 +2,14 @@ class_name Screens
 extends Control
 ## Login / register, character selection and character creation.
 
-signal enter_world(char_id: int)
+signal enter_world(char_id: String)
 signal back_to_login
 
 var preview: Preview
 var mode := "login"
 var chars: Array = []
-var selected := 0
-var after_create := 0
+var selected := ""   # character ids are hex strings, not numbers
+var after_create := ""
 var form := {"race": "human", "cls": "warrior", "gender": "m", "hair": 0, "skin": 0}
 var status := ""
 var _pending: Callable = Callable()
@@ -53,7 +53,7 @@ func _ready() -> void:
 	Net.on("auth", _on_auth)
 	Net.on("authError", func(m): login_err.text = m.error)
 	Net.on("chars", _on_chars)
-	Net.on("created", func(m): after_create = int(m.id))
+	Net.on("created", func(m): after_create = str(m.id))
 	Net.on("createError", func(m): create_err.text = m.error)
 	Net.on("enterError", func(m): create_err.text = m.error; _alert(m.error))
 	Net.connected.connect(_on_connected)
@@ -262,15 +262,15 @@ func _build_chars() -> void:
 
 func _on_chars(m: Dictionary) -> void:
 	chars = m.get("chars", [])
-	if after_create != 0:
+	if after_create != "":
 		selected = after_create
-		after_create = 0
+		after_create = ""
 	var found := false
 	for c in chars:
-		if int(c.id) == selected:
+		if str(c.id) == selected:
 			found = true
 	if not found:
-		selected = int(chars[0].id) if chars.size() > 0 else 0
+		selected = str(chars[0].id) if chars.size() > 0 else ""
 	if chars.is_empty():
 		_open_create()
 		return
@@ -280,7 +280,7 @@ func _on_chars(m: Dictionary) -> void:
 func _render_chars() -> void:
 	UI.clear(char_list)
 	for c in chars:
-		var id := int(c.id)
+		var id := str(c.id)
 		var card := UI.card(func(): selected = id; _render_chars(), Vector2(0, 58))
 		UI.set_selected(card, id == selected)
 		var h := UI.hbox(10)
@@ -306,7 +306,7 @@ func _render_chars() -> void:
 	btn_new.visible = chars.size() < 5
 	var sel = null
 	for c in chars:
-		if int(c.id) == selected:
+		if str(c.id) == selected:
 			sel = c
 	btn_enter.disabled = sel == null
 	btn_delete.disabled = sel == null
@@ -319,13 +319,13 @@ func _render_chars() -> void:
 		preview.clear()
 
 func _enter_selected() -> void:
-	if selected != 0:
+	if selected != "":
 		enter_world.emit(selected)
 
 func _delete_selected() -> void:
 	var sel = null
 	for c in chars:
-		if int(c.id) == selected:
+		if str(c.id) == selected:
 			sel = c
 	if sel == null:
 		return
@@ -335,7 +335,7 @@ func _delete_selected() -> void:
 	d.ok_button_text = "Löschen"
 	d.cancel_button_text = "Abbrechen"
 	add_child(d)
-	d.confirmed.connect(func(): Net.send("deleteChar", {"id": int(sel.id)}); d.queue_free())
+	d.confirmed.connect(func(): Net.send("deleteChar", {"id": str(sel.id)}); d.queue_free())
 	d.canceled.connect(d.queue_free)
 	d.popup_centered()
 
