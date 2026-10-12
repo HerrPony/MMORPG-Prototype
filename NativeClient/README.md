@@ -138,6 +138,6 @@ godot --headless --path NativeClient/game -- --autologin localhost:8084 user pas
 ```
 
 (meldet sich an, läuft, wählt einen Gegner an, kämpft und prüft Server-Synchronisation, Schaden und Musikwechsel).
-`--play2` testet Händler, Ausrüstung, Quests, Trainer, Karten-/Gruppenfenster und den Greifenflug. Mit
+`--pad` prüft Gamepad-Belegung (Tasten, Stick) und den Zonen-Banner, `--play3` Gruppe und Spielermenü (zweiter Client mit `--charname X --auto-accept --stay 60`), `--play2` testet Händler, Ausrüstung, Quests, Trainer, Karten-/Gruppenfenster und den Greifenflug. Mit
 `--shot out.png sekunden [--open bags,char] [--chat "/dev level 20;/dev tp 6 12"] [--hour 12] [--interact npc]` entstehen Screenshots.
 Lizenzen: Godot (MIT), Noto Color Emoji (OFL, `game/assets/fonts`).

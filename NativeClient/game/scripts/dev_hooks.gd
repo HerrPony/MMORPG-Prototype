@@ -17,6 +17,8 @@ func _ready() -> void:
 		_shot.call_deferred(a)
 	if a.has("--play"):
 		_play.call_deferred(a)
+	if a.has("--pad"):
+		_pad.call_deferred()
 	if a.has("--zones"):
 		_zones.call_deferred()
 	if a.has("--play2"):
@@ -370,4 +372,48 @@ func _play3(_a: PackedStringArray) -> void:
 		Net.send("leaveParty")
 		check.call("party left", await _until(func(): return (S.party.members as Array).is_empty()))
 	print("PLAY3 RESULT: " + ("OK" if res.ok else "FAILED"))
+	get_tree().quit()
+
+## Gamepad and zone banner: synthetic joypad events must trigger the mapped actions.
+func _pad() -> void:
+	var banner := {"seen": false}
+	Net.on("zone", func(_m): banner.seen = true)
+	await _wait_spawn()
+	var res := {"ok": true}
+	var check := func(name: String, cond: bool) -> void:
+		print(("PASS " if cond else "FAIL ") + name)
+		if not cond:
+			res.ok = false
+	await get_tree().create_timer(0.5).timeout
+	check.call("zone message shown as banner", banner.seen and main.hud.banner_zone.text != "")
+	var got := {"slot": false, "jump": false, "bags": false}
+	main.controller.action.connect(func(a):
+		if a == "slot_0":
+			got.slot = true
+		if a == "toggle_bags":
+			got.bags = true)
+	var ev := InputEventJoypadButton.new()
+	ev.button_index = JOY_BUTTON_B
+	ev.pressed = true
+	Input.parse_input_event(ev)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check.call("pad B casts slot 1", got.slot)
+	var ev2 := InputEventJoypadButton.new()
+	ev2.button_index = JOY_BUTTON_BACK
+	ev2.pressed = true
+	Input.parse_input_event(ev2)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check.call("pad Back opens bags", got.bags)
+	var ev3 := InputEventJoypadMotion.new()
+	ev3.axis = JOY_AXIS_LEFT_Y
+	ev3.axis_value = -1.0
+	Input.parse_input_event(ev3)
+	var y0: float = S.local.z
+	var x0: float = S.local.x
+	await get_tree().create_timer(1.0).timeout
+	print("stick moved ", Vector2(S.local.x - x0, S.local.z - y0).length(), " dead=", S.me.d)
+	check.call("left stick moves the player", Vector2(S.local.x - x0, S.local.z - y0).length() > 2.0)
+	print("PAD RESULT: " + ("OK" if res.ok else "FAILED"))
 	get_tree().quit()

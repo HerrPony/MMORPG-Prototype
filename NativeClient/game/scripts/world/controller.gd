@@ -129,18 +129,18 @@ func _over_ui() -> bool:
 	var h := get_viewport().gui_get_hovered_control()
 	return h != null and h.mouse_filter != Control.MOUSE_FILTER_IGNORE
 
-func _unhandled_key_input(ev: InputEvent) -> void:
+func _unhandled_input(ev: InputEvent) -> void:
 	if not S.in_world or S.typing:
 		return
-	var k := ev as InputEventKey
-	if k == null or not k.pressed or k.echo:
+	if not (ev is InputEventKey or ev is InputEventJoypadButton) or not ev.is_pressed() or ev.is_echo():
 		return
+	var k := ev as InputEventKey
 	for a in ["toggle_bags", "toggle_quests", "toggle_char", "toggle_spells", "toggle_map", "toggle_party", "menu", "mute", "screenshot", "fullscreen"]:
 		if ev.is_action_pressed(a):
 			action.emit(a)
 			get_viewport().set_input_as_handled()
 			return
-	if k.unicode == 47:   # "/" on any keyboard layout
+	if k != null and k.unicode == 47:   # "/" on any keyboard layout
 		action.emit("chat_cmd")
 		get_viewport().set_input_as_handled()
 	elif ev.is_action_pressed("chat"):
@@ -154,7 +154,7 @@ func _unhandled_key_input(ev: InputEvent) -> void:
 	elif ev.is_action_pressed("interact"):
 		interact_target()
 	elif ev.is_action_pressed("target_next"):
-		target_next(k.shift_pressed)
+		target_next(k != null and k.shift_pressed)
 		get_viewport().set_input_as_handled()
 	else:
 		for i in Settings.SLOT_KEYS.size():
