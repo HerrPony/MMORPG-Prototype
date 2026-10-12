@@ -98,5 +98,11 @@ func _draw() -> void:
 				draw_circle(p, 5.5, Color.BLACK)
 				draw_circle(p, 4.5, Color("6aa8ff") if in_party else Color("e8e8e8"))
 	arrow(c, dir_angle(sin(S.local.r), cos(S.local.r)), Color.WHITE)
-	# rim
-	draw_arc(c, size.x / 2.0 - 1.0, 0, TAU, 64, Color(0.84, 0.7, 0.38, 0.9), 2.5, true)
+	# bronze rim with a notch at the top
+	var r := size.x / 2.0
+	draw_arc(c, r - 3.0, 0, TAU, 72, Color("1c1209"), 8.0, true)
+	draw_arc(c, r - 3.0, 0, TAU, 72, Color("8a6a3a"), 6.0, true)
+	draw_arc(c, r - 5.0, 0, TAU, 72, Color("d8b068"), 1.5, true)
+	draw_arc(c, r - 0.5, 0, TAU, 72, Color("2a1c10"), 1.5, true)
+	draw_colored_polygon(PackedVector2Array([Vector2(c.x - 9, 5), Vector2(c.x + 9, 5), Vector2(c.x, -6)]), Color("8a6a3a"))
+	draw_polyline(PackedVector2Array([Vector2(c.x - 9, 5), Vector2(c.x, -6), Vector2(c.x + 9, 5)]), Color("d8b068"), 1.5)

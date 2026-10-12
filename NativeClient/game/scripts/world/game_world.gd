@@ -358,11 +358,11 @@ func update(dt: float) -> void:
 	var moon_c := Color(0.54, 0.64, 1.0)
 	var lc := moon_c.lerp(sc_low, minf(1.0, day * 1.6)).lerp(Color(1.0, 0.94, 0.85), clampf((float(t.elev) - 0.1) * 2.0, 0.0, 1.0))
 	sun.light_color = lc
-	sun.light_energy = look_cur["sun"] * day * (0.35 + 0.65 * minf(1.0, float(t.elev) * 3.0 + 0.2)) * 0.9 + night * 0.5 * 0.45
+	sun.light_energy = look_cur["sun"] * day * (0.35 + 0.65 * minf(1.0, float(t.elev) * 3.0 + 0.2)) * 0.9 + night * 0.5 * 0.75
 	var amb_day := Color(0.8, 0.9, 1.0)
-	var amb_night := Color(0.17, 0.24, 0.48)
+	var amb_night := Color(0.3, 0.38, 0.64)
 	env.ambient_light_color = amb_night.lerp(amb_day, day)
-	env.ambient_light_energy = look_cur["hemi"] * (0.34 + 0.66 * day) * 0.8
+	env.ambient_light_energy = maxf(0.45, look_cur["hemi"] * (0.5 + 0.5 * day) * 0.8)
 	# windows and lamps glow at night
 	Buildings.glow_material().set_shader_parameter("night", night)
 

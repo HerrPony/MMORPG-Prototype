@@ -14,7 +14,7 @@ var zone_label: Label
 var clock_label: Label
 var fps_label: Label
 # frames
-var p_frame: PanelContainer
+var p_frame: Control
 var p_name: Label
 var p_lvl: Label
 var p_portrait: Label
@@ -23,7 +23,7 @@ var p_hp: Bar
 var p_res: Bar
 var p_buffs: HBoxContainer
 var p_stance: Label
-var t_frame: PanelContainer
+var t_frame: Control
 var t_name: Label
 var t_lvl: Label
 var t_portrait: Label
@@ -82,237 +82,350 @@ func _ready() -> void:
 	_build_chat()
 	_build_misc()
 	_connect_net()
+	UI.nofocus(self)
+	get_viewport().size_changed.connect(_layout)
+	_layout.call_deferred()
 
 # ---------------------------------------------------------------- build
 
-func _frame_panel(pos: Vector2, w: float) -> PanelContainer:
-	var p := PanelContainer.new()
-	p.position = pos
-	p.custom_minimum_size.x = w
-	p.add_theme_stylebox_override("panel", UI.box(Color(0.06, 0.055, 0.05, 0.82), UI.EDGE, 1, 8, 6))
-	return p
-
-func _portrait(size_px: float) -> Array:
+func _circle(size_px: float, border: Color) -> Array:
 	var holder := Control.new()
 	holder.custom_minimum_size = Vector2(size_px, size_px)
+	holder.size = Vector2(size_px, size_px)
 	var bg := Panel.new()
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.add_theme_stylebox_override("panel", UI.box(Color(0.12, 0.1, 0.08), border, 3, int(size_px / 2)))
 	holder.add_child(bg)
 	var l := Label.new()
 	l.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	l.add_theme_font_size_override("font_size", int(size_px * 0.62))
+	l.add_theme_font_size_override("font_size", int(size_px * 0.6))
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	holder.add_child(l)
-	return [holder, bg, l]
+	# level badge at the lower left
+	var badge := Panel.new()
+	badge.position = Vector2(-2, size_px - 16)
+	badge.size = Vector2(20, 20)
+	badge.add_theme_stylebox_override("panel", UI.box(Color(0.05, 0.04, 0.03), BRONZE, 2, 10))
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(badge)
+	var bl := Label.new()
+	bl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	bl.add_theme_font_size_override("font_size", 10)
+	bl.add_theme_color_override("font_color", Color("e8dcc0"))
+	bl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.add_child(bl)
+	return [holder, bg, l, bl]
+
+func _name_label() -> Label:
+	var l := UI.label("", 11, Color("e8c860"))
+	l.add_theme_constant_override("outline_size", 4)
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return l
+
+func _unit_frame(mirror: bool) -> Array:
+	# portrait + name + health bar + resource bar, no panel, like the reference screenshot
+	var f := Control.new()
+	f.size = Vector2(190, 66)
+	f.mouse_filter = Control.MOUSE_FILTER_STOP
+	var pr := _circle(54, BRONZE)
+	var px := 134.0 if mirror else 0.0
+	(pr[0] as Control).position = Vector2(px, 4)
+	var bx := 0.0 if mirror else 44.0
+	var name_l := _name_label()
+	name_l.position = Vector2(bx + 4, 4)
+	name_l.custom_minimum_size = Vector2(120, 0)
+	var hp := Bar.new(126, 14, Color("3ccf4e"))
+	hp.position = Vector2(bx, 20)
+	var res := Bar.new(126, 8, Color("4a8ae0"))
+	res.position = Vector2(bx, 36)
+	var buffs := UI.hbox(2)
+	buffs.position = Vector2(bx, 46)
+	f.add_child(hp)
+	f.add_child(res)
+	f.add_child(name_l)
+	f.add_child(buffs)
+	f.add_child(pr[0])
+	return [f, pr, name_l, hp, res, buffs]
 
 func _build_frames() -> void:
-	p_frame = _frame_panel(Vector2(16, 16), 270)
+	var pf := _unit_frame(false)
+	p_frame = pf[0]
 	add_child(p_frame)
-	var h := UI.hbox(8)
-	p_frame.add_child(h)
-	var pr := _portrait(60)
-	h.add_child(pr[0])
-	p_portrait_bg = pr[1]
-	p_portrait = pr[2]
-	var v := UI.vbox(3)
-	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	h.add_child(v)
-	var top := UI.hbox(6)
-	p_name = UI.label("", 15, Color.WHITE)
-	p_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	p_lvl = UI.label("1", 14, UI.GOLD)
-	top.add_child(p_name)
-	top.add_child(p_lvl)
-	v.add_child(top)
-	p_hp = Bar.new(190, 17, Color("3ccf4e"))
-	p_hp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	v.add_child(p_hp)
-	p_res = Bar.new(190, 14, Color("e24a3a"))
-	p_res.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	v.add_child(p_res)
-	p_stance = UI.label("", 11, UI.MUTED)
-	v.add_child(p_stance)
-	p_buffs = UI.hbox(2)
-	v.add_child(p_buffs)
-
-	t_frame = _frame_panel(Vector2(300, 16), 270)
+	p_portrait_bg = pf[1][1]
+	p_portrait = pf[1][2]
+	p_lvl = pf[1][3]
+	p_name = pf[2]
+	p_hp = pf[3]
+	p_res = pf[4]
+	p_buffs = pf[5]
+	p_stance = UI.label("", 10, UI.MUTED)
+	p_stance.position = Vector2(44, 56)
+	p_stance.add_theme_constant_override("outline_size", 3)
+	p_stance.add_theme_color_override("font_outline_color", Color.BLACK)
+	p_frame.add_child(p_stance)
+	var tf := _unit_frame(true)
+	t_frame = tf[0]
 	t_frame.visible = false
 	add_child(t_frame)
-	var th := UI.hbox(8)
-	t_frame.add_child(th)
-	var tv := UI.vbox(3)
-	tv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	th.add_child(tv)
-	var tt := UI.hbox(6)
-	t_name = UI.label("", 15, Color.WHITE)
-	t_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	t_tag = UI.label("", 11, Color("ffb040"))
-	t_lvl = UI.label("", 14, UI.GOLD)
-	tt.add_child(t_name)
-	tt.add_child(t_tag)
-	tt.add_child(t_lvl)
-	tv.add_child(tt)
-	t_hp = Bar.new(190, 17, Color("e24a3a"))
-	t_hp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	tv.add_child(t_hp)
-	t_buffs = UI.hbox(2)
-	tv.add_child(t_buffs)
-	var tp := _portrait(52)
-	th.add_child(tp[0])
-	t_portrait = tp[2]
-	(tp[1] as Panel).add_theme_stylebox_override("panel", UI.box(Color(0.15, 0.13, 0.11), UI.EDGE, 1, 26))
-
+	t_portrait = tf[1][2]
+	t_lvl = tf[1][3]
+	t_name = tf[2]
+	t_hp = tf[3]
+	t_res_unused = tf[4]
+	t_res_unused.visible = false
+	t_buffs = tf[5]
+	t_tag = _name_label()
+	t_tag.position = Vector2(90, 4)
+	t_tag.add_theme_color_override("font_color", Color("ffb040"))
+	t_frame.add_child(t_tag)
 	party_box = UI.vbox(4)
-	party_box.position = Vector2(16, 112)
 	add_child(party_box)
 	pet_box = UI.vbox(4)
-	pet_box.position = Vector2(300, 82)
 	add_child(pet_box)
 
+var t_res_unused: Bar
+
 func _build_minimap() -> void:
-	var holder := Control.new()
-	holder.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	holder.offset_left = -204
-	holder.offset_right = -16
-	holder.offset_top = 16
-	holder.offset_bottom = 300
-	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(holder)
 	minimap = Minimap.new()
-	minimap.position = Vector2(6, 26)
-	holder.add_child(minimap)
-	zone_label = UI.label("Erlenwald", 14, UI.GOLD, HORIZONTAL_ALIGNMENT_CENTER)
-	zone_label.custom_minimum_size = Vector2(188, 0)
-	zone_label.position = Vector2(0, 0)
-	zone_label.add_theme_constant_override("outline_size", 5)
+	add_child(minimap)
+	# zone name and clock in the top right corner
+	zone_label = UI.label("Erlenwald", 12, Color("e8dcc0"), HORIZONTAL_ALIGNMENT_RIGHT)
+	zone_label.custom_minimum_size = Vector2(300, 0)
+	zone_label.add_theme_constant_override("outline_size", 4)
 	zone_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	holder.add_child(zone_label)
-	clock_label = UI.label("", 13, UI.TEXT, HORIZONTAL_ALIGNMENT_CENTER)
-	clock_label.custom_minimum_size = Vector2(188, 0)
-	clock_label.position = Vector2(0, 206)
+	zone_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(zone_label)
+	clock_label = UI.label("", 12, Color("e8dcc0"), HORIZONTAL_ALIGNMENT_RIGHT)
 	clock_label.add_theme_constant_override("outline_size", 4)
 	clock_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	holder.add_child(clock_label)
+	clock_label.custom_minimum_size = Vector2(60, 0)
+	clock_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(clock_label)
 	fps_label = UI.label("", 12, Color("9fe89f"), HORIZONTAL_ALIGNMENT_RIGHT)
-	fps_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	fps_label.position = Vector2(-80, 0)
 	add_child(fps_label)
-	# quest tracker
+	# sun / moon button next to the minimap opens the world map
+	map_btn = Button.new()
+	map_btn.text = "🗺"
+	map_btn.custom_minimum_size = Vector2(26, 26)
+	map_btn.tooltip_text = "Weltkarte (M)"
+	map_btn.add_theme_stylebox_override("normal", UI.box(Color(0.1, 0.08, 0.05, 0.9), BRONZE, 2, 13))
+	map_btn.add_theme_stylebox_override("hover", UI.box(Color(0.25, 0.18, 0.08, 0.95), GOLD_B, 2, 13))
+	map_btn.add_theme_stylebox_override("pressed", UI.box(Color(0.35, 0.25, 0.1, 0.95), GOLD_B, 2, 13))
+	map_btn.pressed.connect(func(): toggle_window.emit("map"))
+	add_child(map_btn)
+	# quest tracker without a box: header strips and text with a shadow
 	tracker_panel = PanelContainer.new()
-	tracker_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	tracker_panel.offset_left = -270
-	tracker_panel.offset_right = -16
-	tracker_panel.offset_top = 236
-	tracker_panel.add_theme_stylebox_override("panel", UI.box(Color(0.05, 0.045, 0.04, 0.55), UI.EDGE_SOFT, 1, 6, 8))
+	tracker_panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	tracker_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(tracker_panel)
 	var tv := UI.vbox(2)
 	tracker_panel.add_child(tv)
-	tv.add_child(UI.label("Quests", 13, UI.GOLD))
+	tv.add_child(_strip("Alle Ziele", true))
+	tracker_sub = _strip("Quests", false)
+	tv.add_child(tracker_sub)
 	tracker_body = UI.vbox(1)
 	tv.add_child(tracker_body)
 
+var map_btn: Button
+var tracker_sub: Control
+var tracker_collapsed := false
+
+func _strip(text: String, with_minus: bool) -> Control:
+	var c := PanelContainer.new()
+	c.custom_minimum_size = Vector2(250, 22 if with_minus else 18)
+	var sb := UI.box(Color(0.06, 0.05, 0.04, 0.78) if with_minus else Color(0, 0, 0, 0), Color(0, 0, 0, 0), 0, 0, 2)
+	sb.border_width_bottom = 1
+	sb.border_color = Color(0.55, 0.4, 0.2, 0.7)
+	c.add_theme_stylebox_override("panel", sb)
+	var h := HBoxContainer.new()
+	c.add_child(h)
+	var l := UI.label(text, 13 if with_minus else 12, Color("e8dcc0") if with_minus else Color("d8b860"))
+	l.add_theme_constant_override("outline_size", 3)
+	l.add_theme_color_override("font_outline_color", Color.BLACK)
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h.add_child(l)
+	if with_minus:
+		var b := Button.new()
+		b.text = "–"
+		b.custom_minimum_size = Vector2(16, 16)
+		b.focus_mode = Control.FOCUS_NONE
+		b.add_theme_font_size_override("font_size", 12)
+		b.add_theme_stylebox_override("normal", UI.box(Color("a82020"), Color("e04040"), 1, 3, 0))
+		b.add_theme_stylebox_override("hover", UI.box(Color("c83030"), Color("ff6060"), 1, 3, 0))
+		b.add_theme_stylebox_override("pressed", UI.box(Color("801818"), Color("ff6060"), 1, 3, 0))
+		b.pressed.connect(func():
+			tracker_collapsed = not tracker_collapsed
+			tracker_body.visible = not tracker_collapsed
+			tracker_sub.visible = not tracker_collapsed
+			b.text = "+" if tracker_collapsed else "–")
+		h.add_child(b)
+	return c
+
+const BRONZE := Color("8a6a3a")
+const GOLD_B := Color("e8c870")
+
 func _build_bottom() -> void:
-	var bottom := VBoxContainer.new()
-	bottom.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
-	bottom.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	bottom.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	bottom.offset_bottom = -10
-	bottom.add_theme_constant_override("separation", 5)
-	bottom.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(bottom)
-	cast_bar = Bar.new(300, 20, Color("e8b830"))
-	cast_bar.font_size = 13
-	cast_bar.visible = false
-	cast_bar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	bottom.add_child(cast_bar)
-	_slot_rows = UI.hbox(4)
-	_slot_rows.alignment = BoxContainer.ALIGNMENT_CENTER
-	bottom.add_child(_slot_rows)
+	# cast bar: small, yellow, with the spell name below
+	cast_holder = Control.new()
+	cast_holder.size = Vector2(190, 26)
+	cast_holder.visible = false
+	cast_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(cast_holder)
+	cast_bar = Bar.new(190, 10, Color("f0c030"))
+	cast_bar.back = Color(0.15, 0.14, 0.12, 0.9)
+	cast_bar.edge = Color(0.6, 0.55, 0.45, 0.8)
+	cast_holder.add_child(cast_bar)
+	cast_label = UI.label("", 11, Color("e8dcc0"), HORIZONTAL_ALIGNMENT_CENTER)
+	cast_label.custom_minimum_size = Vector2(190, 0)
+	cast_label.position = Vector2(0, 11)
+	cast_label.add_theme_constant_override("outline_size", 3)
+	cast_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	cast_holder.add_child(cast_label)
+	# the ornate action bar frame at the bottom edge
+	bar_frame = ActionFrame.new()
+	add_child(bar_frame)
+	xp_bar = Bar.new(604, 7, Color("8a3ad8"))
+	xp_bar.ticks = 20
+	xp_bar.shine = false
+	xp_bar.back = Color(0.04, 0.03, 0.05, 0.9)
+	xp_bar.edge = Color(0.4, 0.3, 0.5, 0.6)
+	xp_bar.position = Vector2(ActionFrame.CAP, 6)
+	bar_frame.add_child(xp_bar)
 	var keys := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "[", "]"]
 	for i in 14:
-		var s := Slot.new(46)
+		var s := Slot.new(40)
 		s.key_text = keys[i]
+		s.position = Vector2(ActionFrame.CAP + i * 43, 20)
 		var idx := i
 		s.clicked.connect(func(b): if b == MOUSE_BUTTON_LEFT: cast_slot(idx))
 		s.hovered.connect(func(on): _skill_tip(idx, s, on))
 		slots.append(s)
-		_slot_rows.add_child(s)
-	xp_bar = Bar.new(14 * 50.0, 12, Color("8a4ad8"))
-	xp_bar.font_size = 10
-	xp_bar.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	bottom.add_child(xp_bar)
-	# micro menu
-	var micro := UI.hbox(4)
-	micro.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	micro.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	micro.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	micro.offset_right = -16
-	micro.offset_bottom = -14
-	add_child(micro)
-	for it in [["🎒", "Taschen (B)", "bags"], ["🧍", "Charakter (C)", "char"], ["📖", "Zauberbuch (P)", "spells"], ["📜", "Questlog (L)", "quests"], ["🗺️", "Weltkarte (M)", "map"], ["👥", "Gruppe (O)", "party"], ["⚙️", "Menü (Esc)", "menu"]]:
+		bar_frame.add_child(s)
+	# menu icons to the right of the slots
+	var mx := ActionFrame.CAP + 14 * 43 + 14
+	var n := 0
+	for it in [["🧍", "Charakter (C)", "char"], ["📖", "Zauberbuch (P)", "spells"], ["📜", "Questlog (L)", "quests"], ["🗺️", "Weltkarte (M)", "map"], ["👥", "Gruppe (O)", "party"], ["🎒", "Taschen (B)", "bags"], ["⚙️", "Menü (Esc)", "menu"]]:
 		var b := Button.new()
 		b.text = it[0]
 		b.tooltip_text = it[1]
-		b.custom_minimum_size = Vector2(40, 40)
-		b.add_theme_font_size_override("font_size", 20)
+		b.focus_mode = Control.FOCUS_NONE
+		b.size = Vector2(26, 26)
+		b.position = Vector2(mx + (n % 4) * 28, 20 + (n / 4) * 14 if false else 21)
+		b.position = Vector2(mx + n * 28, 27)
+		b.add_theme_font_size_override("font_size", 15)
+		b.add_theme_stylebox_override("normal", UI.box(Color(0.08, 0.06, 0.04, 0.95), BRONZE, 1, 4, 0))
+		b.add_theme_stylebox_override("hover", UI.box(Color(0.25, 0.18, 0.08, 0.95), GOLD_B, 1, 4, 0))
+		b.add_theme_stylebox_override("pressed", UI.box(Color(0.35, 0.25, 0.1, 0.95), GOLD_B, 1, 4, 0))
 		var wn: String = it[2]
 		b.pressed.connect(func(): toggle_window.emit(wn))
-		micro.add_child(b)
+		bar_frame.add_child(b)
+		n += 1
+	bar_frame.custom_minimum_size = Vector2(ActionFrame.CAP * 2 + 14 * 43 + 14 + 7 * 28 + 6, 68)
+	bar_frame.size = bar_frame.custom_minimum_size
 
 func _build_chat() -> void:
-	var panel := VBoxContainer.new()
-	panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	panel.offset_left = 16
-	panel.offset_bottom = -14
-	panel.custom_minimum_size = Vector2(430, 0)
-	panel.add_theme_constant_override("separation", 3)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(panel)
-	var tabs := UI.hbox(3)
-	for f in [["all", "Allgemein"], ["combat", "Kampf"], ["loot", "Beute"]]:
-		var b := Button.new()
-		b.text = f[1]
-		b.toggle_mode = true
-		b.button_pressed = f[0] == "all"
-		b.add_theme_font_size_override("font_size", 12)
-		var fid: String = f[0]
-		b.pressed.connect(func(): chat_filter = fid; _chat_refresh(); for t in chat_tabs: t.button_pressed = t == b)
-		chat_tabs.append(b)
-		tabs.add_child(b)
-	panel.add_child(tabs)
-	var bg := PanelContainer.new()
-	bg.add_theme_stylebox_override("panel", UI.box(Color(0, 0, 0, 0.4), Color(0, 0, 0, 0), 0, 6, 6))
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(bg)
+	# transparent chat without frame, small icon buttons at the left edge
+	chat_root = Control.new()
+	chat_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(chat_root)
 	chat_log = RichTextLabel.new()
 	chat_log.bbcode_enabled = true
 	chat_log.scroll_following = true
-	chat_log.custom_minimum_size = Vector2(0, 150)
+	chat_log.position = Vector2(30, 0)
 	chat_log.mouse_filter = Control.MOUSE_FILTER_PASS
 	chat_log.add_theme_font_size_override("normal_font_size", 13)
 	chat_log.add_theme_font_size_override("bold_font_size", 13)
-	bg.add_child(chat_log)
+	chat_log.add_theme_constant_override("outline_size", 4)
+	chat_log.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
+	chat_log.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	chat_log.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	chat_root.add_child(chat_log)
+	for i in 3:
+		var f: Array = [["all", "💬", "Allgemein"], ["combat", "⚔️", "Kampf"], ["loot", "💰", "Beute"]][i]
+		var b := Button.new()
+		b.text = f[1]
+		b.tooltip_text = f[2] + " (Filter)"
+		b.toggle_mode = true
+		b.button_pressed = i == 0
+		b.focus_mode = Control.FOCUS_NONE
+		b.size = Vector2(22, 22)
+		b.position = Vector2(0, i * 25)
+		b.add_theme_font_size_override("font_size", 12)
+		b.add_theme_stylebox_override("normal", UI.box(Color(0.06, 0.05, 0.04, 0.8), BRONZE, 2, 11, 0))
+		b.add_theme_stylebox_override("hover", UI.box(Color(0.2, 0.15, 0.07, 0.9), GOLD_B, 2, 11, 0))
+		b.add_theme_stylebox_override("pressed", UI.box(Color(0.4, 0.3, 0.1, 0.95), GOLD_B, 2, 11, 0))
+		var fid: String = f[0]
+		b.pressed.connect(func():
+			chat_filter = fid
+			_chat_refresh()
+			for t in chat_tabs:
+				t.button_pressed = t == b)
+		chat_tabs.append(b)
+		chat_root.add_child(b)
 	chat_in = LineEdit.new()
 	chat_in.placeholder_text = "Nachricht… (Enter)"
 	chat_in.max_length = 200
-	chat_in.focus_entered.connect(func(): S.typing = true)
-	chat_in.focus_exited.connect(func(): S.typing = false)
+	chat_in.visible = false
+	chat_in.focus_entered.connect(func(): S.typing = true; chat_in.visible = true)
+	chat_in.focus_exited.connect(func(): S.typing = false; chat_in.visible = false)
 	chat_in.text_submitted.connect(_chat_submit)
 	chat_in.gui_input.connect(func(ev: InputEvent):
 		if ev is InputEventKey and ev.pressed and ev.keycode == KEY_ESCAPE:
 			chat_in.text = ""
 			chat_in.release_focus()
 			get_viewport().set_input_as_handled())
-	panel.add_child(chat_in)
+	chat_root.add_child(chat_in)
+
+var chat_root: Control
+var time_left: Label
+var cast_holder: Control
+var cast_label: Label
+var bar_frame: ActionFrame
+
+## Positions everything relative to the window size (the reference layout of the interface).
+func _layout() -> void:
+	var vs := get_viewport_rect().size
+	size = vs
+	var W := vs.x
+	var H := vs.y
+	p_frame.position = Vector2(W * 0.5 - 465, H * 0.735)
+	t_frame.position = Vector2(W * 0.5 + 285, H * 0.735)
+	party_box.position = Vector2(16, 112)
+	pet_box.position = Vector2(W * 0.5 + 285, H * 0.735 + 70)
+	minimap.position = Vector2(W - 208, 30)
+	zone_label.position = Vector2(W - 400 - 70, 6)
+	clock_label.position = Vector2(W - 70, 6)
+	zone_label.size.x = 330
+	fps_label.position = Vector2(W - 90, 218)
+	map_btn.position = Vector2(W - 36, 24)
+	tracker_panel.position = Vector2(W - 276, 242)
+	cast_holder.position = Vector2(W * 0.5 - 95, H - 112)
+	bar_frame.position = Vector2((W - bar_frame.size.x) * 0.5, H - bar_frame.size.y)
+	var cw := clampf(W * 0.25, 280.0, 420.0)
+	var ch := 120.0
+	chat_root.position = Vector2(8, H - ch - 56)
+	chat_log.size = Vector2(cw, ch)
+	chat_in.position = Vector2(30, ch + 4)
+	chat_in.size = Vector2(cw, 28)
 
 func _build_misc() -> void:
 	fct_root = Control.new()
 	fct_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	fct_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(fct_root)
+	time_left = UI.label("", 16, Color("f0d048"), HORIZONTAL_ALIGNMENT_CENTER)
+	time_left.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	time_left.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	time_left.offset_top = 10
+	time_left.add_theme_constant_override("outline_size", 5)
+	time_left.add_theme_color_override("font_outline_color", Color.BLACK)
+	time_left.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(time_left)
 	err_label = UI.label("", 18, Color("ff6a5a"), HORIZONTAL_ALIGNMENT_CENTER)
 	err_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	err_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
@@ -487,6 +600,7 @@ func _chat_refresh() -> void:
 			chat_log.append_text(l[0] + "\n")
 
 func open_chat(prefix: String) -> void:
+	chat_in.visible = true
 	chat_in.text = prefix
 	chat_in.grab_focus()
 	chat_in.caret_column = prefix.length()
@@ -537,7 +651,7 @@ func render_tracker() -> void:
 		var def := S.quest_def(q.id)
 		if def.is_empty():
 			continue
-		var t := UI.label(def.title + ("  (fertig)" if q.status == "complete" else ""), 13, Color("ffd650"))
+		var t := UI.label("● " + def.title + ("  (fertig)" if q.status == "complete" else ""), 12, Color("f0d048"))
 		t.add_theme_constant_override("outline_size", 3)
 		t.add_theme_color_override("font_outline_color", Color.BLACK)
 		tracker_body.add_child(t)
@@ -549,11 +663,11 @@ func render_tracker() -> void:
 		for i in def.objectives.size():
 			var o: Dictionary = def.objectives[i]
 			var n: int = int(counts[i]) if i < counts.size() else 0
-			var l := UI.label("- %s: %d/%d" % [o.text, n, int(o.count)], 12, Color("7ee27e") if n >= int(o.count) else Color("d8d8d8"))
+			var l := UI.label("   - %s: %d/%d" % [o.text, n, int(o.count)], 11, Color("7ee27e") if n >= int(o.count) else Color("d0d0d0"))
 			l.add_theme_constant_override("outline_size", 3)
 			l.add_theme_color_override("font_outline_color", Color.BLACK)
 			l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			l.custom_minimum_size.x = 220
+			l.custom_minimum_size.x = 244
 			tracker_body.add_child(l)
 	if S.quests.is_empty():
 		tracker_body.add_child(UI.label("Keine aktiven Quests", 12, Color("999999")))
@@ -654,10 +768,14 @@ func update(dt: float) -> void:
 	p_name.add_theme_color_override("font_color", cc)
 	p_lvl.text = str(int(me.lvl))
 	p_portrait.text = "👩" if S.self_info.get("look", {}).get("gender", "m") == "f" else "🧑"
-	p_portrait_bg.add_theme_stylebox_override("panel", UI.box(Color(cc.r * 0.5, cc.g * 0.5, cc.b * 0.5, 0.9), cc, 2, 30))
-	p_hp.set_state(me.hp, me.mh, "%d / %d" % [me.hp, me.mh])
+	p_portrait_bg.add_theme_stylebox_override("panel", UI.box(Color(cc.r * 0.45, cc.g * 0.45, cc.b * 0.45, 0.95), BRONZE, 3, 27))
+	p_hp.set_state(me.hp, me.mh, "")
+	p_hp.tooltip_text = "%d / %d" % [me.hp, me.mh]
+	p_hp.mouse_filter = Control.MOUSE_FILTER_PASS
 	p_res.set_color(Color(S.cls.get("resColor", "#e24a3a")))
-	p_res.set_state(me.res, me.rm, "%d / %d" % [me.res, me.rm])
+	p_res.set_state(me.res, me.rm, "")
+	p_res.tooltip_text = "%d / %d" % [me.res, me.rm]
+	p_res.mouse_filter = Control.MOUSE_FILTER_PASS
 	_set_buffs(p_buffs, ent.st if ent else [])
 	if S.cls.get("id", "") == "warrior":
 		p_stance.text = "🛡️ Verteidigungshaltung" if me.get("stance", "") == "defensive" else "⚔️ Kampfhaltung"
@@ -679,13 +797,17 @@ func update(dt: float) -> void:
 		t_hp.set_color(Color("e24a3a") if t.k == "mob" else Color("3ccf4e"))
 		if t.d:
 			t_hp.set_color(Color("777777"))
-		t_hp.set_state(t.hp, t.mh, "" if t.k == "npc" else ("Tot" if t.d else "%d / %d" % [t.hp, t.mh]))
+		t_hp.set_state(t.hp, t.mh, "")
+		t_hp.tooltip_text = "" if t.k == "npc" else ("Tot" if t.d else "%d / %d" % [t.hp, t.mh])
+		t_hp.mouse_filter = Control.MOUSE_FILTER_PASS
 		t_tag.text = "Boss" if t.bs else ("Elite" if t.el else "")
 		_set_buffs(t_buffs, t.st)
 	else:
 		t_frame.visible = false
 	# xp
-	xp_bar.set_state(me.xp, maxf(1.0, me.xn), ("Erfahrung: %d / %d" % [me.xp, me.xn]) if me.xn > 0 else "Höchststufe")
+	xp_bar.set_state(me.xp, maxf(1.0, me.xn), "")
+	xp_bar.tooltip_text = ("Erfahrung: %d / %d" % [me.xp, me.xn]) if me.xn > 0 else "Höchststufe"
+	xp_bar.mouse_filter = Control.MOUSE_FILTER_PASS
 	if me.xn <= 0:
 		xp_bar.value = 1.0
 		xp_bar.maxv = 1.0
@@ -695,14 +817,23 @@ func update(dt: float) -> void:
 		if k >= 1.0:
 			S.cast = null
 		else:
-			cast_bar.visible = true
-			cast_bar.set_state(k, 1.0, S.skill(S.cast.skill).get("name", ""))
+			cast_holder.visible = true
+			cast_bar.set_state(k, 1.0, "")
+			cast_label.text = S.skill(S.cast.skill).get("name", "")
 	if S.cast == null:
-		cast_bar.visible = false
+		cast_holder.visible = false
 	death_box.visible = me.d
 	# action bar
 	_update_actionbar()
 	_update_social()
+	# "time left" of a timed quest at the top of the screen
+	var tl := ""
+	for q in S.quests:
+		if q.status == "active" and float(q.get("end", 0)) > 0.0:
+			var left := maxf(0.0, float(q.end) - S.now())
+			tl = "Verbleibende Zeit: %d Min." % ceili(left / 60.0) if left >= 60.0 else "Verbleibende Zeit: %d Sek." % ceili(left)
+			break
+	time_left.text = tl
 	# quest timers
 	for qt in _q_timers:
 		var left := maxi(0, ceili(qt[1] - S.now()))

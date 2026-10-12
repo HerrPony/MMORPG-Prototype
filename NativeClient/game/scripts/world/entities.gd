@@ -264,59 +264,66 @@ func _refresh_plate(e: Ent) -> void:
 	if plates == null:
 		return
 	var is_t: bool = S.me.tg == e.id
-	var show_hp: bool = is_t and not e.d and (e.k == "mob" or e.k == "pet")
-	var key := "%s|%s|%s|%d|%s|%s|%s|%d|%d" % [e.n, e.ti, str(e.d), e.l, str(show_hp), str(e.el), str(e.bs), e.hp if show_hp else 0, S.me.lvl]
+	# creatures show a small health bar with a level badge (like the reference interface); the target's bar is bigger
+	var show_bar: bool = (e.k == "mob" or e.k == "pet") and not e.d
+	var key := "%s|%s|%s|%d|%s|%s|%s|%d|%s" % [e.n, e.ti, str(e.d), e.l, str(show_bar), str(e.el), str(e.bs), e.hp, str(is_t)]
 	if e.plate == null:
 		var p := Control.new()
 		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		p.size = Vector2(160, 44)
+		p.size = Vector2(160, 40)
 		var nm := Label.new()
 		nm.name = "Name"
 		nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		nm.size = Vector2(160, 20)
-		nm.position = Vector2(0, 0)
-		nm.add_theme_font_size_override("font_size", 14)
+		nm.size = Vector2(160, 16)
+		nm.add_theme_font_size_override("font_size", 12)
 		nm.add_theme_constant_override("outline_size", 5)
-		nm.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		nm.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
 		nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		p.add_child(nm)
 		var sub := Label.new()
 		sub.name = "Sub"
 		sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		sub.size = Vector2(160, 16)
-		sub.position = Vector2(0, 17)
-		sub.add_theme_font_size_override("font_size", 11)
+		sub.size = Vector2(160, 14)
+		sub.position = Vector2(0, 14)
+		sub.add_theme_font_size_override("font_size", 10)
 		sub.add_theme_constant_override("outline_size", 4)
-		sub.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		sub.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
 		sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		p.add_child(sub)
-		var bar := ColorRect.new()
+		var bar := Panel.new()
 		bar.name = "Bar"
-		bar.color = Color(0, 0, 0, 0.7)
-		bar.size = Vector2(70, 7)
-		bar.position = Vector2(45, 33)
+		bar.add_theme_stylebox_override("panel", UI.box(Color(0.05, 0.05, 0.04, 0.85), Color(0.7, 0.62, 0.4, 0.9), 1, 2))
 		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var fill := ColorRect.new()
 		fill.name = "Fill"
-		fill.color = Color("d63a2c")
 		fill.position = Vector2(1, 1)
-		fill.size = Vector2(68, 5)
 		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		bar.add_child(fill)
+		var badge := Panel.new()
+		badge.name = "Badge"
+		badge.size = Vector2(15, 15)
+		badge.add_theme_stylebox_override("panel", UI.box(Color(0.05, 0.04, 0.03), Color("8a6a3a"), 1, 8))
+		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var bl := Label.new()
+		bl.name = "Lvl"
+		bl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		bl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		bl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		bl.add_theme_font_size_override("font_size", 8)
+		bl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		badge.add_child(bl)
+		bar.add_child(badge)
 		p.add_child(bar)
 		plates.add_child(p)
 		e.plate = p
 		e.plate_key = ""
-	if key == e.plate_key and not show_hp:
+	if key == e.plate_key:
 		return
 	e.plate_key = key
 	var nm: Label = e.plate.get_node("Name")
 	var sub: Label = e.plate.get_node("Sub")
-	var bar: ColorRect = e.plate.get_node("Bar")
-	var lvl := ""
-	if (e.k == "mob" and not e.d) or e.k == "pet":
-		lvl = " " + str(e.l)
-	nm.text = e.n + lvl
+	var bar: Panel = e.plate.get_node("Bar")
+	nm.text = e.n
 	nm.add_theme_color_override("font_color", _name_color(e))
 	var subt := ""
 	if e.k == "npc":
@@ -329,9 +336,21 @@ func _refresh_plate(e: Ent) -> void:
 		subt = "Boss" if e.bs else "Elite"
 	sub.text = subt
 	sub.add_theme_color_override("font_color", Color("ffb040") if e.el else Color("c8c8c8"))
-	bar.visible = show_hp
-	if show_hp:
-		(bar.get_node("Fill") as ColorRect).size.x = 68.0 * clampf(float(e.hp) / maxf(1.0, float(e.mh)), 0.0, 1.0)
+	bar.visible = show_bar
+	if show_bar:
+		var w := 78.0 if is_t else 62.0
+		var h := 8.0 if is_t else 6.0
+		var by := 14.0 if subt == "" else 27.0
+		bar.size = Vector2(w, h + 2.0)
+		bar.position = Vector2((160.0 - w) / 2.0 - 6.0, by)
+		var fill: ColorRect = bar.get_node("Fill")
+		fill.size = Vector2((w - 2.0) * clampf(float(e.hp) / maxf(1.0, float(e.mh)), 0.0, 1.0), h)
+		fill.color = Color("3ccf4e") if e.k == "pet" else (Color("f0d020") if not e.el else Color("ff9a20"))
+		var badge: Panel = bar.get_node("Badge")
+		badge.position = Vector2(w - 1.0, -3.0)
+		var lvl: Label = badge.get_node("Lvl")
+		lvl.text = str(e.l)
+		lvl.add_theme_color_override("font_color", Color("ff6a5a") if e.l > S.me.lvl + 4 else Color("e8dcc0"))
 
 # ---------------------------------------------------------------- per frame
 

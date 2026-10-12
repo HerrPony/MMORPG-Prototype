@@ -80,7 +80,7 @@ static var _glow_mat: ShaderMaterial = null
 static func glow_material() -> ShaderMaterial:
 	if _glow_mat == null:
 		var sh := Shader.new()
-		sh.code = "shader_type spatial;\nrender_mode specular_disabled;\nuniform float night = 0.0;\nvoid fragment(){ ALBEDO = COLOR.rgb * (0.35 + 0.15 * (1.0 - night)); EMISSION = COLOR.rgb * (0.08 + 1.6 * night); ROUGHNESS = 0.6; }\n"
+		sh.code = "shader_type spatial;\nrender_mode specular_disabled;\nuniform float night = 0.0;\nvoid fragment(){ ALBEDO = COLOR.rgb * (0.35 + 0.15 * (1.0 - night)); EMISSION = COLOR.rgb * vec3(1.0, 0.8, 0.5) * (0.05 + 1.25 * night); ROUGHNESS = 0.6; }\n"
 		_glow_mat = ShaderMaterial.new()
 		_glow_mat.shader = sh
 	return _glow_mat

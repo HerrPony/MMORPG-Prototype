@@ -66,6 +66,7 @@ func open(at := Vector2(-1, -1)) -> void:
 	if not visible:
 		Sound.sfx("ui_open", -10.0)
 	visible = true
+	UI.nofocus(self)
 	raise()
 	reset_size()
 	_clamp.call_deferred()

@@ -10,6 +10,7 @@ var font_size := 12
 var back := Color(0, 0, 0, 0.6)
 var edge := Color(0.84, 0.7, 0.38, 0.45)
 var shine := true
+var ticks := 0
 
 func _init(w := 200.0, h := 16.0, col := Color("3ccf4e")) -> void:
 	custom_minimum_size = Vector2(w, h)
@@ -38,6 +39,10 @@ func _draw() -> void:
 		draw_style_box(UI.box(fill, Color(0, 0, 0, 0), 0, 2), fr)
 		if shine:
 			draw_rect(Rect2(fr.position, Vector2(fr.size.x, fr.size.y * 0.42)), Color(1, 1, 1, 0.14))
+	if ticks > 0:
+		for i in range(1, ticks):
+			var x := size.x * float(i) / ticks
+			draw_line(Vector2(x, 0), Vector2(x, size.y), Color(0, 0, 0, 0.55), 1.0)
 	if text != "":
 		var fnt := get_theme_default_font()
 		var tw := fnt.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, size.x, font_size)

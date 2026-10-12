@@ -58,16 +58,16 @@ static func theme() -> Theme:
 	t.set_type_variation("FlatPanel", "PanelContainer")
 	t.set_stylebox("panel", "FlatPanel", flat)
 	# buttons
-	var bn := box(Color(1, 1, 1, 0.05), EDGE_SOFT, 1, 4, 6)
+	var bn := box(Color(0.05, 0.045, 0.04, 0.62), EDGE, 1, 4, 6)
 	bn.content_margin_left = 12
 	bn.content_margin_right = 12
-	var bh := box(Color(1, 1, 1, 0.1), GOLD, 1, 4, 6)
+	var bh := box(Color(0.2, 0.16, 0.09, 0.85), GOLD, 1, 4, 6)
 	bh.content_margin_left = 12
 	bh.content_margin_right = 12
-	var bp := box(Color(0.94, 0.81, 0.48, 0.18), GOLD, 1, 4, 6)
+	var bp := box(Color(0.42, 0.33, 0.14, 0.92), GOLD, 1, 4, 6)
 	bp.content_margin_left = 12
 	bp.content_margin_right = 12
-	var bd := box(Color(1, 1, 1, 0.02), EDGE_SOFT, 1, 4, 6)
+	var bd := box(Color(0.05, 0.045, 0.04, 0.4), EDGE_SOFT, 1, 4, 6)
 	t.set_stylebox("normal", "Button", bn)
 	t.set_stylebox("hover", "Button", bh)
 	t.set_stylebox("pressed", "Button", bp)
@@ -140,6 +140,7 @@ static func label(text: String, size := 14, color := TEXT, align := HORIZONTAL_A
 static func button(text: String, cb: Callable = Callable(), big := false) -> Button:
 	var b := Button.new()
 	b.text = text
+	b.focus_mode = Control.FOCUS_NONE   # a focused button would be pressed again by the jump key
 	if big:
 		b.theme_type_variation = "BigButton"
 		b.custom_minimum_size.y = 40
@@ -193,6 +194,13 @@ static func card(on_click: Callable, min_size := Vector2(0, 0)) -> PanelContaine
 static func set_selected(p: PanelContainer, sel: bool) -> void:
 	var s := box(Color(0.94, 0.81, 0.48, 0.14) if sel else Color(1, 1, 1, 0.04), GOLD if sel else EDGE_SOFT, 2 if sel else 1, 5, 8)
 	p.add_theme_stylebox_override("panel", s)
+
+## Buttons and sliders must not keep keyboard focus: space (jump) and the arrow keys would operate them.
+static func nofocus(n: Node) -> void:
+	if n is BaseButton or n is Slider or n is TabBar or n is TabContainer:
+		(n as Control).focus_mode = Control.FOCUS_NONE
+	for c in n.get_children():
+		nofocus(c)
 
 static func clear(n: Node) -> void:
 	for c in n.get_children():
