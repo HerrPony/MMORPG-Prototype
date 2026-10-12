@@ -23,6 +23,12 @@ jobs:
       TAG: ${{ github.event.inputs.tag || 'native-v1.0.0' }}
       GH_TOKEN: ${{ github.token }}
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: Server/go.mod
+          cache-dependency-path: Server/go.sum
+
       - name: Download the installer
         shell: pwsh
         run: |
@@ -101,6 +107,25 @@ jobs:
           name: windows-login-screenshot
           path: login.png
           if-no-files-found: warn
+
+      - name: Play on Windows against a real server (walk, fight, trade, quests, trainer, griffin flight, gamepad)
+        shell: pwsh
+        run: |
+          Push-Location Server
+          go build -o "$env:RUNNER_TEMP\server.exe" ./cmd/server
+          Pop-Location
+          $srv = Start-Process "$env:RUNNER_TEMP\server.exe" -ArgumentList '-client', '""', '-data', "$env:RUNNER_TEMP\data", '-addr', ':8084', '-dev' -PassThru -WindowStyle Hidden -RedirectStandardError "$env:RUNNER_TEMP\server.log"
+          Start-Sleep 4
+          $failed = $false
+          foreach ($t in @(@('play', 'winplay1'), @('play2', 'winplay2'), @('pad', 'winplay3'))) {
+            $log = "$env:RUNNER_TEMP\game-$($t[0]).log"
+            $p = Start-Process 'C:\ErlenwaldTest\game\ErlenwaldOnline.exe' -ArgumentList '--headless', '--log-file', $log, '--', '--autologin', 'localhost:8084', $t[1], 'secret2', '--autoenter', "--$($t[0])" -PassThru
+            if (-not $p.WaitForExit(180000)) { $p.Kill(); Write-Host "TIMEOUT in $($t[0])" ; $failed = $true }
+            Select-String -Path $log -Pattern 'PASS|FAIL|RESULT|SCRIPT ERROR' | ForEach-Object { $_.Line }
+            if (-not (Select-String -Path $log -Pattern '(PLAY|PLAY2|PAD) RESULT: OK' -Quiet)) { Write-Host "no OK result for $($t[0])"; $failed = $true }
+          }
+          Stop-Process -Id $srv.Id -Force
+          if ($failed) { throw "gameplay checks failed" }
 
       - name: Launcher update check is quiet when everything is current
         shell: pwsh
