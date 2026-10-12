@@ -127,7 +127,7 @@ jobs:
           for plat in windows linux; do
             python3 tools/release/make_release.py --platform $plat --version "${{ steps.ver.outputs.version }}" \
               --game-dir build/$plat/game --launcher-dir build/$plat/launcher --launcher-version "${{ steps.ver.outputs.version }}" \
-              --notes "$RUNNER_TEMP/notes.txt" --out build/pages/updates
+              --notes "$RUNNER_TEMP/notes.txt" --notes-dir release-notes --out build/pages/updates
           done
           # drop objects that no manifest refers to
           python3 - <<'PY'

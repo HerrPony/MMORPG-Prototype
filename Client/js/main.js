@@ -187,7 +187,7 @@ function step(t) {
     g.controller.update(dt);
     g.entities.update(dt, camera, innerWidth, innerHeight);
     g.fx.update(dt);
-    if (!S.instance) g.world.update(dt);
+    if (!S.instance) g.world.update(dt, camera.position);
     // keep the sky matched to the biome we are standing in
     if (!S.instance && ((t / 1000) | 0) % 2 === 0) { const key = g.world.biomeKey(S.local.x, S.local.z); g.world.setZone(key); audio.zone = key; }
     audio.night = sunInfo().night;

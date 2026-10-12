@@ -11,7 +11,7 @@ const RECHECK_SECONDS := 600.0
 var cfg := {"update_url": "", "server": "", "auto_update": true, "close_on_launch": false, "root": ""}
 var root := ""
 var updater: Updater
-var own_version := "1.0.6"
+var own_version := "1.0.7"
 var busy := false
 var state := "checking"       # checking | updating | ready | needs_install | error | offline
 var cli := {}
@@ -380,9 +380,19 @@ func _game_exe() -> String:
 	return root.path_join("game").path_join(name)
 
 func _notes_bb(m: Dictionary) -> String:
-	var t := str(m.get("notes", ""))
-	if t == "":
+	# the whole history, newest first; older manifests only carry the notes of the current version
+	var parts: Array = []
+	var hist = m.get("history", [])
+	if hist is Array and not hist.is_empty():
+		for h in hist:
+			var txt := str(h.get("notes", "")).strip_edges()
+			if txt != "":
+				parts.append(txt)
+	elif str(m.get("notes", "")) != "":
+		parts.append(str(m.notes).strip_edges())
+	if parts.is_empty():
 		return "[color=#a89a7e]Keine Neuigkeiten.[/color]"
+	var t := "\n\n[color=#6a5a38]────────────────────────[/color]\n\n".join(parts)
 	# RichTextLabel has no [list]/[*] tags: turn them into bullet lines
 	t = t.replace("[list]", "").replace("[/list]", "").replace("[*]", "•  ")
 	return t

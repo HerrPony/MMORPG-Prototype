@@ -1,0 +1,9 @@
+[b]Version 1.0.5[/b]
+[b]Behoben[/b]
+[list]
+[*]Fähre: Spieler an Deck werden wieder mit dem Schiff mitbewegt. Man bleibt auf der fahrenden Fähre stehen und muss nicht mehr hinterherlaufen.
+[/list]
+[b]Technik[/b]
+[list]
+[*]Die vom Server gesendete Schiff-ID wurde als Kommazahl gelesen und fand das Schiff nicht; sie wird jetzt als Ganzzahl nachgeschlagen.
+[/list]

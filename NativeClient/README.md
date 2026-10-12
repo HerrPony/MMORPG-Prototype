@@ -6,7 +6,7 @@ dazu kommen bessere Grafik, mehr Einstellungen und eine flüssigere Steuerung.
 
 * **Engine:** Godot 4.5 (Forward+, Vulkan/D3D12), Sprache GDScript
 * **Optik:** Low-Poly im Minecraft-Stil (Blockmodelle, flache Schattierung), aber mit Echtzeitschatten, SSAO, Bloom, Nebel,
-  Himmels-Shader mit Sonne/Mond/Sternen/Wolken/Aurora, realistischem Wasser-Shader (Wellen, Himmelsspiegelung, Tiefenfärbung, Schaum) und Schwimmen, Tag-/Nachtzyklus (6 h)
+  Himmels-Shader mit Sonne/Mond/Sternen/Wolken/Aurora, realistischem Wasser-Shader (Wellen, Himmelsspiegelung, Tiefenfärbung, Schaum), Schwimmen, detailreichem Boden- und Gebäude-Shader und Laternenlicht mit Schatten bei Nacht, Tag-/Nachtzyklus (6 h)
 * **Launcher + Installer:** findet Updates selbst, lädt nur geänderte Dateien, repariert beschädigte Installationen
 
 ```
@@ -54,7 +54,7 @@ Gespeichert wird in `settings.cfg` im Benutzerordner (`%APPDATA%\ErlenwaldOnline
 | `scripts/autoload/` | `S` (Zustand), `Net` (WebSocket), `Settings`, `Sound` |
 | `scripts/world/` | Weltaufbau aus den Serverdaten: Gelände (Vertex-Shader aus Höhenmap), Wasser, Himmel, Props (MultiMesh), Gebäude, Modelle mit prozeduraler Animation, Entities, Steuerung, Effekte, Dungeons |
 | `scripts/ui/` | UI-Theme, HUD, Fenster (Taschen, Charakter, Zauberbuch, Quests, Dialog, Händler, Beute, Gruppe, Karte, Menü, Einstellungen), Login/Charakterwahl |
-| `assets/shaders/` | Gelände, Wasser, Himmel, Laub, Karte |
+| `assets/shaders/` | Gelände, Wasser, Himmel, Laub, Karte, Gebäude, Fenster, Laternen (Kopf und Lichthof) |
 | `assets/sfx/` | Soundeffekte (OGG, aus der WebAudio-Engine gerendert) |
 
 Weltkoordinaten, Kollision (Bäume, Gebäude, Hänge, Wasser), Platzierung der Props und alle Regeln sind identisch zum Web-Client:

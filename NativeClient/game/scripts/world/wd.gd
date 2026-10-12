@@ -23,6 +23,7 @@ static var lakes: Array = []
 static var towns: Array = []
 static var pois: Array = []
 static var buildings: Array = []
+static var lamps: Array = []
 static var house: Array = []
 static var bridges: Array = []
 static var zones: Array = []
@@ -56,6 +57,7 @@ static func load_scenery(sc: Dictionary) -> void:
 	towns = sc.get("towns", [])
 	pois = sc.get("pois", [])
 	buildings = sc.get("buildings", [])
+	lamps = sc.get("lamps", [])
 	house = sc.get("house", [])
 	bridges = sc.get("bridges", [])
 	zones = sc.get("zones", [])
