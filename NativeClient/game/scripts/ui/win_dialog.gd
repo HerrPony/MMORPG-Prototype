@@ -17,7 +17,7 @@ func _init() -> void:
 	tabs = UI.hbox(4)
 	body.add_child(tabs)
 	var sc := ScrollContainer.new()
-	sc.custom_minimum_size = Vector2(450, 0)
+	sc.custom_minimum_size = Vector2(450, 340)
 	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content = UI.vbox(7)
@@ -63,7 +63,7 @@ func show_dialog(msg: Dictionary) -> void:
 			view = prev
 	if view == "greet" and vs.size() > 0:
 		view = vs[0][0]
-	if view == "quest" and (m.quests as Array).size() == 1:
+	if view == "quest" and (m.get("quests", []) as Array).size() == 1:
 		quest_id = m.quests[0].id
 	var still := false
 	for q in m.get("quests", []):
@@ -173,9 +173,10 @@ func _render_flight() -> void:
 	var f: Dictionary = m.flight
 	if not f.get("ship", false):
 		content.add_child(_text("Du bist in [b]%s[/b]. Dein Flugpunkt hier ist freigeschaltet. Dein Geld: %s" % [f.hereName, UI.copper_text(S.copper)]))
-	if (f.points as Array).is_empty():
+	var points: Array = f.get("points", [])
+	if points.is_empty():
 		content.add_child(_text("[color=#a89a7e]Du kennst noch keinen anderen Flugpunkt. Sprich mit den Greifenmeistern in anderen Städten, um sie freizuschalten. Greifen fliegen nur auf demselben Kontinent.[/color]", 13))
-	for p in f.points:
+	for p in points:
 		var pid: String = p.id
 		var price := int(p.price)
 		var card := UI.card(func():
@@ -206,7 +207,7 @@ func _render_trainer() -> void:
 		content.add_child(_text("Ich bilde nur %s aus. Such dir einen Lehrer deiner eigenen Klasse." % t.className))
 		return
 	content.add_child(_text("Dein Geld: " + UI.copper_text(S.copper)))
-	for s in t.skills:
+	for s in t.get("skills", []):
 		var d := S.skill(s.id)
 		var card := PanelContainer.new()
 		card.add_theme_stylebox_override("panel", UI.box(Color(1, 1, 1, 0.04), UI.EDGE_SOFT, 1, 5, 6))

@@ -414,12 +414,12 @@ func _connect_net() -> void:
 	Net.on("quests", func(m):
 		var now := S.now()
 		S.quests = []
-		for q in m.list:
+		for q in m.get("list", []):
 			var d: Dictionary = q.duplicate()
 			d["end"] = (now + float(q.left)) if q.has("left") else 0.0
 			S.quests.append(d)
 		render_tracker())
-	Net.on("party", func(m): S.party = {"id": m.id, "leader": m.leader, "members": m.members, "states": S.party.states})
+	Net.on("party", func(m): S.party = {"id": m.get("id", 0), "leader": m.get("leader", 0), "members": m.get("members", []), "states": S.party.states})
 
 func show_error(t: String) -> void:
 	err_label.text = t

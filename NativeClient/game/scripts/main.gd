@@ -20,6 +20,7 @@ var last_combat := -99.0
 var zone_t := 0.0
 var map_t := 0.0
 var shot_pending := false
+var world_dirty := false
 
 func _ready() -> void:
 	get_window().title = "Erlenwald Online"
@@ -110,10 +111,12 @@ func _wire() -> void:
 	Net.on("loot", func(_m): Sound.sfx("loot"))
 	Net.on("err", func(_m): Sound.sfx("error", -8.0))
 	Net.on("marks", func(m):
-		S.marks = m.marks
+		S.marks = m.get("marks", {})
 		if entities: entities.refresh_all_markers())
 	Net.on("quests", func(_m): if entities: entities.refresh_objects())
-	Net.on("worldChanged", func(_m): _message("Ein Admin hat die Welt verändert. Bitte neu anmelden.", true))
+	Net.on("worldChanged", func(_m):
+		world_dirty = true
+		_message("Ein Admin hat die Welt verändert. Bitte melde dich neu an, die Welt wird dann neu aufgebaut.", true))
 	Net.on("kicked", func(m): _message(str(m.text), true))
 	Net.closed.connect(func():
 		if S.in_world:
@@ -167,6 +170,8 @@ func _on_world(m: Dictionary) -> void:
 	loading.visible = true
 	await get_tree().process_frame
 	await get_tree().process_frame
+	if world != null and world_dirty:
+		_destroy_game()
 	if world == null:
 		_build_game()
 	_leave_dungeon()
@@ -208,6 +213,21 @@ func _build_game() -> void:
 	controller.action.connect(_on_action)
 	controller.player_menu.connect(hud.open_player_menu)
 	cam.fov = float(Settings.v["fov"])
+
+func _destroy_game() -> void:
+	world_dirty = false
+	if controller:
+		controller.queue_free()
+		controller = null
+	if game_root:
+		game_root.queue_free()
+		game_root = null
+	world = null
+	entities = null
+	fx = null
+	dungeon = null
+	_map_ready = false
+	S.ents.clear()
 
 var _map_ready := false
 func map_setup() -> void:
@@ -257,11 +277,11 @@ func _on_instance(m: Dictionary) -> void:
 	if world == null:
 		return
 	if m.get("on", false):
-		S.instance = {"name": m.get("name", ""), "rooms": m.rooms, "origin": m.origin}
 		_leave_dungeon()
+		S.instance = {"name": m.get("name", ""), "rooms": m.get("rooms", []), "origin": m.get("origin", [0, 0])}
 		dungeon = Dungeon.new()
 		game_root.add_child(dungeon)
-		dungeon.build({"rooms": m.rooms, "origin": m.origin, "style": m.get("style", "mine")})
+		dungeon.build({"rooms": m.get("rooms", []), "origin": m.get("origin", [0, 0]), "style": m.get("style", "mine")})
 		world.set_active(false)
 		cam.environment = dungeon.env
 		controller.dungeon = dungeon

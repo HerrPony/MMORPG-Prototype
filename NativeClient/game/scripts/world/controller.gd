@@ -99,6 +99,8 @@ func _input(ev: InputEvent) -> void:
 					_click(down_pos, true)
 	elif ev is InputEventMouseMotion:
 		var mm := ev as InputEventMouseMotion
+		if not (lmb or rmb):
+			_hover_cursor(mm.position)
 		if lmb or rmb:
 			down_acc += absf(mm.relative.x) + absf(mm.relative.y)
 			if rmb or down_acc > 4.0:
@@ -106,6 +108,22 @@ func _input(ev: InputEvent) -> void:
 				cam_yaw -= mm.relative.x * sens
 				var inv := -1.0 if Settings.v["invert_y"] else 1.0
 				cam_pitch = clampf(cam_pitch + mm.relative.y * sens * inv, -0.35, 1.45)
+
+## Pointing hand over NPCs, objects and lootable corpses, crosshair over attackable creatures.
+func _hover_cursor(pos: Vector2) -> void:
+	var t := Time.get_ticks_msec()
+	if t - hover_t < 80:
+		return
+	hover_t = t
+	var shape := Input.CURSOR_ARROW
+	if not _over_ui():
+		var e: Ent = S.ents.get(entities.pick(pos))
+		if e:
+			if e.k == "npc" or e.k == "obj" or (e.k == "mob" and e.d and e.lt):
+				shape = Input.CURSOR_POINTING_HAND
+			elif e.k == "mob" and not e.d:
+				shape = Input.CURSOR_CROSS
+	Input.set_default_cursor_shape(shape)
 
 func _over_ui() -> bool:
 	var h := get_viewport().gui_get_hovered_control()
@@ -122,7 +140,10 @@ func _unhandled_key_input(ev: InputEvent) -> void:
 			action.emit(a)
 			get_viewport().set_input_as_handled()
 			return
-	if ev.is_action_pressed("chat"):
+	if k.unicode == 47:   # "/" on any keyboard layout
+		action.emit("chat_cmd")
+		get_viewport().set_input_as_handled()
+	elif ev.is_action_pressed("chat"):
 		action.emit("chat")
 		get_viewport().set_input_as_handled()
 	elif ev.is_action_pressed("chat_cmd"):

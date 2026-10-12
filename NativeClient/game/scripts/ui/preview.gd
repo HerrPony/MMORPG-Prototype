@@ -22,9 +22,6 @@ func _ready() -> void:
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.glow_enabled = true
 	env.glow_intensity = 0.5
-	var we := WorldEnvironment.new()
-	we.environment = env
-	add_child(we)
 	var key := DirectionalLight3D.new()
 	key.light_color = Color("fff0d0")
 	key.light_energy = 1.6
@@ -37,6 +34,7 @@ func _ready() -> void:
 	rim.rotation_degrees = Vector3(-25, 215, 0)
 	add_child(rim)
 	camera = Camera3D.new()
+	camera.environment = env   # (a WorldEnvironment node would also affect the game world)
 	camera.fov = 35
 	camera.position = Vector3(0, 1.5, 4.6)
 	add_child(camera)

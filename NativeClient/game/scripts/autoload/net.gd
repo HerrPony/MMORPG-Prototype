@@ -64,10 +64,22 @@ func _process(_dt: float) -> void:
 			else:
 				closed.emit()
 
+## Go sends null for empty slices and maps: drop those keys so that `m.get(key, default)` gives the default.
+static func strip_nulls(d: Dictionary) -> void:
+	for k in d.keys():
+		var v = d[k]
+		if v == null:
+			d.erase(k)
+		elif v is Dictionary:
+			strip_nulls(v)
+		elif v is Array:
+			for it in v:
+				if it is Dictionary:
+					strip_nulls(it)
+
 func _dispatch(t: String, m: Dictionary) -> void:
-	if has_meta("seen"):
-		var sn: Dictionary = get_meta("seen")
-		sn[t] = int(sn.get(t, 0)) + 1
+	if t != "s" and t != "world":
+		strip_nulls(m)
 	if _handlers.has(t):
 		for fn in _handlers[t].duplicate():
 			if fn.is_valid():

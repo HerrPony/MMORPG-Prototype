@@ -7,6 +7,8 @@ var main: Node
 
 func _ready() -> void:
 	var a := OS.get_cmdline_user_args()
+	if a.has("--preset"):
+		Settings.apply_preset(a[a.find("--preset") + 1])
 	if a.has("--autologin"):
 		_autologin.call_deferred(a)
 	if a.has("--autoenter"):
@@ -53,6 +55,9 @@ func _shot(a: PackedStringArray) -> void:
 	if a.has("--chat"):
 		chats = a[a.find("--chat") + 1].split(";")
 	var sent := false
+	var interact_s := ""
+	if a.has("--interact"):
+		interact_s = a[a.find("--interact") + 1]
 	var t := 0.0
 	while t < delay:
 		await get_tree().process_frame
@@ -61,6 +66,20 @@ func _shot(a: PackedStringArray) -> void:
 			sent = true
 			for c in chats:
 				Net.send("chat", {"text": c})
+		if S.in_world and main.spawned and interact_s != "" and t > 6.0:
+			var best: Ent = null
+			var bd := 1e9
+			for e: Ent in S.ents.values():
+				if (e.m.contains(interact_s) or e.n.contains(interact_s)) and e.id != S.id:
+					var d := Vector2(e.rx - S.local.x, e.rz - S.local.z).length()
+					if d < bd:
+						bd = d
+						best = e
+			if best:
+				print("interact with ", best.n, " (", best.m, ") at ", bd, " m")
+				main.controller.set_target(best.id)
+				Net.send("interact", {"id": best.id})
+			interact_s = ""
 		if S.in_world and main.spawned and opens.size() > 0 and t > delay - 2.0:
 			for o in opens:
 				main.windows.toggle(o)

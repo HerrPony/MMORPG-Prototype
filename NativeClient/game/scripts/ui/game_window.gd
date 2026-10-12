@@ -68,6 +68,11 @@ func open(at := Vector2(-1, -1)) -> void:
 	visible = true
 	raise()
 	reset_size()
+	_clamp.call_deferred()
+
+func _clamp() -> void:
+	var vs := get_viewport_rect().size
+	position = Vector2(clampf(position.x, 0.0, maxf(0.0, vs.x - size.x)), clampf(position.y, 0.0, maxf(0.0, vs.y - size.y)))
 
 func close() -> void:
 	if visible:

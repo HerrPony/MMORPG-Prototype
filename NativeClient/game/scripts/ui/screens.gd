@@ -261,7 +261,7 @@ func _build_chars() -> void:
 	bottom.add_child(row)
 
 func _on_chars(m: Dictionary) -> void:
-	chars = m.chars
+	chars = m.get("chars", [])
 	if after_create != 0:
 		selected = after_create
 		after_create = 0

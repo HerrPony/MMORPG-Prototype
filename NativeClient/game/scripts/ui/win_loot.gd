@@ -21,7 +21,7 @@ func show_loot(m: Dictionary) -> void:
 	title_label.text = m.name
 	UI.clear(list)
 	var idx := 0
-	for it in m.items:
+	for it in m.get("items", []):
 		var d := S.item(it.i)
 		var i2 := idx
 		var card := UI.card(func(): Net.send("loot", {"id": int(m.id), "idx": i2}))

@@ -27,6 +27,7 @@ window/size/min_width=1024
 window/size/min_height=600
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+window/vsync/vsync_mode=1
 
 [gui]
 
@@ -35,6 +36,10 @@ theme/default_font_antialiasing=1
 [rendering]
 
 renderer/rendering_method="forward_plus"
+rendering_device/fallback_to_vulkan=true
+rendering_device/fallback_to_d3d12=true
+rendering_device/fallback_to_opengl3=true
+textures/vram_compression/import_s3tc_bptc=true
 lights_and_shadows/directional_shadow/size=4096
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=3
 anti_aliasing/quality/msaa_3d=2

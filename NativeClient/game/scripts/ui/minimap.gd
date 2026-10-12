@@ -40,8 +40,6 @@ func _draw() -> void:
 		draw_circle(c, size.x / 2.0, Color("16141a"))
 		var org: Array = S.instance.origin
 		for rm in S.instance.rooms:
-			var a := to_px(Vector2(rm.x + org[0] - rm.w / 2.0, rm.z + org[1] - rm.d / 2.0))
-			var b := to_px(Vector2(rm.x + org[0] + rm.w / 2.0, rm.z + org[1] + rm.d / 2.0))
 			# rooms are axis aligned in the world; the map is rotated, so draw them as polygons
 			var corners := [Vector2(rm.x + org[0] - rm.w / 2.0, rm.z + org[1] - rm.d / 2.0), Vector2(rm.x + org[0] + rm.w / 2.0, rm.z + org[1] - rm.d / 2.0), Vector2(rm.x + org[0] + rm.w / 2.0, rm.z + org[1] + rm.d / 2.0), Vector2(rm.x + org[0] - rm.w / 2.0, rm.z + org[1] + rm.d / 2.0)]
 			var pts := PackedVector2Array()

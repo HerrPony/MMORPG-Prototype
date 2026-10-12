@@ -50,7 +50,7 @@ func _ready() -> void:
 			loot.close()
 		Tooltip.hide_tip())
 	Net.on("inv", func(m):
-		S.inv = m.get("items") if m.get("items") is Array else []
+		S.inv = m.get("items", [])
 		S.copper = int(m.copper)
 		S.inv_max = int(m.max)
 		bags.refresh() if bags.visible else null
@@ -58,11 +58,11 @@ func _ready() -> void:
 		if dialog.visible:
 			dialog.render()
 		vendor.refresh())
-	Net.on("equip", func(m): S.equip = m.get("eq") if m.get("eq") is Dictionary else {}; char_win.refresh())
+	Net.on("equip", func(m): S.equip = m.get("eq", {}); char_win.refresh())
 	Net.on("stats", func(m): S.stats = m; char_win.refresh())
-	Net.on("sets", func(m): S.sets = m.get("sets") if m.get("sets") is Dictionary else {}; char_win.refresh())
+	Net.on("sets", func(m): S.sets = m.get("sets", {}); char_win.refresh())
 	Net.on("skills", func(m):
-		S.skill_ids = m.skills
+		S.skill_ids = m.get("skills", [])
 		spells.refresh()
 		var d := S.skill(m.learned)
 		if not d.is_empty() and hud:
@@ -70,8 +70,8 @@ func _ready() -> void:
 	Net.on("quests", func(_m): quests.refresh())
 	Net.on("questDone", func(_m): dialog.close())
 	Net.on("party", func(_m): party.refresh())
-	Net.on("disc", func(m): S.disc = m.ids if m.ids is Array else [])
-	Net.on("fp", func(m): S.fp = m.ids if m.ids is Array else [])
+	Net.on("disc", func(m): S.disc = m.get("ids", []))
+	Net.on("fp", func(m): S.fp = m.get("ids", []))
 
 func toggle(name: String) -> void:
 	var w: GameWindow = {"bags": bags, "char": char_win, "spells": spells, "quests": quests, "map": map, "party": party, "menu": menu}.get(name)
