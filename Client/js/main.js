@@ -12,6 +12,7 @@ import { Controller } from './player.js';
 import { ui, initUI, enterHud, leaveHud, updateUI } from './ui/index.js';
 import { renderTracker } from './ui/hud.js';
 import { initTouch } from './touch.js';
+import { setServerTime, sunInfo } from './daynight.js';
 
 const canvas = $('gl');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -71,6 +72,7 @@ initUI(net);
 initScreens(net, preview, { isInWorld: () => S.inWorld, leaveWorld });
 
 net.on('world', (m) => {
+  if (m.now) setServerTime(m.now);
   S.id = m.id; S.self = m.self; S.cls = m.cls; S.skillIds = m.skills; S.defs = m.defs; S.scenery = m.scenery;
   S.disc = m.disc || []; S.fp = m.fp || [];
   S.cd = {}; S.gcd = { end: 0, dur: 0 }; S.cast = null; S.quests = []; S.marks = {}; S.instance = null;
@@ -187,7 +189,8 @@ function step(t) {
     g.fx.update(dt);
     if (!S.instance) g.world.update(dt);
     // keep the sky matched to the biome we are standing in
-    if (!S.instance && ((t / 1000) | 0) % 2 === 0) g.world.setZone(g.world.biomeKey(S.local.x, S.local.z));
+    if (!S.instance && ((t / 1000) | 0) % 2 === 0) { const key = g.world.biomeKey(S.local.x, S.local.z); g.world.setZone(key); audio.zone = key; }
+    audio.night = sunInfo().night;
     updateUI(dt, g.controller.camYaw);
     renderer.render(activeScene, camera);
   } else {

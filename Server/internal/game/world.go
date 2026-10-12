@@ -449,7 +449,7 @@ func (w *World) enter(c *storage.Character, out Sender) *Entity {
 	w.send(e, protocol.M{
 		"t": "world", "id": e.ID,
 		"self": protocol.M{"name": c.Name, "race": c.Race, "class": c.Class, "look": c.Look},
-		"cls":  class, "skills": c.Skills, "defs": w.defsJSON, "scenery": w.sceneryJSON,
+		"cls":  class, "skills": c.Skills, "defs": w.defsJSON, "scenery": w.sceneryJSON, "now": time.Now().UnixMilli(),
 		"disc": c.Discovered, "fp": c.FlightPoints,
 	})
 	w.sendInventory(e)
