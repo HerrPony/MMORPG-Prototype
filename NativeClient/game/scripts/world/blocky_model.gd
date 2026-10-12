@@ -17,12 +17,28 @@ var wing_speed := 9.0
 var glow_nodes: Array = []   # nodes that pulse (crystals, wisps)
 var t := 0.0
 var player_class := ""
+var bow: Node3D = null       # archer rig, set by Models.humanoid when a bow is held
 
 func attack() -> void:
 	attack_t = 0.0
 
 func cast(on: bool) -> void:
 	casting = on
+
+## How far the string is pulled back (0..0.38) and whether an arrow is nocked.
+func _set_draw(d: float, arrow: bool) -> void:
+	var nx := -0.03 - d
+	var nock: Node3D = bow.get_meta("nock")
+	nock.position.x = nx
+	nock.visible = arrow
+	var halves: Array = bow.get_meta("halves")
+	for i in 2:
+		var sgn := 1.0 if i == 0 else -1.0
+		var dy := -sgn * 0.5
+		var h: Node3D = halves[i]
+		h.scale.y = Vector2(nx, dy).length()
+		h.position = Vector3(nx / 2.0, sgn * 0.5 + dy / 2.0, 0)
+		h.rotation.z = atan2(dy, nx) - PI / 2.0
 
 func part(n: String) -> Node3D:
 	return parts.get(n)
@@ -35,7 +51,7 @@ func update(dt: float, st: Dictionary) -> void:
 	death = move_toward(death, 1.0 if dead else 0.0, dt * 2.5)
 	if attack_t >= 0.0:
 		attack_t += dt
-		if attack_t > 0.45:
+		if attack_t > (0.65 if bow else 0.45):
 			attack_t = -1.0
 	phase += dt * (3.0 + speed * 9.0) * speed_scale * (1.0 if speed > 0.02 else 0.0)
 	var amp: float = clampf(speed * 1.6, 0.0, 1.0) * 0.8
@@ -76,9 +92,37 @@ func _anim_human(dt: float, amp: float, airborne: bool) -> void:
 	if casting:
 		arm_r = -2.4 + sin(t * 9.0) * 0.08
 		arm_l = -2.2 + sin(t * 9.0 + 1.0) * 0.08
-	if attack_t >= 0.0:
-		var k := attack_t / 0.45
-		var sw := sin(k * PI)
+	var arm_r_yaw := 0.0
+	if bow:
+		# archer stance: bow arm forward, string hand near the chest; attack = draw (0-0.3 s), release, recoil
+		arm_l = -1.4
+		arm_r = -1.3
+		arm_r_yaw = -0.55
+		var draw := 0.04
+		var arrow := true
+		var twist := 0.0
+		if attack_t >= 0.0:
+			var k := attack_t / 0.3
+			if k < 1.0:
+				var e := k * k * (3.0 - 2.0 * k)
+				draw = 0.04 + 0.34 * e
+				arm_r_yaw = -(0.55 + 0.45 * e)
+				twist = -0.25 * k
+			elif attack_t < 0.42:
+				draw = 0.02
+				arm_r_yaw = -(0.6 - (attack_t - 0.3) / 0.12 * 0.15)
+				arrow = false
+				arm_l = -1.4 + 0.08 * sin((attack_t - 0.3) * 60.0)
+				twist = -0.25 * maxf(0.0, 1.0 - (attack_t - 0.3) * 4.0)
+			elif attack_t < 0.65:
+				arrow = (attack_t - 0.42) / 0.23 > 0.4
+		var tb: Node3D = parts.get("torso")
+		if tb:
+			tb.rotation.y = lerpf(tb.rotation.y, twist, minf(1.0, dt * 14.0))
+		_set_draw(draw, arrow)
+	elif attack_t >= 0.0:
+		var k2 := attack_t / 0.45
+		var sw := sin(k2 * PI)
 		arm_r = -2.1 * sw + 0.2
 		var tw: Node3D = parts.get("torso")
 		if tw:
@@ -89,6 +133,9 @@ func _anim_human(dt: float, amp: float, airborne: bool) -> void:
 			tw2.rotation.y = lerpf(tw2.rotation.y, 0.0, minf(1.0, dt * 14.0))
 	_swing("arm_l", arm_l)
 	_swing("arm_r", arm_r)
+	var ar: Node3D = parts.get("arm_r")
+	if ar:
+		ar.rotation.y = arm_r_yaw
 	var torso: Node3D = parts.get("torso")
 	var head: Node3D = parts.get("head")
 	var idle := sin(t * 1.6) * 0.012

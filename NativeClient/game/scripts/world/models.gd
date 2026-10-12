@@ -254,6 +254,40 @@ static func _part(parent: Node3D, name: String, pos: Vector3, mb: MeshBuilder, m
 		p.add_child(mb.instance(mat))
 	return p
 
+## A bow standing along Y and bulging towards +X, with a string and a nocked arrow that BlockyModel._set_draw moves.
+static func _bow_node() -> Node3D:
+	var root := Node3D.new()
+	var mb := MeshBuilder.new()
+	var wood := C(0x6b4a22)
+	var arc: Array[Vector2] = []
+	for k in 9:
+		var y := -0.5 + k / 8.0
+		arc.append(Vector2(0.17 * (1.0 - pow(y / 0.5, 2.0)), y))
+	for k in 8:
+		var a := arc[k]
+		var b := arc[k + 1]
+		var mid := (a + b) / 2.0
+		mb.box(Vector3(mid.x, mid.y, 0), Vector3(0.07, (b - a).length() + 0.03, 0.07), wood, Vector3(0, 0, rad_to_deg(-atan2(b.x - a.x, b.y - a.y))), 0.0)
+	mb.box(Vector3(0.17, 0, 0), Vector3(0.1, 0.2, 0.1), C(0x3a2412), Vector3.ZERO, 0.0)
+	root.add_child(mb.instance())
+	var halves: Array = []
+	for i in 2:
+		var sb := MeshBuilder.new()
+		sb.box(Vector3.ZERO, Vector3(0.012, 1.0, 0.012), C(0xdddddd), Vector3.ZERO, 0.0)
+		var h := sb.instance()
+		root.add_child(h)
+		halves.append(h)
+	var ab := MeshBuilder.new()
+	ab.box(Vector3(0.35, 0, 0), Vector3(0.7, 0.014, 0.014), C(0xd8d0b8), Vector3.ZERO, 0.0)
+	ab.box(Vector3(0.72, 0, 0), Vector3(0.08, 0.05, 0.03), C(0xc0c4cc), Vector3.ZERO, 0.0)
+	ab.box(Vector3(0.04, 0, 0), Vector3(0.1, 0.05, 0.012), C(0xc83030), Vector3.ZERO, 0.0)
+	var nock := Node3D.new()
+	nock.add_child(ab.instance())
+	root.add_child(nock)
+	root.set_meta("halves", halves)
+	root.set_meta("nock", nock)
+	return root
+
 static func humanoid(spec: Dictionary) -> BlockyModel:
 	var mdl := BlockyModel.new()
 	mdl.kind = spec.get("kind", "human")
@@ -384,6 +418,17 @@ static func humanoid(spec: Dictionary) -> BlockyModel:
 				var kind: String = p[0]
 				var psc: float = p[2] if p.size() > 2 else 1.0
 				var pcol: int = p[3] if p.size() > 3 else 0
+				if kind == "bow":
+					# the arm points forward: hand-local +Z is up and -Y is forward, so the bow stands upright, belly towards the target
+					var bh := Node3D.new()
+					bh.position = Vector3(0, -arm_len + 0.06, 0.02)
+					bh.basis = Basis(Vector3(0, -1, 0), Vector3(0, 0, 1), Vector3(-1, 0, 0)).scaled(Vector3.ONE * psc * 1.25)
+					var bow_node := _bow_node()
+					bh.add_child(bow_node)
+					ap.add_child(bh)
+					mdl.bow = bow_node
+					mdl.set_meta("bow_delay", 0.3)   # the arrow leaves the string this long after the shot started
+					continue
 				var pm := _prop(kind, pcol)
 				var holder := Node3D.new()
 				holder.position = Vector3(0, -arm_len + 0.06, 0.05)

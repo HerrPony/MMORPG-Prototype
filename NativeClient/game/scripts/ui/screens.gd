@@ -253,7 +253,7 @@ func _build_chars() -> void:
 	bottom.add_child(char_info)
 	var row := UI.hbox(10)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	btn_enter = UI.button("Welt betreten", func(): if selected != 0: enter_world.emit(selected), true)
+	btn_enter = UI.button("Welt betreten", _enter_selected, true)
 	btn_enter.custom_minimum_size.x = 220
 	btn_delete = UI.button("Löschen", _delete_selected)
 	row.add_child(btn_enter)
@@ -317,6 +317,10 @@ func _render_chars() -> void:
 	else:
 		char_info.text = ""
 		preview.clear()
+
+func _enter_selected() -> void:
+	if selected != 0:
+		enter_world.emit(selected)
 
 func _delete_selected() -> void:
 	var sel = null
