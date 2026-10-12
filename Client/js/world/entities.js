@@ -255,7 +255,8 @@ export class Entities {
       }
       e.group.position.set(e.rx, e.ry, e.rz);
       e.group.rotation.y = e.rr;
-      const st = { speed: e.fl ? 0 : e.speed, airborne: e.airborne, dead: e.d, flying: e.fl };
+      const swim = e.k === 'player' && !e.d && !e.fl && !e.airborne && e.ry < -0.9; // feet in deep water: swimming
+      const st = { speed: e.fl ? 0 : e.speed, airborne: e.airborne, dead: e.d, flying: e.fl, swim };
       e.model.update(dt, st);
       if (e.mount) e.mount.update(dt, st);
       if (e.pad) e.pad.update(dt, { speed: 0, flying: false });

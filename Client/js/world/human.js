@@ -525,7 +525,7 @@ export function makeHumanoid(spec0 = {}) {
   }
   dress(spec0);
 
-  let attackT = 0, castT = 0, dead = 0, phase = 0, t = Math.random() * 10, sw = 0;
+  let attackT = 0, castT = 0, dead = 0, swimF = 0, swimPh = 0, phase = 0, t = Math.random() * 10, sw = 0;
   return {
     obj: root, height: 1.8 * scale * (bs[1] || 1) + 0.1, kind: 'human',
     setTint(c) { spec = { ...spec, tint: c }; },
@@ -537,6 +537,7 @@ export function makeHumanoid(spec0 = {}) {
       t += dt;
       const sp = st.speed;
       const moving = sp > 0.08 && !st.airborne;
+      swimF += ((st.swim ? 1 : 0) - swimF) * Math.min(1, dt * 7);
       const slow = spec.slow ? 0.6 : 1;
       if (moving) phase += dt * Math.max(4, sp * 13) * slow;
       sw += ((moving ? Math.min(1, 0.4 + sp * 0.6) * slow : 0) - sw) * Math.min(1, dt * 12);
@@ -574,11 +575,20 @@ export function makeHumanoid(spec0 = {}) {
       armR.pv.rotation.x = rArm; armL.pv.rotation.x = lArm;
       armR.pv.rotation.y = rYaw; armL.pv.rotation.y = 0;
       armR.pv.rotation.z = 0.04; armL.pv.rotation.z = -0.04;
+      if (swimF > 0.01) { // swimming: lean forward, crawl with the arms, kick with the legs; treading water when standing still
+        swimPh += dt * (moving ? 6.5 : 2.2);
+        const a = Math.sin(swimPh), b = Math.sin(swimPh + Math.PI);
+        const k2 = swimF * (moving ? 1 : 0.45);
+        armR.pv.rotation.x = rArm + (-2.3 + a * 0.9 - rArm) * swimF * (moving ? 1 : 0.35);
+        armL.pv.rotation.x = lArm + (-2.3 + b * 0.9 - lArm) * swimF * (moving ? 1 : 0.35);
+        legs[0].pv.rotation.x = legs[0].pv.rotation.x * (1 - swimF) + a * 0.45 * k2;
+        legs[1].pv.rotation.x = legs[1].pv.rotation.x * (1 - swimF) + b * 0.45 * k2;
+      }
       body.position.y = moving ? Math.abs(Math.sin(phase)) * 0.04 * sw : 0;
       headPv.rotation.y = moving ? 0 : Math.sin(t * 0.6) * 0.12;
       dead += ((st.dead ? 1 : 0) - dead) * Math.min(1, dt * 6); // death: lie on the back
-      inner.rotation.x = -dead * (Math.PI / 2);
-      inner.position.y = dead * 0.22 * scale;
+      inner.rotation.x = -dead * (Math.PI / 2) + swimF * (moving ? 1.2 : 0.35);
+      inner.position.y = dead * 0.22 * scale + swimF * (moving ? 0.55 : 0.2) * scale + swimF * Math.sin(t * 2.4) * 0.04;
     },
   };
 }

@@ -5,6 +5,7 @@ extends Node3D
 var ents: Entities
 var hud: Hud
 var list: Array = []
+var _swimmers := {}          # entity id -> seconds until the next ripple
 var tex: GradientTexture2D
 var streak_tex: GradientTexture2D
 
@@ -34,6 +35,7 @@ func clear_all() -> void:
 	for c in get_children():
 		c.queue_free()
 	list.clear()
+	_swimmers.clear()
 
 func _mat(color: Color, t: Texture2D = null, billboard := true, opacity := 1.0) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -392,7 +394,32 @@ func on_dmg(m: Dictionary) -> void:
 	if int(m.get("ab", 0)) > 0:
 		hud.floating_text(sp + Vector2(0, -18), ("(%d absorbiert)" % int(m.ab)) if int(m.get("a", 0)) > 0 else "Absorbiert", "abs")
 
+## Ripples around swimmers and a splash when somebody enters the water.
+func _swim_fx(dt: float) -> void:
+	var seen := {}
+	for e: Ent in S.ents.values():
+		if e.k != "player" or e.d or e.fl or e.ry >= -0.9:
+			continue
+		if Vector2(e.rx - S.local.x, e.rz - S.local.z).length() > 70.0:
+			continue
+		seen[e.id] = true
+		var at := Vector3(e.rx, -0.08, e.rz)
+		if not _swimmers.has(e.id):
+			_swimmers[e.id] = 0.0
+			burst(Vector3(e.rx, 0.1, e.rz), Color(0.7, 0.85, 1.0), 1.6, 0.45)
+			ring(at, Color(0.5, 0.62, 0.72), 0.4, 2.8, 1.3)
+			Sound.sfx("splash", -4.0)
+		_swimmers[e.id] -= dt
+		if _swimmers[e.id] <= 0.0:
+			var moving: bool = e.speed > 0.05
+			_swimmers[e.id] = 0.3 if moving else 0.9
+			ring(at, Color(0.42, 0.54, 0.62), 0.35, 1.7 if moving else 1.2, 1.1)
+	for id in _swimmers.keys():
+		if not seen.has(id):
+			_swimmers.erase(id)
+
 func update(dt: float) -> void:
+	_swim_fx(dt)
 	var cur := list
 	list = []
 	var keep: Array = []

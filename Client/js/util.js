@@ -46,6 +46,11 @@ export function heightAt(x, z) {
   return a + (b - a) * fx + (c - a) * fz + (a - b - c + d) * fx * fz;
 }
 
+// Swimming (same numbers as the server, see gamedata/world.go): feet float at SWIM_LEVEL, and the coastal belt
+// of the sea down to SWIM_FLOOR can be swum in - a little stricter than the server so we never get pulled back.
+export const SWIM_LEVEL = -1.1, SWIM_FLOOR = -6.7;
+export const footY = (x, z) => Math.max(heightAt(x, z), SWIM_LEVEL);
+
 // 0 sea, 1 forest, 2 plains, 3 swamp, 4 snow, 5 desert, 6 jungle, 7 blossom, 8 mesa, 9 volcano, 10 lava
 export function biomeAt(x, z) {
   if (!W.ready || z > 500) return 1;

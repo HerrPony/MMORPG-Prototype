@@ -384,7 +384,8 @@ func update(dt: float) -> void:
 				S.local.x = e.rx; S.local.y = e.ry; S.local.z = e.rz; S.local.r = e.rr; S.local.speed = 0.0
 		e.node.position = Vector3(e.rx, e.ry, e.rz)
 		e.node.rotation.y = e.rr
-		var stt := {"speed": 0.0 if e.fl else e.speed, "airborne": e.airborne, "dead": e.d, "flying": e.fl}
+		var swim: bool = e.k == "player" and not e.d and not e.fl and not e.airborne and e.ry < -0.9  # feet in deep water: swimming
+		var stt := {"speed": 0.0 if e.fl else e.speed, "airborne": e.airborne, "dead": e.d, "flying": e.fl, "swim": swim}
 		e.model.update(dt, stt)
 		if e.mount:
 			e.mount.update(dt, stt)

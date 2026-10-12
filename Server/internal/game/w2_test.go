@@ -240,3 +240,33 @@ func clearShotPos(t *testing.T, mob *Entity, d float64) (float64, float64) {
 	t.Fatal("no clear line to the mob")
 	return 0, 0
 }
+
+// players can swim in the coastal belt of the sea, but the open sea (and with it the other continent) stays closed
+func TestSwimmingStopsAtOpenSea(t *testing.T) {
+	w := newTestWorld(t)
+	e, _ := addPlayer(t, w, "Nixe", "warrior", 5)
+	var h *gamedata.Town
+	for _, tw := range gamedata.Towns {
+		if tw.ID == "sturmhafen" {
+			h = tw
+		}
+	}
+	z := h.Z + 40
+	e.X, e.Z, e.Y = h.X, z, gamedata.FootY(h.X, z)
+	deepest := 0.0
+	for i := 0; i < 1500; i++ {
+		w.tick()
+		w.onMove(e, protocol.Move{X: e.X + 1.2, Y: gamedata.FootY(e.X+1.2, z), Z: z})
+		deepest = math.Min(deepest, gamedata.Height(e.X, e.Z))
+	}
+	if deepest > -2 {
+		t.Fatalf("the player never reached deep water (deepest %.1f at x=%.0f)", deepest, e.X)
+	}
+	if e.X > 420 || !gamedata.Swimmable(e.X, e.Z) {
+		t.Fatalf("swam too far: x=%.0f", e.X)
+	}
+	if e.Y < gamedata.SwimLevel-0.31 || e.Y > 0.5 {
+		t.Fatalf("swimming height is off: y=%.2f", e.Y)
+	}
+	t.Logf("swam to x=%.0f (shore of the continent ends near x=%.0f)", e.X, h.X+30)
+}

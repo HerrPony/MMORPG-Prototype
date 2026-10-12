@@ -20,6 +20,11 @@ const (
 	GridNX    = 721 // vertices along x
 	GridNZ    = 301 // vertices along z
 	DeepWater = -1.6
+	// Swimming: players may leave the shallows into the sea as long as the sea floor is above SwimFloor
+	// (a belt of some 30 m around the coast). The open sea between the continents stays closed, so the
+	// other continent can only be reached with the ferry. Clients use the same numbers.
+	SwimFloor = -6.8
+	SwimLevel = -1.1 // y of a swimming player's feet (the water surface is at about -0.1)
 	SeaLevel  = 0.0
 
 	Cont2X     = 840.0 // center of the second continent
@@ -440,6 +445,18 @@ func Walkable(x, z float64) bool {
 	}
 	return x > WorldMinX+4 && x < WorldMaxX-4 && math.Abs(z) < WorldHalf-4 && Height(x, z) > DeepWater && BiomeAt(x, z) != BiomeLava
 }
+
+// Swimmable reports whether a player may be at x,z in the water: everything walkable plus the coastal
+// belt of the sea. The sea floor drops to -7 away from the coasts, which keeps the continents apart.
+func Swimmable(x, z float64) bool {
+	if Walkable(x, z) {
+		return true
+	}
+	return x > WorldMinX+4 && x < WorldMaxX-4 && math.Abs(z) < WorldHalf-4 && Height(x, z) > SwimFloor && BiomeAt(x, z) != BiomeLava
+}
+
+// FootY is the height a player's feet are at: the terrain, but not deeper than the swimming level.
+func FootY(x, z float64) float64 { return math.Max(Height(x, z), SwimLevel) }
 
 // HeightmapB64 / BiomemapB64 are the grids as sent to clients (int16 of h*20, uint8 biome).
 func HeightmapB64() string {
