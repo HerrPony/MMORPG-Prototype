@@ -148,13 +148,21 @@ jobs:
         run: |
           set -e
           cd NativeClient/build/pages
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
           git init -q -b gh-pages
           git config user.name "github-actions"
           git config user.email "actions@users.noreply.github.com"
           touch .nojekyll
+          # Build on top of the published branch so that only new objects are uploaded. A fresh orphan branch
+          # re-uploads the whole tree (~250 MB) on every release, which GitHub answers with an HTTP 500.
+          if git fetch -q --depth 1 "$URL" gh-pages; then git reset -q --soft FETCH_HEAD; fi
           git add -A
           git commit -q -m "Client ${{ steps.ver.outputs.version }}"
-          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
+          for i in 1 2 3; do
+            git push "$URL" gh-pages && exit 0
+            echo "push failed (attempt $i)"; sleep 20
+          done
+          exit 1
 
       - name: GitHub release with installers
         uses: softprops/action-gh-release@v2
