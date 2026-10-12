@@ -207,7 +207,7 @@ func buildSpawns() {
 		h.Write([]byte(g.Mob))
 		rng := rand.New(rand.NewSource(int64(h.Sum32()) + int64(g.X*7) + int64(g.Z*13)))
 		placed := 0
-		for try := 0; try < 400 && placed < g.N; try++ {
+		for try := 0; try < 800 && placed < g.N; try++ {
 			x, z := g.X, g.Z
 			if g.N > 1 || g.Radius > 2 || try > 20 {
 				a := rng.Float64() * 2 * math.Pi
@@ -219,8 +219,12 @@ func buildSpawns() {
 				continue
 			}
 			tooClose := false
+			gap := packSpacing
+			if g.N == 1 { // single bosses/elites sit in their camp
+				gap = 4
+			}
 			for _, s := range generatedSpawns {
-				if math.Hypot(s.X-x, s.Z-z) < 4 {
+				if math.Hypot(s.X-x, s.Z-z) < gap {
 					tooClose = true
 					break
 				}
@@ -233,6 +237,10 @@ func buildSpawns() {
 		}
 	}
 }
+
+// packSpacing is the minimum distance between two spawns, so that you can pull one mob without its neighbours
+// (aggro range 8, group pull radius 6.5, wandering radius 2.5).
+const packSpacing = 14.0
 
 // roadClear is the distance mobs keep from roads when they spawn.
 const roadClear = 5.0

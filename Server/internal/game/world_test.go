@@ -2,6 +2,7 @@ package game
 
 import (
 	"encoding/json"
+	"math"
 	"testing"
 	"time"
 
@@ -83,7 +84,7 @@ func TestKillWolfGivesXPAndPersonalLoot(t *testing.T) {
 	w := newTestWorld(t)
 	e, _ := addPlayer(t, w, "Anna", "mage", 1)
 	wolf := findMob(w, "wolf")
-	e.X, e.Z = wolf.X-8, wolf.Z
+	e.X, e.Z = clearShotPos(t, wolf, 8)
 	e.Y = gamedata.Height(e.X, e.Z)
 	e.P.Target = wolf.ID
 	for i := 0; i < 400 && !wolf.Dead; i++ {
@@ -229,7 +230,7 @@ func TestWarriorStanceAndTaunt(t *testing.T) {
 		t.Fatal("defensive stance should reduce damage taken")
 	}
 	wolf := findMob(w, "wolf")
-	e.X, e.Z = wolf.X-5, wolf.Z
+	e.X, e.Z = clearShotPos(t, wolf, 5)
 	e.P.Target = wolf.ID
 	e.P.Res = 50
 	w.now += 5
@@ -257,7 +258,7 @@ func TestMageElementalAndHunterPet(t *testing.T) {
 	h, _ := addPlayer(t, w, "Hans", "hunter", 12)
 	h.P.Char.Skills = append(h.P.Char.Skills, "h_tame", "h_callpet")
 	wolf := findMob(w, "wolf")
-	h.X, h.Z = wolf.X-6, wolf.Z
+	h.X, h.Z = clearShotPos(t, wolf, 6)
 	h.P.Target = wolf.ID
 	w.tryCast(h, "h_tame")
 	run(w, 7)
@@ -305,4 +306,30 @@ func (w *World) npcByID(id string) *Entity {
 		}
 	}
 	return nil
+}
+
+func TestMobsRespectObstaclesAndSpacing(t *testing.T) {
+	sp := gamedata.AllSpawns()
+	tooClose := 0
+	for i, a := range sp {
+		for _, b := range sp[i+1:] {
+			if math.Hypot(a.X-b.X, a.Z-b.Z) < 3.9 {
+				tooClose++
+			}
+		}
+	}
+	if tooClose > 0 {
+		t.Fatalf("%d spawn pairs closer than 3.9 m", tooClose)
+	}
+	// a body pushed into a building ends up outside of it
+	for _, b := range gamedata.BuildScenery().House {
+		x, z := gamedata.Collide(b.X, b.Z, 0.4)
+		if math.Abs(x-b.X) < b.W/2 && math.Abs(z-b.Z) < b.D/2 {
+			t.Fatalf("still inside wall at %.1f,%.1f", b.X, b.Z)
+		}
+	}
+	// no line of sight through the cabin wall (north wall at z=-4)
+	if !gamedata.LineBlocked(0, -8, 0, 0, false) {
+		t.Fatal("shot through the house wall")
+	}
 }

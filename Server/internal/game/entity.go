@@ -48,7 +48,8 @@ type Entity struct {
 	HP    int
 	MaxHP int
 	Dead  bool
-	Inst  int // dungeon instance id, 0 = open world
+	Inst  int     // dungeon instance id, 0 = open world
+	Stuck float64 // seconds a mover has been blocked by an obstacle
 
 	// temporary effects
 	Dots        []Dot

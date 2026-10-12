@@ -204,12 +204,12 @@ func TestHunterSkillStartsAutoShot(t *testing.T) {
 	w := newTestWorld(t)
 	e, _ := addPlayer(t, w, "Anna", "hunter", 5)
 	wolf := findMob(w, "wolf")
-	e.X, e.Z = wolf.X-10, wolf.Z
+	e.X, e.Z = clearShotPos(t, wolf, 10)
 	e.Y = gamedata.Height(e.X, e.Z)
 	e.P.Target = wolf.ID
 	e.P.Char.Skills = append(e.P.Char.Skills, "h_aimed")
 	w.tryCast(e, "h_aimed")
-	run(w, 3)
+	// (running the world on could kill the wolf, which ends the auto shot again)
 	if !e.P.Auto {
 		t.Fatal("an offensive skill should start the hunter's auto shot")
 	}
@@ -221,4 +221,17 @@ func TestHunterSkillStartsAutoShot(t *testing.T) {
 	if m.P.Auto {
 		t.Fatal("only hunters start auto attacks with skills")
 	}
+}
+
+// clearShotPos returns a spot d metres from the mob with an unobstructed line to it.
+func clearShotPos(t *testing.T, mob *Entity, d float64) (float64, float64) {
+	t.Helper()
+	for a := 0.0; a < 6.28; a += 0.3 {
+		x, z := mob.X+math.Cos(a)*d, mob.Z+math.Sin(a)*d
+		if !gamedata.LineBlocked(x, z, mob.X, mob.Z, true) && gamedata.Walkable(x, z) {
+			return x, z
+		}
+	}
+	t.Fatal("no clear line to the mob")
+	return 0, 0
 }

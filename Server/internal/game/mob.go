@@ -48,11 +48,33 @@ func (w *World) moveToward(e *Entity, tx, tz, speed float64) float64 {
 		return 0
 	}
 	step := math.Min(d, speed*w.dt)
+	ox, oz := e.X, e.Z
 	e.X += dx / d * step
 	e.Z += dz / d * step
+	if e.Inst == 0 { // trees, rocks and buildings are solid for mobs and pets too
+		rad := 0.5
+		if e.M != nil {
+			rad = 0.35 + 0.25*math.Max(1, e.M.Def.Scale)
+		}
+		e.X, e.Z = gamedata.Collide(e.X, e.Z, rad)
+		if step > 0.01 && math.Hypot(e.X-ox, e.Z-oz) < step*0.3 {
+			e.Stuck += w.dt
+		} else {
+			e.Stuck = 0
+		}
+	}
 	e.R = math.Atan2(dx, dz)
 	e.Y = gamedata.Height(e.X, e.Z)
 	return d - step
+}
+
+// hasLOS reports whether a has a clear line to b (open world only). Trees and rocks block ranged attacks,
+// buildings block everything.
+func (w *World) hasLOS(a, b *Entity, trees bool) bool {
+	if a.Inst != 0 || b.Inst != 0 {
+		return true
+	}
+	return !gamedata.LineBlocked(a.X, a.Z, b.X, b.Z, trees)
 }
 
 // addThreat raises src's threat on a mob; the first threat pulls nearby pack members.
@@ -72,6 +94,9 @@ func (w *World) addThreat(mobE *Entity, srcID int, amt float64) {
 	}
 }
 
+// packRadius is how close an aggressive mob has to stand to join a fight that starts next to it.
+const packRadius = 6.5
+
 // pullPack makes aggressive mobs standing close to e join the fight.
 func (w *World) pullPack(e *Entity, targetID int) {
 	if !e.M.Def.Aggressive && !e.M.Def.Elite {
@@ -81,7 +106,7 @@ func (w *World) pullPack(e *Entity, targetID int) {
 		if o == e || o.M == nil || o.Dead || o.Inst != e.Inst || len(o.M.Threat) > 0 || !o.M.Def.Aggressive {
 			continue
 		}
-		if math.Hypot(o.X-e.X, o.Z-e.Z) < 11 {
+		if math.Hypot(o.X-e.X, o.Z-e.Z) < packRadius {
 			o.M.Threat[targetID] = 1
 			o.M.Target = targetID
 		}
@@ -157,7 +182,7 @@ func (w *World) tickMob(e *Entity) {
 	// aggressive mobs pick a target on sight
 	if d.Aggressive && len(m.Threat) == 0 && !m.Returning {
 		for _, p := range w.players {
-			if p.Inst == e.Inst && !p.Dead && p.P.Flight == nil && dist(e, p) < d.AggroRange {
+			if p.Inst == e.Inst && !p.Dead && p.P.Flight == nil && dist(e, p) < d.AggroRange && w.hasLOS(e, p, false) {
 				w.addThreat(e, p.ID, 1)
 				break
 			}
@@ -167,7 +192,12 @@ func (w *World) tickMob(e *Entity) {
 	if t == nil {
 		switch {
 		case m.Returning:
-			if w.moveToward(e, m.SX, m.SZ, d.Speed*1.4) < 0.5 {
+			if w.moveToward(e, m.SX, m.SZ, d.Speed*1.4) < 0.5 || e.Stuck > 2 {
+				if e.Stuck > 2 { // wedged behind an obstacle: beam home
+					e.X, e.Z = m.SX, m.SZ
+					e.Y = gamedata.Height(e.X, e.Z)
+				}
+				e.Stuck = 0
 				m.Returning = false
 			}
 		case len(m.Threat) > 0:
@@ -181,19 +211,25 @@ func (w *World) tickMob(e *Entity) {
 		w.evade(e)
 		return
 	}
+	if e.Stuck > 5 { // cannot reach the target (cliff, wall): give up
+		e.Stuck = 0
+		w.evade(e)
+		return
+	}
 	sp := d.Speed * e.speedMult(w.now)
 	dd := dist(e, t)
+	los := w.hasLOS(e, t, d.Range > 0)
 	dmgMult := 1.0
 	if m.Enraged {
 		dmgMult = 1.5
 	}
 	if d.Range > 0 { // ranged attackers keep their distance
-		if dd > d.Range*0.9 {
+		if dd > d.Range*0.9 || !los {
 			w.moveToward(e, t.X, t.Z, sp)
 		} else {
 			e.R = math.Atan2(t.X-e.X, t.Z-e.Z)
 		}
-		if dd <= d.Range && w.now >= m.NextAtk {
+		if dd <= d.Range && los && w.now >= m.NextAtk {
 			m.NextAtk = w.now + d.AttackSec*1.1
 			w.sendNear(e, protocol.M{"t": "fx", "k": "mobshot", "s": e.ID, "d": t.ID, "style": d.Style})
 			w.damage(e, t, float64(d.DmgMin+w.rng.Intn(d.DmgMax-d.DmgMin+1))*dmgMult, false)
@@ -204,7 +240,7 @@ func (w *World) tickMob(e *Entity) {
 		} else {
 			e.R = math.Atan2(t.X-e.X, t.Z-e.Z)
 		}
-		if dd <= 2.8*math.Max(1, d.Scale*0.8) && w.now >= m.NextAtk {
+		if dd <= 2.8*math.Max(1, d.Scale*0.8) && los && w.now >= m.NextAtk {
 			m.NextAtk = w.now + d.AttackSec
 			w.sendNear(e, protocol.M{"t": "fx", "k": "bite", "s": e.ID, "d": t.ID})
 			w.damage(e, t, float64(d.DmgMin+w.rng.Intn(d.DmgMax-d.DmgMin+1))*dmgMult, false)
@@ -230,7 +266,7 @@ func (w *World) idleMob(e *Entity) {
 	m.WanderWait -= w.dt
 	if m.WanderWait <= 0 {
 		a := w.rng.Float64() * 2 * math.Pi
-		r := 1 + w.rng.Float64()*5
+		r := 1 + w.rng.Float64()*2.5
 		m.WX, m.WZ = m.SX+math.Cos(a)*r, m.SZ+math.Sin(a)*r
 		if gamedata.Height(m.WX, m.WZ) > 0.2 {
 			m.Wandering = true
