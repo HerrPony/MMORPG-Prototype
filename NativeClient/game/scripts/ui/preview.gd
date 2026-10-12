@@ -36,7 +36,7 @@ func _ready() -> void:
 	camera = Camera3D.new()
 	camera.environment = env   # (a WorldEnvironment node would also affect the game world)
 	camera.fov = 35
-	camera.position = Vector3(0, 1.5, 4.6)
+	camera.position = Vector3(0, 1.45, 5.7)
 	add_child(camera)
 	camera.look_at(Vector3(0, 1.0, 0))
 	var ground := MeshInstance3D.new()

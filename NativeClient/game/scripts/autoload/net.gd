@@ -37,9 +37,25 @@ func close() -> void:
 func send(t: String, data: Dictionary = {}) -> void:
 	if peer == null or peer.get_ready_state() != WebSocketPeer.STATE_OPEN:
 		return
-	var m := data.duplicate()
+	var m := _intify(data.duplicate(true)) as Dictionary
 	m["t"] = t
 	peer.send_text(JSON.stringify(m))
+
+## Godot parses every JSON number as float and would write 100.0 back; the Go server wants 100 for integer fields.
+static func _intify(v: Variant) -> Variant:
+	if v is float:
+		if absf(v) < 9.0e15 and v == floorf(v):
+			return int(v)
+		return v
+	if v is Dictionary:
+		for k in v:
+			v[k] = _intify(v[k])
+		return v
+	if v is Array:
+		for i in v.size():
+			v[i] = _intify(v[i])
+		return v
+	return v
 
 func _process(_dt: float) -> void:
 	if peer == null:
@@ -78,7 +94,7 @@ static func strip_nulls(d: Dictionary) -> void:
 					strip_nulls(it)
 
 func _dispatch(t: String, m: Dictionary) -> void:
-	if t != "s" and t != "world":
+	if t != "s":
 		strip_nulls(m)
 	if _handlers.has(t):
 		for fn in _handlers[t].duplicate():

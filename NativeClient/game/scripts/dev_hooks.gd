@@ -17,13 +17,15 @@ func _ready() -> void:
 		_shot.call_deferred(a)
 	if a.has("--play"):
 		_play.call_deferred(a)
+	if a.has("--play2"):
+		_play2.call_deferred(a)
 
 func _autologin(a: PackedStringArray) -> void:
 	var i := a.find("--autologin")
 	main.screens.in_server.text = a[i + 1]
 	main.screens.in_user.text = a[i + 2]
 	main.screens.in_pass.text = a[i + 3]
-	if a.has("--autoenter"):
+	if a.has("--autoenter") or a.has("--autoenter-register"):
 		Net.on("authError", func(_m): Net.send("register", {"user": main.screens.in_user.text, "pass": main.screens.in_pass.text}))
 	main.screens._submit()
 
@@ -146,4 +148,145 @@ func _play(a: PackedStringArray) -> void:
 	print("music dir: ", Sound._music_dir, " track: ", Sound._track)
 	check.call("music plays a fight track after combat", Sound._music_dir == "" or Sound._track.ends_with("_fight"))
 	print("PLAY RESULT: " + ("OK" if res.ok else "FAILED"))
+	get_tree().quit()
+
+
+# ---------------------------------------------------------------- scripted play 2: dialogs, vendor, gear, quests, trainer, flight
+
+func _until(cond: Callable, timeout := 6.0) -> bool:
+	var t := 0.0
+	while t < timeout:
+		if cond.call():
+			return true
+		await get_tree().process_frame
+		t += get_process_delta_time()
+	return cond.call()
+
+func _tp(x: float, z: float) -> void:
+	Net.send("chat", {"text": "/dev tp %d %d" % [int(x), int(z)]})
+	await _until(func(): return Vector2(S.local.x - x, S.local.z - z).length() < 3.0, 4.0)
+	await get_tree().create_timer(0.8).timeout
+
+func _interact(who: String) -> bool:
+	for e: Ent in S.ents.values():
+		if e.id != S.id and (e.m == who or e.n.contains(who)):
+			main.controller.set_target(e.id)
+			Net.send("interact", {"id": e.id})
+			return true
+	return false
+
+func _play2(_a: PackedStringArray) -> void:
+	await _wait_spawn()
+	var res := {"ok": true}
+	var check := func(name: String, cond: bool) -> void:
+		print(("PASS " if cond else "FAIL ") + name)
+		if not cond:
+			res.ok = false
+	var errs: Array = []
+	Net.on("err", func(m): errs.append(m.text); print("server error: ", m.text))
+	var W: Windows = main.windows
+	Net.on("inv", func(m): print("inv message: ", (m.get("items", []) as Array).size(), " items, copper ", m.get("copper"), " max ", m.get("max")))
+	Net.send("chat", {"text": "/dev level 12"})
+	Net.send("chat", {"text": "/dev gold 200"})
+	await get_tree().create_timer(1.0).timeout
+	# --- vendor
+	await _tp(11, 13)
+	await get_tree().create_timer(1.0).timeout
+	check.call("merchant found", _interact("merchant"))
+	check.call("dialog opens", await _until(func(): return W.dialog.visible))
+	check.call("dialog lists quests", (W.dialog.m.get("quests", []) as Array).size() > 0)
+	W.vendor.open_for(W.dialog.m)
+	check.call("vendor shows goods", W.vendor.list.get_child_count() > 0)
+	var stock: Array = W.dialog.m.get("stock", [])
+	var bought := ""
+	for id in stock:
+		var it := S.item(id)
+		if int(it.get("buy", 99999999)) <= S.copper and not (it.get("req", 0) > S.me.lvl):
+			bought = id
+			break
+	check.call("something affordable", bought != "")
+	if bought != "":
+		Net.send("buy", {"npc": W.dialog.m.npc, "item": bought, "count": 1})
+		check.call("inventory updated", await _until(func(): return S.inv.size() > 0))
+		W.bags.open()
+		W.bags.refresh()
+		check.call("bag slot shows item", W.bags.slot_nodes.size() > 0 and (W.bags.slot_nodes[0] as Slot).icon != "")
+		var idx := 0
+		var it2 := S.item(S.inv[0].i)
+		if it2.get("slot", "") != "":
+			Net.send("equip", {"idx": 0})
+			check.call("item equipped", await _until(func(): return S.equip.size() > 0))
+		W.char_win.open()
+		W.char_win.refresh()
+		check.call("character window builds", W.char_win.content.get_child_count() > 3)
+	# --- quest
+	var qid := ""
+	for o in W.dialog.m.get("quests", []):
+		if o.state == "available":
+			qid = o.id
+			break
+	check.call("quest offered", qid != "")
+	if qid != "":
+		W.dialog.quest_id = qid
+		W.dialog.view = "quest"
+		W.dialog.render()
+		check.call("quest text rendered", W.dialog.content.get_child_count() > 3)
+		Net.send("acceptQuest", {"quest": qid})
+		check.call("quest accepted", await _until(func(): return S.quests.size() == 1))
+		await get_tree().create_timer(0.3).timeout
+		check.call("tracker shows quest", main.hud.tracker_body.get_child_count() >= 2)
+		W.quests.open()
+		W.quests.refresh()
+		check.call("quest log builds", W.quests.detail.get_child_count() > 3)
+	W.close_top()
+	W.close_top()
+	# --- trainer
+	await _tp(-9, 13)
+	await get_tree().create_timer(1.0).timeout
+	check.call("trainer found", _interact("trainer_warrior"))
+	check.call("trainer dialog opens", await _until(func(): return W.dialog.visible and W.dialog.m.has("trainer")))
+	W.dialog.view = "trainer"
+	W.dialog.render()
+	check.call("trainer lists skills", W.dialog.content.get_child_count() > 2)
+	var learn := ""
+	for sk in W.dialog.m.trainer.get("skills", []):
+		if sk.state == "learnable":
+			learn = sk.id
+			break
+	if learn != "":
+		Net.send("train", {"npc": W.dialog.m.npc, "skill": learn})
+		check.call("skill learned", await _until(func(): return S.skill_ids.has(learn)))
+		W.spells.open()
+		W.spells.refresh()
+		check.call("spell book builds", W.spells.list.get_child_count() > 3)
+	W.dialog.close()
+	# --- map and party windows
+	W.map.open()
+	await get_tree().create_timer(0.5).timeout
+	W.map.close()
+	W.party.open()
+	W.party.refresh()
+	W.party.close()
+	# --- griffin flight
+	Net.send("chat", {"text": "/dev unlock"})
+	await get_tree().create_timer(0.5).timeout
+	await _tp(20, 22)
+	await get_tree().create_timer(1.0).timeout
+	check.call("griffin master found", _interact("flightmaster"))
+	check.call("flight dialog opens", await _until(func(): return W.dialog.visible and W.dialog.view == "flight"))
+	var pts: Array = W.dialog.m.flight.get("points", [])
+	print("flight points: ", pts.size())
+	if pts.size() > 0:
+		var started := {"v": false}
+		Net.on("flightStart", func(_m): started.v = true)
+		Net.send("flight", {"npc": W.dialog.m.npc, "dest": pts[0].id})
+		check.call("flight starts", await _until(func(): return started.v))
+		check.call("player is flying", await _until(func(): return S.me.get("fl", false)))
+		var p0 := Vector2(S.local.x, S.local.z)
+		await get_tree().create_timer(3.0).timeout
+		check.call("flight moves the player", Vector2(S.local.x, S.local.z).distance_to(p0) > 5.0)
+		var own: Ent = S.ents.get(S.id)
+		check.call("griffin mount attached", own != null and own.mount != null)
+	print("server errors: ", errs.size())
+	print("PLAY2 RESULT: " + ("OK" if res.ok else "FAILED"))
 	get_tree().quit()
