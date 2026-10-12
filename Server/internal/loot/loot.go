@@ -26,7 +26,16 @@ type Looter struct {
 func Roll(m *gamedata.Mob, mobLevel int, who Looter, rng *rand.Rand) *Bag {
 	b := &Bag{}
 	if rng.Float64() < m.GearChance {
-		b.Items = append(b.Items, storage.ItemStack{Item: gamedata.RandomGear(mobLevel, who.Class, rng), Count: 1})
+		lvl := mobLevel
+		if m.Elite && rng.Float64() < 0.3 { // elites sometimes drop gear of the next tier
+			lvl += 2
+		}
+		b.Items = append(b.Items, storage.ItemStack{Item: gamedata.RandomGear(lvl, who.Class, rng), Count: 1})
+	}
+	if !m.Boss && rng.Float64() < 0.3 { // hand made items of the open-world elites and mini bosses
+		if id := gamedata.NamedDrop(m.ID, who.Class, rng); id != "" {
+			b.Items = append(b.Items, storage.ItemStack{Item: id, Count: 1})
+		}
 	}
 	if m.Boss {
 		n := 1

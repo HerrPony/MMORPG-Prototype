@@ -109,3 +109,14 @@ Ist ein Ziel unerreichbar (z. B. Spieler hinter einer Klippe), geben Mobs nach e
 - **Musik:** `Client/js/audio.js` komponiert fortlaufend: pro Biom ein eigenes Thema (Tonart, Modus, Tempo, Akkordfolge, Instrumente),
   Haupt-Thema im Menü, düsteres Thema im Dungeon. Melodien entstehen aus einem Motiv, das über 8-Takt-Phrasen entwickelt wird. Tagsüber
   Flöte/Streicher, nachts Harfe/Glocken/Chor; im Kampf kommen Pauken/Taiko, Blech und ein Streicher-Ostinato dazu.
+
+## Inhalte: Quests, Loot, Ausrüstung
+
+- **Quests:** über 280 Quests auf allen Stufen (1–40). Die zweite Welle (`Server/internal/gamedata/zz_quests*.go`, IDs mit `n_`) bringt
+  Jagd-, Sammel-, Erkundungs-, Lieferquests und Gespräche für jede Region. Sammelziele nutzen die neuen Handelswaren der Mobs.
+- **Loot:** jeder Mob dropt zusätzlich Handelswaren (Knochen, Krallen, Herzen …, aus Namen und Art erzeugt), Essen und Heiltränke passend zur Stufe;
+  Ausrüstung fällt deutlich öfter. Die Elite- und Mini-Boss-Gegner der offenen Welt haben handgemachte Einzelstücke (`zz_gear.go`).
+- **Ausrüstung:** pro Stufe zusätzliche Waffenfamilien (Streitaxt, Streitkolben, Armbrust, Kompositbogen, Zepter, Runenstab), Turmschild,
+  Köcher und Zauberbuch sowie „der Wacht“/„der Macht“-Varianten aller Teile (nur als Drops). Händler: 13 neue Händler, in jeder Region gibt es
+  Waffen, Rüstungen und Schmuck der passenden Stufe, die jeweils stärkste Ausrüstung der nächsten Region liegt eine Reise entfernt.
+  Tests (`zz_content_test.go`) sichern Quest-Dichte, Händler-Abdeckung aller 20 Ausrüstungsstufen und die Loot-Tabellen ab.
