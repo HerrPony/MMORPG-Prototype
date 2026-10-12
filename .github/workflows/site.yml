@@ -1,0 +1,43 @@
+name: Website
+
+# Publishes the landing page (Site/) to the root of the gh-pages branch. The update tree of the native client
+# (updates/) lives in the same branch and is left alone.
+on:
+  push:
+    branches: [main]
+    paths: ["Site/**", ".github/workflows/site.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish to gh-pages
+        run: |
+          set -e
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          mkdir pages && cd pages
+          git init -q -b gh-pages
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          if git fetch -q --depth 1 "$URL" gh-pages; then git reset -q --hard FETCH_HEAD; fi
+          # replace the site, keep updates/ and the git directory
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name updates -exec rm -rf {} +
+          cp -r ../Site/. .
+          touch .nojekyll
+          git add -A
+          if git diff --cached --quiet; then echo "site unchanged"; exit 0; fi
+          git commit -q -m "Website"
+          for i in 1 2 3; do
+            git push "$URL" gh-pages && exit 0
+            echo "push failed (attempt $i)"; sleep 20
+          done
+          exit 1

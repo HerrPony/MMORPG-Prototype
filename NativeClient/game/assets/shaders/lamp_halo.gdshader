@@ -14,7 +14,7 @@ void vertex() {
 	vec3 centre = (VIEW_MATRIX * vec4(MODEL_MATRIX[3].xyz, 1.0)).xyz;
 	float dist = length(centre);
 	// fades out in the distance and when the camera is right next to the lamp
-	k = INSTANCE_CUSTOM.z * smoothstep(190.0, 80.0, dist) * smoothstep(0.8, 4.0, dist);
+	k = INSTANCE_CUSTOM.z * smoothstep(190.0, 80.0, dist) * smoothstep(2.5, 9.0, dist);
 	fl = 1.0 + 0.08 * sin(TIME * 9.0 + INSTANCE_CUSTOM.x * 6.28) + 0.05 * sin(TIME * 23.0 + INSTANCE_CUSTOM.x * 17.0);
 	// a bit bigger when seen from afar so that it stays visible
 	VERTEX *= INSTANCE_CUSTOM.y * (1.0 + dist * 0.004);
