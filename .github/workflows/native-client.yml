@@ -37,6 +37,8 @@ jobs:
           INPUT_NOTES: ${{ github.event.inputs.notes }}
         run: |
           if [ "$EVENT" = "push" ]; then v="${GITHUB_REF_NAME#native-v}"; else v="$INPUT_VERSION"; fi
+          # tags like native-v01 or native-v1.2 become a full X.Y.Z version (installer and launcher compare numbers)
+          if [[ "$v" =~ ^[0-9]+$ ]]; then v="$((10#$v)).0.0"; elif [[ "$v" =~ ^[0-9]+\.[0-9]+$ ]]; then v="$v.0"; fi
           echo "version=$v" >> "$GITHUB_OUTPUT"
           notes="$INPUT_NOTES"
           if [ -z "${notes// /}" ]; then notes="[b]Version $v[/b]"; fi
@@ -136,7 +138,7 @@ jobs:
       - name: GitHub release with installers
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: native-v${{ steps.ver.outputs.version }}
+          tag_name: ${{ github.event_name == 'push' && github.ref_name || format('native-v{0}', steps.ver.outputs.version) }}
           name: Erlenwald Online Client ${{ steps.ver.outputs.version }}
           files: |
             NativeClient/build/dist/ErlenwaldOnline-Setup.exe
