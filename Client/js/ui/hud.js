@@ -1,5 +1,6 @@
 import { S, now } from '../state.js';
 import { $, esc, CLASS_COLORS, CLASS_ICONS } from '../util.js';
+import { gameHours, sunInfo } from '../daynight.js';
 
 const STATUS_ICONS = { slow: ['🐌', 'Verlangsamt', true], dot: ['🩸', 'Schaden über Zeit', true], buff: ['⬆️', 'Gestärkt', false], shield: ['🛡️', 'Schild', false] };
 
@@ -164,8 +165,8 @@ export function initHud(net) {
       // death
       $('deathbox').classList.toggle('hidden', !me.d);
 
-      const d = new Date();
-      const clock = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+      const gh = gameHours(), hh = Math.floor(gh), mm = Math.floor((gh - hh) * 60);
+      const clock = (sunInfo().elev > -0.05 ? '☀ ' : '☾ ') + hh.toString().padStart(2, '0') + ':' + mm.toString().padStart(2, '0');
       if (clock !== lastClock) { lastClock = clock; $('clock').textContent = clock; }
     },
   };

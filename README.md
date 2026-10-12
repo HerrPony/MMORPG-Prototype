@@ -98,3 +98,14 @@ Mobs und Begleiter laufen um Hindernisse herum. Der Server baut beim Start (und 
 Props und Gebäuden ein 1-m-Navigationsgitter (`Server/internal/gamedata/nav.go`), sucht mit A* eine Route und glättet sie.
 Es gibt nichts von Hand zu pflegen: Was im Editor gesetzt wird, ist automatisch auch für die Wegfindung ein Hindernis.
 Ist ein Ziel unerreichbar (z. B. Spieler hinter einer Klippe), geben Mobs nach einigen Sekunden auf und gehen heim.
+
+## Tag/Nacht, Himmel und Musik
+
+- **Tag/Nacht:** Ein Spieltag dauert 6 echte Stunden (= ¼ Tag, 1 Spielstunde = 15 Minuten). Die Zeit ergibt sich aus der Serveruhr
+  (Spielmitternacht um 0, 6, 12 und 18 Uhr Serverzeit), alle Spieler sehen dieselbe Tageszeit. Mit `?hour=22` in der URL lässt sich
+  zum Testen eine feste Spielstunde erzwingen. Sonne und Mond ziehen über den Himmel, Morgen-/Abendrot, Sterne, Mondlicht.
+- **Himmel pro Biom:** `ZONE_LOOK` in `Client/js/world/scene.js` – Farben, Wolkenmenge/-farbe, Sterne, Polarlicht (Eisgipfel),
+  Dunst und Vulkanglut (Aschenlande) sowie die Farbe des Abendrots pro Biom. Neue Biome brauchen nur einen Eintrag.
+- **Musik:** `Client/js/audio.js` komponiert fortlaufend: pro Biom ein eigenes Thema (Tonart, Modus, Tempo, Akkordfolge, Instrumente),
+  Haupt-Thema im Menü, düsteres Thema im Dungeon. Melodien entstehen aus einem Motiv, das über 8-Takt-Phrasen entwickelt wird. Tagsüber
+  Flöte/Streicher, nachts Harfe/Glocken/Chor; im Kampf kommen Pauken/Taiko, Blech und ein Streicher-Ostinato dazu.
