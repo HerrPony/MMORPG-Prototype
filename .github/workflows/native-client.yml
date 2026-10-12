@@ -76,11 +76,19 @@ jobs:
       - name: Compile all scripts
         run: GODOT=godot NativeClient/tools/check_scripts.sh
 
+      # the render script re-renders only tracks whose inputs changed; it keeps the finished OGGs here
+      - name: Cache rendered music
+        uses: actions/cache@v4
+        with:
+          path: NativeClient/build/music-cache
+          key: music-${{ github.run_id }}
+          restore-keys: music-
+
       - name: Render music (pre-rendered OGG from the WebAudio score)
         timeout-minutes: 45
         run: |
           export NODE_PATH="$RUNNER_TEMP/node/node_modules"
-          node NativeClient/tools/music/render_music.mjs "$GITHUB_WORKSPACE/NativeClient/build/audio" --music-only
+          node NativeClient/tools/music/render_music.mjs "$GITHUB_WORKSPACE/NativeClient/build/audio" --music-only --cache "$GITHUB_WORKSPACE/NativeClient/build/music-cache"
 
       - name: Export game and launcher
         run: |

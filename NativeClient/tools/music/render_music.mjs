@@ -1,10 +1,13 @@
 // Renders the web client's procedural score (Client/js/audio.js) offline into OGG files for the native client.
-//   node render_music.mjs <outDir> [--sfx-only] [--music-only] [--only name,name]
+//   node render_music.mjs <outDir> [--sfx-only] [--music-only] [--only name,name] [--cache <dir>]
+// With --cache, a track is only rendered again when its inputs changed (its theme, the engine code in audio.js, this script);
+// otherwise the finished OGG is copied from the cache directory.
 // Needs: node + playwright (chromium) and ffmpeg with libvorbis. The WebAudio engine is the single source of the
 // music, so web and native client sound the same.
 import { createRequire } from 'module';
 import http from 'http';
 import fs from 'fs';
+import crypto from 'crypto';
 import path from 'path';
 import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -20,6 +23,9 @@ const sfxOnly = process.argv.includes('--sfx-only');
 const musicOnly = process.argv.includes('--music-only');
 const onlyArg = process.argv.indexOf('--only');
 const only = onlyArg > 0 ? process.argv[onlyArg + 1].split(',') : null;
+const cacheArg = process.argv.indexOf('--cache');
+const cacheDir = cacheArg > 0 ? path.resolve(process.argv[cacheArg + 1]) : null;
+if (cacheDir) fs.mkdirSync(cacheDir, { recursive: true });
 fs.mkdirSync(out, { recursive: true });
 
 const server = http.createServer((req, res) => {
@@ -126,11 +132,30 @@ if (!sfxOnly) {
       jobs.push({ name: `${t}_fight`, theme: t, mode: 'world', zone: t, night: 0, intensity: 1, bars: 16, phrase: 1 });
     }
   }
+  // everything a track depends on: the engine (audio.js without the THEMES table), this script, the job and its theme
+  const norm = (file) => fs.readFileSync(file, 'utf8').replace(/\r/g, '');
+  const engine = norm(path.join(clientDir, 'js/audio.js')).replace(/const THEMES = \{[\s\S]*?\n\};/, '');
+  const script = norm(fileURLToPath(import.meta.url));
+  const themeData = JSON.parse(await page.evaluate('JSON.stringify(window.THEMES)'));
   for (const j of jobs) {
     if (!wanted(j.name)) continue;
     const t0 = Date.now();
+    const dest = path.join(out, 'music', j.name + '.ogg');
+    const hash = crypto.createHash('sha256').update(JSON.stringify([engine, script, j, themeData[j.theme]])).digest('hex').slice(0, 16);
+    const hit = cacheDir ? path.join(cacheDir, `${j.name}.${hash}.ogg`) : null;
+    if (hit && fs.existsSync(hit)) {
+      fs.copyFileSync(hit, dest);
+      console.log(`music ${j.name}: from cache`);
+      continue;
+    }
     const b64 = await page.evaluate((o) => window.renderMusic(o), j);
-    const size = encode(b64, path.join(out, 'music', j.name + '.ogg'), 1.5);
+    const size = encode(b64, dest, 1.5);
+    if (hit) {
+      // drop older versions of this track so that the cache does not grow
+      const old = fs.readdirSync(cacheDir).filter((n) => n.startsWith(j.name + '.') && n.slice(j.name.length + 1).length === 20 && n.endsWith('.ogg'));
+      for (const n of old) fs.unlinkSync(path.join(cacheDir, n));
+      fs.copyFileSync(dest, hit);
+    }
     console.log(`music ${j.name}: ${(size / 1e6).toFixed(2)} MB in ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   }
 }
