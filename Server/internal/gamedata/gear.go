@@ -205,7 +205,11 @@ func init() {
 func RandomGear(level int, class string, rng *rand.Rand) string {
 	t := min(tiers-1, max(0, (level-1)/2))
 	var usable []string
-	for _, id := range gearPool[t] {
+	pool := gearPool[t]
+	if rng.Float64() < 0.5 { // half of the drops are the "der Wacht" / "der Macht" variants
+		pool = gearVariants[t]
+	}
+	for _, id := range pool {
 		it := Items[id]
 		if len(it.Classes) == 0 || class == "" || slices.Contains(it.Classes, class) {
 			usable = append(usable, id)

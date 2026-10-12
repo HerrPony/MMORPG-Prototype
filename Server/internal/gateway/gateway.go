@@ -65,7 +65,7 @@ func (c *conn) Send(v any) {
 }
 
 func (g *Gateway) ServeWS(w http.ResponseWriter, r *http.Request) {
-	ws, err := websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true})
+	ws, err := websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true, CompressionMode: websocket.CompressionNoContextTakeover})
 	if err != nil {
 		return
 	}

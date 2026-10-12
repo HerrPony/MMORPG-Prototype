@@ -273,6 +273,11 @@ func TestMageElementalAndHunterPet(t *testing.T) {
 	wolf := findMob(w, "wolf")
 	h.X, h.Z = clearShotPos(t, wolf, 6)
 	h.P.Target = wolf.ID
+	for id, o := range w.ents { // nobody may interrupt the 6 second taming cast
+		if o.M != nil && o != wolf && math.Hypot(o.X-h.X, o.Z-h.Z) < 40 {
+			delete(w.ents, id)
+		}
+	}
 	w.tryCast(h, "h_tame")
 	run(w, 7)
 	if h.P.Char.Pet == nil || h.P.PetEnt == 0 {
