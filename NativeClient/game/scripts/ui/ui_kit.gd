@@ -178,6 +178,22 @@ static func rich(bbcode: String, size := 14) -> RichTextLabel:
 	r.add_theme_font_size_override("bold_font_size", size)
 	return r
 
+## A clickable card (panel with child controls) used for selections; call .set_meta("sel", bool) via set_selected.
+static func card(on_click: Callable, min_size := Vector2(0, 0)) -> PanelContainer:
+	var p := PanelContainer.new()
+	p.custom_minimum_size = min_size
+	p.mouse_filter = Control.MOUSE_FILTER_STOP
+	p.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	set_selected(p, false)
+	p.gui_input.connect(func(ev: InputEvent):
+		if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+			on_click.call())
+	return p
+
+static func set_selected(p: PanelContainer, sel: bool) -> void:
+	var s := box(Color(0.94, 0.81, 0.48, 0.14) if sel else Color(1, 1, 1, 0.04), GOLD if sel else EDGE_SOFT, 2 if sel else 1, 5, 8)
+	p.add_theme_stylebox_override("panel", s)
+
 static func clear(n: Node) -> void:
 	for c in n.get_children():
 		n.remove_child(c)

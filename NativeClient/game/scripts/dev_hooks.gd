@@ -1,0 +1,118 @@
+class_name DevHooks
+extends Node
+## Developer-only automation used by the tests: screenshots and scripted play (see NativeClient/README.md).
+## Enabled with user args: --autologin host user pass, --autoenter, --shot out.png seconds, --open a,b, --play
+
+var main: Node
+
+func _ready() -> void:
+	var a := OS.get_cmdline_user_args()
+	if a.has("--autologin"):
+		_autologin.call_deferred(a)
+	if a.has("--autoenter"):
+		Net.on("chars", _auto_enter)
+	if a.has("--shot"):
+		_shot.call_deferred(a)
+	if a.has("--play"):
+		_play.call_deferred(a)
+
+func _autologin(a: PackedStringArray) -> void:
+	var i := a.find("--autologin")
+	main.screens.in_server.text = a[i + 1]
+	main.screens.in_user.text = a[i + 2]
+	main.screens.in_pass.text = a[i + 3]
+	if a.has("--autoenter"):
+		Net.on("authError", func(_m): Net.send("register", {"user": main.screens.in_user.text, "pass": main.screens.in_pass.text}))
+	main.screens._submit()
+
+func _auto_enter(m: Dictionary) -> void:
+	if S.in_world:
+		return
+	if m.chars.is_empty():
+		var nm := "Tester"
+		for ch in str(randi() % 100000):
+			nm += "abcdefghij"[int(ch)]
+		Net.send("createChar", {"name": nm, "race": "human", "class": "warrior", "look": {"gender": "m", "hair": 0, "skin": 0}})
+	else:
+		Net.send("enterWorld", {"id": m.chars[0].id})
+
+func _wait_spawn() -> void:
+	while not (S.in_world and main.spawned):
+		await get_tree().process_frame
+
+func _shot(a: PackedStringArray) -> void:
+	var i := a.find("--shot")
+	var path: String = a[i + 1]
+	var delay := float(a[i + 2])
+	var opens: PackedStringArray = []
+	if a.has("--open"):
+		opens = a[a.find("--open") + 1].split(",")
+	var t := 0.0
+	while t < delay:
+		await get_tree().process_frame
+		t += get_process_delta_time()
+		if S.in_world and main.spawned and opens.size() > 0 and t > delay - 2.0:
+			for o in opens:
+				main.windows.toggle(o)
+			opens = []
+	get_viewport().get_texture().get_image().save_png(path)
+	print("saved ", path)
+	get_tree().quit()
+
+## Scripted play: walk, target a mob and fight it; prints PASS/FAIL lines.
+func _play(a: PackedStringArray) -> void:
+	await _wait_spawn()
+	var res := {"ok": true}
+	var check := func(name: String, cond: bool) -> void:
+		print(("PASS " if cond else "FAIL ") + name)
+		if not cond:
+			res.ok = false
+	Net.on("err", func(m): print("server error: ", m.text))
+	var srv := {"tg": -1}
+	Net.on("s", func(m): srv.tg = int(m.me.get("tg", 0)))
+	await get_tree().create_timer(1.0).timeout
+	var x0: float = S.local.x
+	var z0: float = S.local.z
+	Input.action_press("move_forward")
+	await get_tree().create_timer(2.0).timeout
+	Input.action_release("move_forward")
+	var moved := Vector2(S.local.x - x0, S.local.z - z0).length()
+	check.call("walk moved %.1f m" % moved, moved > 5.0)
+	await get_tree().create_timer(0.6).timeout
+	var own: Ent = S.ents.get(S.id)
+	check.call("server position follows (%.1f vs %.1f)" % [own.x, S.local.x], absf(own.x - S.local.x) < 3.0 and absf(own.z - S.local.z) < 3.0)
+	# find a mob and teleport near it via the server's admin command is not available: walk towards it
+	var mob: Ent = null
+	var best := 1e9
+	for e: Ent in S.ents.values():
+		if e.k == "mob" and not e.d:
+			var d := Vector2(e.rx - S.local.x, e.rz - S.local.z).length()
+			if d < best:
+				best = d
+				mob = e
+	check.call("a mob is in range (%.0f m)" % best, mob != null)
+	if mob:
+		main.controller.set_target(mob.id)
+		await get_tree().create_timer(0.3).timeout
+		check.call("target set (server says %d)" % srv.tg, S.me.tg == mob.id and srv.tg == mob.id)
+		var hp0 := mob.hp
+		var seen := {"dmg": 0}
+		Net.on("dmg", func(_m): seen.dmg += 1)
+		# run towards it
+		var t := 0.0
+		while t < 12.0 and Vector2(mob.rx - S.local.x, mob.rz - S.local.z).length() > 2.2:
+			S.local.r = atan2(mob.rx - S.local.x, mob.rz - S.local.z)
+			main.controller.cam_yaw = S.local.r
+			Input.action_press("move_forward")
+			await get_tree().process_frame
+			t += get_process_delta_time()
+		Input.action_release("move_forward")
+		print("skills: ", S.skill_ids, " dist=", Vector2(mob.rx - S.local.x, mob.rz - S.local.z).length(), " target=", S.me.tg, " mob=", mob.m, " lvl ", mob.l)
+		for i in 12:
+			main.hud.cast_slot(0)
+			print("cast ", i, " dist=", Vector2(mob.rx - S.local.x, mob.rz - S.local.z).length(), " hp=", mob.hp, " frame=", Engine.get_frames_drawn())
+			await get_tree().create_timer(0.5).timeout
+		check.call("damage events received (%d)" % seen.dmg, seen.dmg > 0)
+		check.call("mob lost hp (%d -> %d)" % [hp0, mob.hp], mob.hp < hp0 or mob.d)
+	print("PLAY RESULT: " + ("OK" if res.ok else "FAILED"))
+	get_tree().quit()

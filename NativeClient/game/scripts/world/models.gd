@@ -803,7 +803,9 @@ static func make_griffin() -> BlockyModel:
 	tb.box(Vector3(0, 0, -0.85), Vector3(0.24, 0.24, 0.2), c.darkened(0.2))
 	mdl.parts["tail"] = _part(mdl, "tail", Vector3(0, 1.0, -0.75), tb)
 	mdl.parts["body"] = body
-	mdl.height = 1.8
+	mdl.height = 2.4
+	mdl.set_meta("seat_y", 1.55)
+	mdl.set_meta("seat_z", -0.05)
 	return mdl
 
 # ---------------------------------------------------------------- world objects

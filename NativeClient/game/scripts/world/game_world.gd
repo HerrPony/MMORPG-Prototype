@@ -36,6 +36,11 @@ var zone_key := "forest"
 var clock := 0.0
 var light_dir := Vector3(0.5, 0.8, 0.3)
 var built := false
+var active := true
+var _last_prop_cfg := ""
+var tex_hm: ImageTexture
+var tex_bm: ImageTexture
+var tex_map: ImageTexture      # 1 m/pixel map overlay: r road, g paving, b buildings, a walls
 
 func _ready() -> void:
 	Settings.changed.connect(apply_settings)
@@ -48,6 +53,7 @@ func build() -> void:
 	props_root = Node3D.new(); props_root.name = "Props"; add_child(props_root)
 	buildings_root = Node3D.new(); buildings_root.name = "Buildings"; add_child(buildings_root)
 	Props.build(props_root, float(Settings.v["prop_density"]), float(Settings.v["view_distance"]), Settings.v["shadows"] > 0)
+	_last_prop_cfg = "%s|%s|%s" % [Settings.v["prop_density"], Settings.v["view_distance"], Settings.v["shadows"] > 0]
 	Buildings.build(buildings_root)
 	Buildings.build_cabin(buildings_root)
 	Buildings.build_bridges(buildings_root)
@@ -132,13 +138,25 @@ func apply_settings() -> void:
 	vp.scaling_3d_scale = clampf(float(v["res_scale"]), 0.5, 1.0)
 	if water and water.material_override:
 		(water.material_override as ShaderMaterial).set_shader_parameter("quality", float(v["water_quality"]))
+	rebuild_props.call_deferred()
 	if props_root:
 		for c in props_root.get_children():
 			var mi := c as GeometryInstance3D
 			if mi:
 				mi.visibility_range_end = float(v["view_distance"]) if mi.visibility_range_end > 80.0 else mi.visibility_range_end
 
+## Hides the open world while the player is inside a dungeon instance.
+func set_active(on: bool) -> void:
+	active = on
+	visible = on
+	if sun:
+		sun.visible = on
+
 func rebuild_props() -> void:
+	var cfg := "%s|%s|%s" % [Settings.v["prop_density"], Settings.v["view_distance"], Settings.v["shadows"] > 0]
+	if cfg == _last_prop_cfg and props_root and props_root.get_child_count() > 0:
+		return
+	_last_prop_cfg = cfg
 	if props_root:
 		Props.build(props_root, float(Settings.v["prop_density"]), float(Settings.v["view_distance"]), Settings.v["shadows"] > 0)
 
@@ -150,10 +168,14 @@ func _build_terrain() -> void:
 	var mat := ShaderMaterial.new()
 	mat.shader = sh
 	var himg := Image.create_from_data(WD.nx, WD.nz, false, Image.FORMAT_RF, WD.hm.to_byte_array())
-	mat.set_shader_parameter("hm_tex", ImageTexture.create_from_image(himg))
+	tex_hm = ImageTexture.create_from_image(himg)
+	mat.set_shader_parameter("hm_tex", tex_hm)
 	var bimg := Image.create_from_data(WD.nx, WD.nz, false, Image.FORMAT_R8, WD.bm)
-	mat.set_shader_parameter("bm_tex", ImageTexture.create_from_image(bimg))
-	mat.set_shader_parameter("mask_tex", ImageTexture.create_from_image(_bake_mask()))
+	tex_bm = ImageTexture.create_from_image(bimg)
+	mat.set_shader_parameter("bm_tex", tex_bm)
+	var mask := _bake_mask()
+	mat.set_shader_parameter("mask_tex", ImageTexture.create_from_image(mask))
+	tex_map = ImageTexture.create_from_image(_bake_map_overlay(mask))
 	mat.set_shader_parameter("grid", Vector2(WD.nx, WD.nz))
 	mat.set_shader_parameter("origin", Vector2(WD.x0, WD.z0))
 	mat.set_shader_parameter("cell", WD.cell)
@@ -227,6 +249,37 @@ func _bake_mask() -> Image:
 							put.call(x, z, 0.0, 0.8, 0.3)
 	return Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, data)
 
+## Copy of the road/paving mask with buildings (blue) and walls (alpha) stamped in, for the minimap and world map.
+func _bake_map_overlay(mask: Image) -> Image:
+	var img := mask.duplicate() as Image
+	var w := img.get_width()
+	var h := img.get_height()
+	var data := img.get_data()
+	for i in range(0, data.size(), 4):
+		data[i + 2] = 0
+		data[i + 3] = 0
+	for b in WD.buildings:
+		var k: String = b.k
+		var chan := -1
+		var val := 255
+		if k == "house" or k == "hut" or k == "keep" or k == "pagoda":
+			chan = 2
+		elif k == "dock":
+			chan = 2
+			val = 120
+		elif k == "wall":
+			chan = 3
+		if chan < 0:
+			continue
+		var x0 := maxi(0, int(b.x - b.w / 2.0 - WD.x0))
+		var x1 := mini(w - 1, int(b.x + b.w / 2.0 - WD.x0))
+		var z0 := maxi(0, int(b.z - b.d / 2.0 - WD.z0))
+		var z1 := mini(h - 1, int(b.z + b.d / 2.0 - WD.z0))
+		for z in range(z0, z1 + 1):
+			for x in range(x0, x1 + 1):
+				data[(z * w + x) * 4 + chan] = val
+	return Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, data)
+
 func _build_water() -> void:
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(3400, 2400)
@@ -249,7 +302,7 @@ func set_zone(key: String) -> void:
 	look_tgt = _look_dict(LOOK[zone_key])
 
 func update(dt: float) -> void:
-	if not built:
+	if not built or not active:
 		return
 	clock += dt
 	var k := 1.0 - exp(-dt * 1.2)

@@ -41,6 +41,8 @@ var local := {"x": 0.0, "y": 0.0, "z": 0.0, "r": 0.0, "speed": 0.0, "airborne": 
 var typing := false
 var in_world := false
 var admin := false
+var dialog_npc := 0
+var map_cont := -1
 var server_offset_ms := 0.0         # server clock minus local clock
 
 func _ready() -> void:

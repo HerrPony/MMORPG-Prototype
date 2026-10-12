@@ -117,6 +117,9 @@ static func biome_at(x: float, z: float) -> int:
 static func biome_key(x: float, z: float) -> String:
 	return BIOME_KEYS[biome_at(x, z)]
 
+static func cont_of(x: float) -> int:
+	return 1 if x > 420.0 else 0
+
 static func on_dock(x: float, z: float) -> bool:
 	for b in docks:
 		if absf(x - b.x) <= b.w / 2.0 and absf(z - b.z) <= b.d / 2.0:
