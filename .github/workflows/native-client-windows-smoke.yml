@@ -13,7 +13,7 @@ on:
     paths: [".github/workflows/native-client-windows-smoke.yml"]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   windows:
@@ -126,6 +126,22 @@ jobs:
           }
           Stop-Process -Id $srv.Id -Force
           if ($failed) { throw "gameplay checks failed" }
+
+      - name: Publish the screenshot (branch ci-screenshots, so it can be looked at)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          if (-not (Test-Path login.png)) { throw "no screenshot" }
+          $d = "$env:RUNNER_TEMP\shots"
+          New-Item -ItemType Directory $d | Out-Null
+          Copy-Item login.png "$d\windows-login.png"
+          Push-Location $d
+          git init -q -b ci-screenshots
+          git config user.name github-actions
+          git config user.email actions@users.noreply.github.com
+          git add -A
+          git commit -q -m "Windows login screenshot"
+          git push -q -f "https://x-access-token:$env:GH_TOKEN@github.com/$env:GITHUB_REPOSITORY.git" ci-screenshots
 
       - name: Launcher update check is quiet when everything is current
         shell: pwsh
