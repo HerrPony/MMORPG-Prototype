@@ -264,7 +264,8 @@ func update(dt: float) -> void:
 			var want := atan2(dx, dz)
 			L.r += wrapf(want - L.r, -PI, PI) * minf(1.0, dt * 14.0)
 	# ships: the deck moves with the ship
-	var ship: Ent = S.ents.get(S.me.get("ab", 0)) if int(S.me.get("ab", 0)) != 0 else null
+	# the server sends the ferry id as a JSON number (float in Godot): entity keys are ints, so convert before the lookup
+	var ship: Ent = S.ents.get(int(S.me.get("ab", 0))) if int(S.me.get("ab", 0)) != 0 else null
 	if ship:
 		if _ab_id == ship.id:
 			L.x += ship.rx - _ab_x

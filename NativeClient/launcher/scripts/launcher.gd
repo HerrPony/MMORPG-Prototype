@@ -11,7 +11,7 @@ const RECHECK_SECONDS := 600.0
 var cfg := {"update_url": "", "server": "", "auto_update": true, "close_on_launch": false, "root": ""}
 var root := ""
 var updater: Updater
-var own_version := "1.0.4"
+var own_version := "1.0.5"
 var busy := false
 var state := "checking"       # checking | updating | ready | needs_install | error | offline
 var cli := {}
