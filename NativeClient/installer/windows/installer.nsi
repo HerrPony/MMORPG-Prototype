@@ -1,7 +1,7 @@
 ; Erlenwald Online - Windows installer (NSIS, per-user install, no administrator rights needed).
 ;
 ; Build (see tools/build_installer.sh):
-;   makensis -DVERSION=1.0.5 -DLAUNCHER_DIR=<dir with Launcher.exe + Launcher.pck> [-DGAME_DIR=<exported game, bundles it>]
+;   makensis -DVERSION=1.0.6 -DLAUNCHER_DIR=<dir with Launcher.exe + Launcher.pck> [-DGAME_DIR=<exported game, bundles it>]
 ;            [-DUPDATE_URL=https://updates.example.org] [-DGAME_SERVER=play.example.org:8080] -DOUTFILE=Setup.exe installer.nsi
 ;
 ; Without GAME_DIR it is a small "web installer": the launcher downloads the game on its first start.
@@ -11,7 +11,7 @@ Unicode true
 !include "FileFunc.nsh"
 
 !ifndef VERSION
-  !define VERSION "1.0.5"
+  !define VERSION "1.0.6"
 !endif
 !ifndef OUTFILE
   !define OUTFILE "ErlenwaldOnline-Setup.exe"

@@ -12,6 +12,9 @@ var death := 0.0             # 0 alive .. 1 lying down
 var speed_scale := 1.0       # slow walkers (zombies, golems)
 var arms_forward := false
 var flying := false
+var swim_f := 0.0            # 0 on land .. 1 swimming
+var swim_ph := 0.0
+var _swam := false
 var bob := 0.0
 var wing_speed := 9.0
 var glow_nodes: Array = []   # nodes that pulse (crystals, wisps)
@@ -57,6 +60,7 @@ func update(dt: float, st: Dictionary) -> void:
 	phase += dt * (3.0 + speed * 9.0) * speed_scale * (1.0 if speed > 0.02 else 0.0)
 	var amp: float = clampf(speed * 1.6, 0.0, 1.0) * 0.8
 	var airborne: bool = st.get("airborne", false)
+	swim_f = move_toward(swim_f, 1.0 if st.get("swim", false) else 0.0, dt * 5.0)
 	match kind:
 		"human", "golem": _anim_human(dt, amp, airborne)
 		"quad": _anim_quad(dt, amp, airborne)
@@ -70,6 +74,19 @@ func update(dt: float, st: Dictionary) -> void:
 	if kind != "wisp" and kind != "object" and kind != "ship":
 		rotation.x = death * (PI / 2.0) * (-1.0 if kind == "quad" else 1.0) * 0.98
 		position.y = -death * (0.1 if kind == "quad" else 0.5) * 0.0
+	# swimming: lean forward and float with the head above the water
+	if swim_f > 0.001 and kind == "human":
+		var moving := speed > 0.05
+		rotation.x += swim_f * (1.2 if moving else 0.35)
+		_swam = true
+		position.y = swim_f * ((0.55 if moving else 0.2) + sin(t * 2.4) * 0.04)
+	elif _swam:
+		_swam = false
+		position.y = 0.0
+
+func _leg_rot(n: String) -> float:
+	var p: Node3D = parts.get(n)
+	return p.rotation.x if p else 0.0
 
 func _swing(n: String, a: float) -> void:
 	var p: Node3D = parts.get(n)
@@ -132,6 +149,16 @@ func _anim_human(dt: float, amp: float, airborne: bool) -> void:
 		var tw2: Node3D = parts.get("torso")
 		if tw2:
 			tw2.rotation.y = lerpf(tw2.rotation.y, 0.0, minf(1.0, dt * 14.0))
+	if swim_f > 0.001:
+		# crawl stroke with the arms and a flutter kick; only treading water when standing still
+		var moving_s := amp > 0.02
+		swim_ph += dt * (6.5 if moving_s else 2.2)
+		var k_s := swim_f * (1.0 if moving_s else 0.45)
+		var a_s := sin(swim_ph)
+		arm_l = lerpf(arm_l, -2.3 - a_s * 0.9, swim_f * (1.0 if moving_s else 0.35))
+		arm_r = lerpf(arm_r, -2.3 + a_s * 0.9, swim_f * (1.0 if moving_s else 0.35))
+		_swing("leg_l", lerpf(_leg_rot("leg_l"), a_s * 0.45 * k_s, swim_f))
+		_swing("leg_r", lerpf(_leg_rot("leg_r"), -a_s * 0.45 * k_s, swim_f))
 	_swing("arm_l", arm_l)
 	_swing("arm_r", arm_r)
 	var ar: Node3D = parts.get("arm_r")

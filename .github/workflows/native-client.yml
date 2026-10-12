@@ -42,6 +42,8 @@ jobs:
           if [[ "$v" =~ ^[0-9]+$ ]]; then v="$((10#$v)).0.0"; elif [[ "$v" =~ ^[0-9]+\.[0-9]+$ ]]; then v="$v.0"; fi
           echo "version=$v" >> "$GITHUB_OUTPUT"
           notes="$INPUT_NOTES"
+          # a tag push has no input: the changelog of the release is read from NativeClient/release-notes/<version>.txt
+          if [ -z "${notes// /}" ] && [ -f "NativeClient/release-notes/$v.txt" ]; then notes="$(cat "NativeClient/release-notes/$v.txt")"; fi
           if [ -z "${notes// /}" ]; then notes="[b]Version $v[/b]"; fi
           printf '%s\n' "$notes" > "$RUNNER_TEMP/notes.txt"
 

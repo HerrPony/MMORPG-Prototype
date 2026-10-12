@@ -172,10 +172,10 @@ func (w *World) movePassenger(e *Entity, m protocol.Move) {
 		return
 	}
 	// a world position: stepping off the ship onto the pier or the shore (only while it lies at a pier)
-	if !f.Sailing && !onDeck(ship, m.X, m.Z, 0.05) && gamedata.Walkable(m.X, m.Z) && math.Hypot(m.X-e.X, m.Z-e.Z) < 6 {
+	if !f.Sailing && !onDeck(ship, m.X, m.Z, 0.05) && gamedata.Swimmable(m.X, m.Z) && math.Hypot(m.X-e.X, m.Z-e.Z) < 6 {
 		p.Aboard = 0
 		e.X, e.Z, e.R = m.X, m.Z, m.R
-		e.Y = clampf(m.Y, 0, 4)
+		e.Y = clampf(m.Y, gamedata.SwimLevel-0.3, 4)
 		p.LastMove = w.now
 		p.ZoneKey, p.PoiID = "", ""
 		w.sysChat(e, "sys", "Du gehst in "+f.From.Name+" von Bord.")

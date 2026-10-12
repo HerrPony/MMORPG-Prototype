@@ -36,6 +36,8 @@ Zwei Kontinente (je ca. 600 × 600 m), vom Server als Höhen- und Biomkarte erze
   Dungeons: Versunkener Nebeltempel (Stufe 26–30) und Feuerschlund (Stufe 36–40), je 2 Minibosse, Trash und Endboss für 5 Spieler.
 - **Fähre:** Ein Schiff pendelt im festen Takt (45 s Liegezeit) zwischen Sturmhafen und Lotushafen. Es liegt längsseits am Steg:
   einfach hinüberlaufen, an Deck frei bewegen und im Zielhafen wieder über den Steg von Bord gehen.
+- **Schwimmen:** Von der Küste aus kann man ins Meer gehen und schwimmen (langsamer, kein Springen). Geschwommen wird nur im Küstenstreifen (Meeresboden bis -6,8 m,
+  gleiche Werte in Server und Clients); das offene Meer ist gesperrt – auf den anderen Kontinent kommt man nur mit der Fähre.
 - Orte lösen beim Betreten ein Namensbanner aus und werden auf der Weltkarte (M, Reiter pro Kontinent) aufgedeckt.
   Aktive Quests markieren ihr Zielgebiet golden auf Weltkarte und Minimap.
 - Gegner spawnen nie auf Straßen. Maximalstufe 40, alle 2 Stufen eine neue Fertigkeit beim Klassenlehrer.

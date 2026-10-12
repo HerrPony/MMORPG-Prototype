@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { S } from './state.js';
-import { heightAt } from './util.js';
+import { heightAt, SWIM_LEVEL } from './util.js';
 
 const SLOT_CODES = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9', 'Digit0', 'Minus', 'Equal', 'BracketLeft', 'BracketRight'];
 
-const RUN = 7, BACK = 4.2, WALK = 3.2, JUMP = 8.2, GRAVITY = 24;
+const RUN = 7, BACK = 4.2, WALK = 3.2, JUMP = 8.2, GRAVITY = 24, SWIM = 4.2;
 
 // Local player: movement, camera, mouse + keyboard controls.
 export class Controller {
@@ -229,6 +229,10 @@ export class Controller {
       if (this._abId === ship.id) { L.x += ship.rx - this._abX; L.z += ship.rz - this._abZ; }
       this._abId = ship.id; this._abX = ship.rx; this._abZ = ship.rz;
     } else this._abId = 0;
+    // in deep water you swim: slower, no jumping
+    const swimming = !S.me.ab && !this.dungeon && !this.world.onDock(L.x, L.z) && heightAt(L.x, L.z) < SWIM_LEVEL;
+    if (swimming) speed = Math.min(speed, SWIM);
+    L.swim = swimming;
     let nx = L.x + dx * speed * dt, nz = L.z + dz * speed * dt;
     let deck = null;
     if (!this.dungeon) {
@@ -243,9 +247,9 @@ export class Controller {
     L.speed = moved / RUN;
 
     // vertical
-    const ground = deck ? deck.ry + 1.2 : this.world.onDock(L.x, L.z) ? 1.2 : heightAt(L.x, L.z);
+    const ground = deck ? deck.ry + 1.2 : this.world.onDock(L.x, L.z) ? 1.2 : Math.max(heightAt(L.x, L.z), SWIM_LEVEL);
     if (this.grounded) {
-      if (k.jump && !dead && !S.typing) { this.vy = JUMP; this.grounded = false; }
+      if (k.jump && !dead && !S.typing && !swimming) { this.vy = JUMP; this.grounded = false; }
       else if (L.y - ground > 0.35) { this.grounded = false; this.vy = 0; }
       else L.y = ground;
     }
@@ -316,7 +320,7 @@ export class Controller {
     let cz = tz - Math.cos(this.camYaw) * cp * this.camDist;
     let cy = ty + sp * this.camDist;
     if (this.dungeon) [cx, cz] = this.dungeon.collide(cx, cz); // keep the camera inside the walls
-    const minY = heightAt(cx, cz) + 0.5;
+    const minY = Math.max(heightAt(cx, cz), 0) + 0.5; // never dive into the sea
     if (cy < minY) cy = minY;
     this.camera.position.set(cx, cy, cz);
     this.camera.lookAt(tx, ty + 0.1, tz);

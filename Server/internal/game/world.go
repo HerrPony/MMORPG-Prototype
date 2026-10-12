@@ -430,10 +430,10 @@ func (w *World) enter(c *storage.Character, out Sender) *Entity {
 	}
 	e := &Entity{ID: w.newID(), Kind: KindPlayer, Name: c.Name, Model: c.Race, Level: c.Level,
 		X: c.X, Y: c.Y, Z: c.Z, R: c.R}
-	if !gamedata.Walkable(c.X, c.Z) || (math.Abs(c.X) < 0.001 && math.Abs(c.Z) < 0.001) {
+	if !gamedata.Swimmable(c.X, c.Z) || (math.Abs(c.X) < 0.001 && math.Abs(c.Z) < 0.001) {
 		e.X, e.Z, e.R = gamedata.SpawnPoint.X, gamedata.SpawnPoint.Z, gamedata.SpawnPoint.R
 	}
-	e.Y = gamedata.Height(e.X, e.Z)
+	e.Y = gamedata.FootY(e.X, e.Z)
 	e.P = &Player{Char: c, Out: out, Class: class, CD: map[string]float64{}, LastMove: w.now,
 		Marks: map[int]string{}, Stance: "battle"}
 	w.recalc(e)

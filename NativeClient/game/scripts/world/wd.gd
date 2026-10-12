@@ -3,6 +3,12 @@ extends RefCounted
 ## World data decoded from the server's scenery message: terrain grid, biomes, props, buildings, collision.
 ## Static state (there is only one world).
 
+## Swimming (same numbers as the server, see gamedata/world.go): the feet float at SWIM_LEVEL and the coastal belt of the sea
+## down to SWIM_FLOOR can be swum in - a little stricter than the server, so we never get pulled back. The open sea stays
+## closed: the other continent can only be reached with the ferry.
+const SWIM_LEVEL := -1.1
+const SWIM_FLOOR := -6.7
+
 static var ready := false
 static var nx := 0
 static var nz := 0
@@ -130,6 +136,14 @@ static func on_dock(x: float, z: float) -> bool:
 static func gh(x: float, z: float) -> float:
 	return 1.2 if on_dock(x, z) else height_at(x, z)
 
+## Height of the feet: like gh, but not deeper than the swimming level.
+static func foot_y(x: float, z: float) -> float:
+	return maxf(gh(x, z), SWIM_LEVEL)
+
+## True when the position is deep water (not a pier): the player swims there.
+static func is_swim(x: float, z: float) -> bool:
+	return not on_dock(x, z) and height_at(x, z) < SWIM_LEVEL
+
 static func dist_to_seg(px: float, pz: float, ax: float, az: float, bx: float, bz: float) -> float:
 	var dx := bx - ax
 	var dz := bz - az
@@ -139,7 +153,7 @@ static func dist_to_seg(px: float, pz: float, ax: float, az: float, bx: float, b
 		t = clampf(((px - ax) * dx + (pz - az) * dz) / l2, 0.0, 1.0)
 	return Vector2(px - (ax + dx * t), pz - (az + dz * t)).length()
 
-## Collision with trees, rocks and buildings, plus water depth and steep slopes (same rules as the web client / server).
+## Collision with trees, rocks and buildings, plus the edge of the swimmable sea and steep slopes (same rules as the web client / server).
 static func collide(x: float, z: float, ox: float, oz: float, has_old := true, radius := 0.4) -> Vector2:
 	var gx := floori(x / 8.0)
 	var gz := floori(z / 8.0)
@@ -191,13 +205,13 @@ static func collide(x: float, z: float, ox: float, oz: float, has_old := true, r
 	z = clampf(z, z0 + 6.0, zmax)
 	if has_old:
 		var h := gh(x, z)
-		if h < -1.5:
+		if h < SWIM_FLOOR:
 			return Vector2(ox, oz)
 		var step := Vector2(x - ox, z - oz).length()
 		if step > 1e-4 and (h - gh(ox, oz)) / step > 1.35:
-			if (gh(x, oz) - gh(ox, oz)) / maxf(absf(x - ox), 1e-4) <= 1.35 and gh(x, oz) > -1.5:
+			if (gh(x, oz) - gh(ox, oz)) / maxf(absf(x - ox), 1e-4) <= 1.35 and gh(x, oz) > SWIM_FLOOR:
 				return Vector2(x, oz)
-			if (gh(ox, z) - gh(ox, oz)) / maxf(absf(z - oz), 1e-4) <= 1.35 and gh(ox, z) > -1.5:
+			if (gh(ox, z) - gh(ox, oz)) / maxf(absf(z - oz), 1e-4) <= 1.35 and gh(ox, z) > SWIM_FLOOR:
 				return Vector2(ox, z)
 			return Vector2(ox, oz)
 	return Vector2(x, z)

@@ -10,6 +10,7 @@ const BACK := 4.2
 const WALK := 3.2
 const JUMP := 8.2
 const GRAVITY := 24.0
+const SWIM := 4.2
 
 var camera: Camera3D
 var world: GameWorld
@@ -59,7 +60,7 @@ func correct(x: float, y: float, z: float) -> void:
 func _ground(x: float, z: float) -> float:
 	if dungeon != null:
 		return 0.0
-	return WD.gh(x, z)
+	return WD.foot_y(x, z)
 
 # ------------------------------------------------------------- input
 
@@ -275,6 +276,11 @@ func update(dt: float) -> void:
 		_ab_z = ship.rz
 	else:
 		_ab_id = 0
+	# in deep water you swim: slower, no jumping
+	var swimming: bool = dungeon == null and int(S.me.get("ab", 0)) == 0 and WD.is_swim(L.x, L.z)
+	if swimming:
+		speed = minf(speed, SWIM)
+	L.swim = swimming
 	var nx: float = L.x + dx * speed * dt
 	var nz: float = L.z + dz * speed * dt
 	var on_deck: Ent = null
@@ -296,7 +302,7 @@ func update(dt: float) -> void:
 	# vertical
 	var ground: float = (on_deck.ry + 1.2) if on_deck else _ground(L.x, L.z)
 	if grounded:
-		if Input.is_action_pressed("jump") and not dead and not typing:
+		if Input.is_action_pressed("jump") and not dead and not typing and not swimming:
 			vy = JUMP
 			grounded = false
 		elif L.y - ground > 0.35:
@@ -384,7 +390,7 @@ func _update_camera(dt: float) -> void:
 			var px := tx - sin(cam_yaw) * cp * dd
 			var pz := tz - cos(cam_yaw) * cp * dd
 			var py := ty + sp * dd
-			if py > WD.height_at(px, pz) + 0.45:
+			if py > maxf(WD.height_at(px, pz), 0.0) + 0.45:
 				d = dd
 				break
 			d = min_d
@@ -396,7 +402,7 @@ func _update_camera(dt: float) -> void:
 		var c: Vector2 = dungeon.collide(cx, cz)
 		cx = c.x; cz = c.y
 	else:
-		cy = maxf(cy, WD.height_at(cx, cz) + 0.5)
+		cy = maxf(cy, maxf(WD.height_at(cx, cz), 0.0) + 0.5) # never dive into the sea
 	var target := Vector3(cx, cy, cz)
 	if Settings.v["camera_smooth"] and cam_pos.distance_to(target) < 6.0:
 		cam_pos = cam_pos.lerp(target, minf(1.0, dt * 28.0))

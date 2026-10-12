@@ -201,7 +201,7 @@ func (w *World) calcDamage(e *Entity, power float64) float64 {
 }
 
 func (w *World) correctPlayer(e *Entity) {
-	e.Y = gamedata.Height(e.X, e.Z)
+	e.Y = gamedata.FootY(e.X, e.Z)
 	e.P.LastMove = w.now
 	w.send(e, protocol.M{"t": "correct", "x": e.X, "y": e.Y, "z": e.Z})
 }

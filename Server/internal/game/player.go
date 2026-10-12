@@ -53,12 +53,12 @@ func (w *World) onMove(e *Entity, m protocol.Move) {
 			e.R = m.R
 			return
 		}
-		if !gamedata.Walkable(m.X, m.Z) {
+		if !gamedata.Swimmable(m.X, m.Z) {
 			w.send(e, protocol.M{"t": "correct", "x": e.X, "y": e.Y, "z": e.Z})
 			return
 		}
 		e.X, e.Z = m.X, m.Z
-		h := gamedata.Height(e.X, e.Z)
+		h := gamedata.FootY(e.X, e.Z)
 		if gamedata.OnDock(e.X, e.Z) {
 			h = deckY
 		}

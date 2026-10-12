@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { W, setWorldData, heightAt, biomeAt, distToPoly, smoothstep, BIOME_KEYS } from '../util.js';
+import { W, setWorldData, heightAt, SWIM_FLOOR, biomeAt, distToPoly, smoothstep, BIOME_KEYS } from '../util.js';
 import { buildVegetation } from './vegetation.js';
 import { buildTowns, buildCabin, ships } from './buildings.js';
 import { buildDungeon } from './dungeon.js';
@@ -330,15 +330,15 @@ export function buildWorld(scenery, renderer) {
     }
     const xMax = W.x0 + (W.nx - 1) * W.cell - 6, zMax = W.z0 + (W.nz - 1) * W.cell - 6;
     x = Math.max(W.x0 + 6, Math.min(xMax, x)); z = Math.max(W.z0 + 6, Math.min(zMax, z));
-    // water too deep to wade through, and slopes too steep to climb
+    // the open sea is too deep to swim in, and slopes too steep to climb
     if (ox !== undefined) {
       const h = gh(x, z);
-      if (h < -1.5) return [ox, oz];
+      if (h < SWIM_FLOOR) return [ox, oz]; // the open sea is closed: only the ferry crosses it
       const step = Math.hypot(x - ox, z - oz);
       if (step > 1e-4 && (h - gh(ox, oz)) / step > 1.35) {
         // try sliding along each axis
-        if ((gh(x, oz) - gh(ox, oz)) / Math.max(Math.abs(x - ox), 1e-4) <= 1.35 && gh(x, oz) > -1.5) return [x, oz];
-        if ((gh(ox, z) - gh(ox, oz)) / Math.max(Math.abs(z - oz), 1e-4) <= 1.35 && gh(ox, z) > -1.5) return [ox, z];
+        if ((gh(x, oz) - gh(ox, oz)) / Math.max(Math.abs(x - ox), 1e-4) <= 1.35 && gh(x, oz) > SWIM_FLOOR) return [x, oz];
+        if ((gh(ox, z) - gh(ox, oz)) / Math.max(Math.abs(z - oz), 1e-4) <= 1.35 && gh(ox, z) > SWIM_FLOOR) return [ox, z];
         return [ox, oz];
       }
     }

@@ -6,7 +6,7 @@ dazu kommen bessere Grafik, mehr Einstellungen und eine flüssigere Steuerung.
 
 * **Engine:** Godot 4.5 (Forward+, Vulkan/D3D12), Sprache GDScript
 * **Optik:** Low-Poly im Minecraft-Stil (Blockmodelle, flache Schattierung), aber mit Echtzeitschatten, SSAO, Bloom, Nebel,
-  Himmels-Shader mit Sonne/Mond/Sternen/Wolken/Aurora, Wasser-Shader mit Tiefenfärbung und Schaum, Tag-/Nachtzyklus (6 h)
+  Himmels-Shader mit Sonne/Mond/Sternen/Wolken/Aurora, realistischem Wasser-Shader (Wellen, Himmelsspiegelung, Tiefenfärbung, Schaum) und Schwimmen, Tag-/Nachtzyklus (6 h)
 * **Launcher + Installer:** findet Updates selbst, lädt nur geänderte Dateien, repariert beschädigte Installationen
 
 ```

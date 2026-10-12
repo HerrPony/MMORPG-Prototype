@@ -285,8 +285,8 @@ func _bake_map_overlay(mask: Image) -> Image:
 func _build_water() -> void:
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(3400, 2400)
-	plane.subdivide_width = 160
-	plane.subdivide_depth = 120
+	plane.subdivide_width = 320  # long swells are made of vertices (about 10 m apart)
+	plane.subdivide_depth = 240
 	water = MeshInstance3D.new()
 	water.name = "Water"
 	water.mesh = plane
