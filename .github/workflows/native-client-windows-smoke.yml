@@ -39,7 +39,14 @@ jobs:
             if (-not (Test-Path "C:\ErlenwaldTest\$f")) { throw "missing $f" }
           }
           Get-ChildItem C:\ErlenwaldTest | Select-Object Name, Length
-          if (-not (Test-Path "$env:USERPROFILE\Desktop\Erlenwald Online.lnk") -and -not (Test-Path "$env:PUBLIC\Desktop\Erlenwald Online.lnk")) { Write-Warning "desktop shortcut not found (user profile may differ)" }
+          $desk = [Environment]::GetFolderPath('Desktop')
+          "desktop folder: $desk"
+          if (-not (Test-Path "$desk\Erlenwald Online.lnk")) { throw "desktop shortcut missing in $desk" }
+          $lnk = (New-Object -ComObject WScript.Shell).CreateShortcut("$desk\Erlenwald Online.lnk")
+          "shortcut target: $($lnk.TargetPath)"
+          if ($lnk.TargetPath -ne 'C:\ErlenwaldTest\Launcher.exe') { throw "wrong shortcut target" }
+          $sm = [Environment]::GetFolderPath('Programs')
+          if (-not (Test-Path "$sm\Erlenwald Online\Erlenwald Online.lnk")) { throw "start menu shortcut missing" }
           if (-not (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ErlenwaldOnline' -ErrorAction SilentlyContinue)) { throw "uninstall registry entry missing" }
 
       - name: Fetch the update tree
@@ -73,6 +80,27 @@ jobs:
           "game exit code: $($p.ExitCode)"
           if ($p.ExitCode -ne 0) { exit 1 }
           if (Select-String -Path $log -Pattern 'SCRIPT ERROR|Parse Error|Failed to load' -Quiet) { throw "script errors in the game log" }
+
+      - name: Game opens a window with software rendering (D3D12 WARP) and draws the login screen
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $shot = "$env:RUNNER_TEMP\login.png"
+          $log = "$env:RUNNER_TEMP\game-gui.log"
+          $p = Start-Process 'C:\ErlenwaldTest\game\ErlenwaldOnline.exe' -ArgumentList '--rendering-driver', 'd3d12', '--resolution', '1280x720', '--log-file', $log, '--', '--shot', $shot, '6' -PassThru
+          if (-not $p.WaitForExit(120000)) { $p.Kill(); Get-Content $log; throw "game did not finish" }
+          Get-Content $log
+          "game exit code: $($p.ExitCode)"
+          if (-not (Test-Path $shot)) { throw "no screenshot written" }
+          Copy-Item $shot "$env:GITHUB_WORKSPACE\login.png"
+
+      - name: Upload the screenshot
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-login-screenshot
+          path: login.png
+          if-no-files-found: warn
 
       - name: Launcher update check is quiet when everything is current
         shell: pwsh
