@@ -99,6 +99,8 @@ statt heruntergeladen. „Prüfen“ hasht alle Dateien und repariert beschädig
   Bauen: `VERSION=1.0.0 [BUNDLE_GAME=1] [UPDATE_URL=…] [GAME_SERVER=…] NativeClient/tools/build_installer.sh` (benötigt `makensis`).
 * **Linux:** `ErlenwaldOnline-linux.tar.gz` entpacken, `./install.sh` ausführen (Menüeintrag und Befehl `erlenwald`), `uninstall.sh` entfernt alles.
 * macOS ist noch nicht vorbereitet (nur Windows und Linux).
+* Die Programme sind nicht signiert: Windows SmartScreen zeigt beim ersten Start „Weitere Informationen → Trotzdem ausführen“.
+  Mit einem Zertifikat lässt sich der Installer und die Engine-Datei signieren (Godot-Exportoption `codesign`, NSIS `signtool`).
 
 ### Eine neue Version veröffentlichen
 
@@ -135,6 +137,7 @@ Spieltests laufen headless gegen einen Testserver (`server -dev -client "" -data
 godot --headless --path NativeClient/game -- --autologin localhost:8084 user pass --autoenter --play
 ```
 
-(meldet sich an, läuft, wählt einen Gegner an, kämpft und prüft Server-Synchronisation, Schaden und Musikwechsel). Mit
+(meldet sich an, läuft, wählt einen Gegner an, kämpft und prüft Server-Synchronisation, Schaden und Musikwechsel).
+`--play2` testet Händler, Ausrüstung, Quests, Trainer, Karten-/Gruppenfenster und den Greifenflug. Mit
 `--shot out.png sekunden [--open bags,char] [--chat "/dev level 20;/dev tp 6 12"] [--hour 12] [--interact npc]` entstehen Screenshots.
 Lizenzen: Godot (MIT), Noto Color Emoji (OFL, `game/assets/fonts`).

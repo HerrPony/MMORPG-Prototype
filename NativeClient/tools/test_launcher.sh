@@ -50,7 +50,7 @@ open(p, "wb").write(b"x" * e["size"])
 PY
 rm "$tmp/inst/game/ErlenwaldOnline.pck"
 out=$(run); echo "$out"; echo "$out" | grep -q "RESULT: error" || fail "bad hash accepted"
-echo "== launcher updates itself"
+echo "== launcher updates itself (decided by content)"
 mkdir -p "$tmp/launcher"; echo "new launcher pck" > "$tmp/launcher/Launcher.pck"; head -c 100000 /dev/urandom > "$tmp/launcher/Launcher.x86_64"
 head -c 1200000 /dev/urandom > "$tmp/g2/ErlenwaldOnline.pck"
 pub 1.0.3 "$tmp/g2" --launcher-dir "$tmp/launcher" --launcher-version 9.9.9 >/dev/null
@@ -60,4 +60,6 @@ for i in 1 2 3 4 5 6 7 8; do [ -e "$tmp/inst/update_launcher.sh" ] || break; sle
 [ "$(cat "$tmp/inst/Launcher.pck")" = "new launcher pck" ] || fail "launcher pack not swapped in"
 [ -x "$tmp/inst/Launcher.x86_64" ] || fail "launcher binary not installed"
 [ ! -d "$tmp/inst/.update" ] || fail "staging folder left behind"
+out=$(run --self-update); echo "$out" | grep -q "launcher update available" && fail "a current launcher wants to update again (restart loop)"
+echo "launcher is current: no further update"
 echo "ALL LAUNCHER TESTS PASSED"

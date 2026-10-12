@@ -1,0 +1,34 @@
+name: Native client check
+
+# Compiles every script of the Godot projects and runs the updater end-to-end test.
+on:
+  pull_request:
+    paths: ["NativeClient/**"]
+  push:
+    branches: [main]
+    paths: ["NativeClient/**"]
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.5.1"
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot
+        run: |
+          base="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable"
+          curl -fsSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && sudo mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+      - name: Compile all game scripts
+        run: GODOT=godot NativeClient/tools/check_scripts.sh
+      - name: Launcher scripts import cleanly
+        run: |
+          godot --headless --path NativeClient/launcher --import 2>&1 | tee launcher-import.log
+          ! grep -E "SCRIPT ERROR|Parse Error" launcher-import.log
+      - name: Updater end-to-end test
+        run: GODOT=godot NativeClient/tools/test_launcher.sh

@@ -15,6 +15,7 @@ var manifest: Dictionary = {}
 var installed: Dictionary = {}   # installed.json: {version, files:{path:{sha256,size,mtime}}}
 var last_error := ""
 var _cancel := false
+var force_launcher_update := false   # tests: also update when running from the editor
 
 func _init(url := "", install_root := "") -> void:
 	base_url = url.trim_suffix("/")
@@ -313,8 +314,22 @@ func _install_file(part: String, dest: String, f: Dictionary) -> bool:
 
 # ------------------------------------------------------------------ launcher self-update
 
-func launcher_update_available(own_version: String) -> bool:
-	return manifest.has("launcher_version") and compare_versions(str(manifest.launcher_version), own_version) > 0 and (manifest.get("launcher_files", []) as Array).size() > 0
+## True if one of the launcher files of the manifest differs from the installed one. Decided by content, not by
+## version numbers, so a launcher that is already current never restarts itself in a loop. Big files (the engine
+## binary) are compared by size only.
+func launcher_update_available(_own_version := "") -> bool:
+	if OS.has_feature("editor") and not force_launcher_update:
+		return false
+	for f in manifest.get("launcher_files", []):
+		var path := root.path_join(f.path)
+		if not FileAccess.file_exists(path):
+			return true
+		var sz := _file_size(path)
+		if sz != int(f.size):
+			return true
+		if sz < 16 * 1048576 and FileAccess.get_sha256(path) != f.sha256:
+			return true
+	return false
 
 ## Downloads the new launcher files into <root>/.update and starts a helper that swaps them in after this process exits.
 func stage_launcher_update() -> bool:

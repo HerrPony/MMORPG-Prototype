@@ -111,7 +111,9 @@ func _wire() -> void:
 	Net.on("loot", func(_m): Sound.sfx("loot"))
 	Net.on("err", func(_m): Sound.sfx("error", -8.0))
 	Net.on("marks", func(m):
-		S.marks = m.get("marks", {})
+		S.marks = {}
+		for k in m.get("marks", {}):   # JSON object keys are strings
+			S.marks[int(k)] = m.marks[k]
 		if entities: entities.refresh_all_markers())
 	Net.on("quests", func(_m): if entities: entities.refresh_objects())
 	Net.on("worldChanged", func(_m):

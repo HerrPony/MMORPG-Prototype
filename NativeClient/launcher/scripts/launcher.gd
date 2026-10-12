@@ -497,6 +497,7 @@ func _launch() -> void:
 # ---------------------------------------------------------------- command line mode (tests, scripted installs)
 
 func _cli_run() -> void:
+	updater.force_launcher_update = cli.has("self_update")
 	updater.status.connect(func(t): print(t))
 	var ok: bool = await updater.fetch_manifest()
 	if not ok:

@@ -17,8 +17,16 @@ func _ready() -> void:
 		_shot.call_deferred(a)
 	if a.has("--play"):
 		_play.call_deferred(a)
+	if a.has("--zones"):
+		_zones.call_deferred()
 	if a.has("--play2"):
 		_play2.call_deferred(a)
+	if a.has("--play3"):
+		_play3.call_deferred(a)
+	if a.has("--auto-accept"):
+		Net.on("partyInvite", func(_m): Net.send("inviteReply", {"accept": true}))
+	if a.has("--stay"):
+		_stay.call_deferred(float(a[a.find("--stay") + 1]))
 
 func _autologin(a: PackedStringArray) -> void:
 	var i := a.find("--autologin")
@@ -32,11 +40,18 @@ func _autologin(a: PackedStringArray) -> void:
 func _auto_enter(m: Dictionary) -> void:
 	if S.in_world:
 		return
-	if m.chars.is_empty():
-		var nm := "Tester"
-		for ch in str(randi() % 100000):
-			nm += "abcdefghij"[int(ch)]
-		Net.send("createChar", {"name": nm, "race": "human", "class": "warrior", "look": {"gender": "m", "hair": 0, "skin": 0}})
+	var a := OS.get_cmdline_user_args()
+	var want := a[a.find("--charname") + 1] if a.has("--charname") else ""
+	for c in m.get("chars", []):
+		if want != "" and c.name == want:
+			Net.send("enterWorld", {"id": c.id})
+			return
+	if m.get("chars", []).is_empty() or want != "":
+		var nm := want if want != "" else "Tester"
+		if want == "":
+			for ch in str(randi() % 100000):
+				nm += "abcdefghij"[int(ch)]
+		Net.send("createChar", {"name": nm, "race": "human", "class": "mage" if want != "" else "warrior", "look": {"gender": "f" if want != "" else "m", "hair": 1, "skin": 1}})
 	else:
 		Net.send("enterWorld", {"id": m.chars[0].id})
 
@@ -192,6 +207,11 @@ func _play2(_a: PackedStringArray) -> void:
 	# --- vendor
 	await _tp(11, 13)
 	await get_tree().create_timer(1.0).timeout
+	var merchant_marked := false
+	for e: Ent in S.ents.values():
+		if e.m == "merchant" and e.marker != null:
+			merchant_marked = true
+	check.call("quest marker above the quest giver", merchant_marked)
 	check.call("merchant found", _interact("merchant"))
 	check.call("dialog opens", await _until(func(): return W.dialog.visible))
 	check.call("dialog lists quests", (W.dialog.m.get("quests", []) as Array).size() > 0)
@@ -289,4 +309,65 @@ func _play2(_a: PackedStringArray) -> void:
 		check.call("griffin mount attached", own != null and own.mount != null)
 	print("server errors: ", errs.size())
 	print("PLAY2 RESULT: " + ("OK" if res.ok else "FAILED"))
+	get_tree().quit()
+
+func _zones() -> void:
+	await _wait_spawn()
+	var cen: Dictionary = main.windows.map._centroids()
+	for z in S.scenery.zones:
+		var c = cen.get(int(z.id))
+		print("ZONE ", z.key, " ", z.name, " cont ", z.cont, " centroid ", c if c != null else "-")
+	for t in S.scenery.towns:
+		print("TOWN ", t.id, " ", t.name, " ", t.x, " ", t.z, " ", t.kind)
+	get_tree().quit()
+
+func _stay(seconds: float) -> void:
+	await _wait_spawn()
+	Net.send("chat", {"text": "/dev tp 6 12"})
+	print("STAY: in world as ", S.self_info.get("name", "?"))
+	await get_tree().create_timer(seconds).timeout
+	get_tree().quit()
+
+func _play3(_a: PackedStringArray) -> void:
+	await _wait_spawn()
+	var res := {"ok": true}
+	var check := func(name: String, cond: bool) -> void:
+		print(("PASS " if cond else "FAIL ") + name)
+		if not cond:
+			res.ok = false
+	var W: Windows = main.windows
+	var chats: Array = []
+	Net.on("chat", func(m): chats.append(m))
+	await _tp(6, 12)
+	var found := {"e": null}
+	var ok: bool = await _until(func():
+		for e: Ent in S.ents.values():
+			if e.k == "player" and e.id != S.id:
+				found.e = e
+				return true
+		return false, 25.0)
+	check.call("another player is visible", ok)
+	var other: Ent = found.e
+	if other:
+		check.call("other player has a model", other.model != null and other.model.player_class != "")
+		main.hud.open_player_menu(other.id, Vector2(300, 300))
+		check.call("player menu opens", main.hud.player_menu.item_count > 1)
+		main.hud.player_menu.hide()
+		Net.send("invite", {"id": other.id})
+		check.call("party formed", await _until(func(): return (S.party.members as Array).size() == 2))
+		await get_tree().create_timer(0.5).timeout
+		check.call("party frame shown", main.hud.party_box.get_child_count() == 1)
+		W.party.open()
+		W.party.refresh()
+		check.call("party window lists both", W.party.content.get_child_count() >= 3)
+		Net.send("chat", {"text": "/p hallo gruppe"})
+		await get_tree().create_timer(1.0).timeout
+		var got := false
+		for c in chats:
+			if c.get("ch", "") == "party" or str(c.get("text", "")).contains("hallo"):
+				got = true
+		check.call("party chat echoed", got)
+		Net.send("leaveParty")
+		check.call("party left", await _until(func(): return (S.party.members as Array).is_empty()))
+	print("PLAY3 RESULT: " + ("OK" if res.ok else "FAILED"))
 	get_tree().quit()

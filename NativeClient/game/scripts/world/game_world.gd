@@ -91,8 +91,10 @@ func _build_environment() -> void:
 	env.fog_depth_curve = 1.4
 	env.fog_sky_affect = 0.0
 	env.glow_enabled = true
-	env.glow_hdr_threshold = 1.0
-	env.glow_bloom = 0.05
+	env.glow_hdr_threshold = 1.5
+	env.glow_hdr_scale = 1.5
+	env.glow_intensity = 0.7
+	env.glow_bloom = 0.02
 	world_env.environment = env
 	add_child(world_env)
 	sun = DirectionalLight3D.new()
@@ -360,7 +362,7 @@ func update(dt: float) -> void:
 	var amb_day := Color(0.8, 0.9, 1.0)
 	var amb_night := Color(0.17, 0.24, 0.48)
 	env.ambient_light_color = amb_night.lerp(amb_day, day)
-	env.ambient_light_energy = look_cur["hemi"] * (0.34 + 0.66 * day) * 0.62
+	env.ambient_light_energy = look_cur["hemi"] * (0.34 + 0.66 * day) * 0.8
 	# windows and lamps glow at night
 	Buildings.glow_material().set_shader_parameter("night", night)
 

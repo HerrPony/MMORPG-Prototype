@@ -56,6 +56,7 @@ Section "Erlenwald Online" SecMain
   SectionIn RO
   SetOutPath "$INSTDIR"
   ; a running launcher cannot be overwritten: ask the user to close it first
+  ClearErrors
   IfFileExists "$INSTDIR\Launcher.exe" 0 +2
     Delete "$INSTDIR\Launcher.exe"
   IfErrors 0 +3

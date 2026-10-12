@@ -59,6 +59,9 @@ jobs:
           mkdir -p "$RUNNER_TEMP/node" && cd "$RUNNER_TEMP/node" && npm init -y >/dev/null && npm i playwright >/dev/null
           npx playwright install --with-deps chromium
 
+      - name: Compile all scripts
+        run: GODOT=godot NativeClient/tools/check_scripts.sh
+
       - name: Render music (pre-rendered OGG from the WebAudio score)
         run: |
           export NODE_PATH="$RUNNER_TEMP/node/node_modules"
@@ -73,11 +76,13 @@ jobs:
           for plat in windows linux; do
             mkdir -p build/$plat/game build/$plat/launcher
           done
-          godot --headless --path game --export-release "Windows Desktop" ../build/windows/game/ErlenwaldOnline.exe
-          godot --headless --path game --export-release "Linux" ../build/linux/game/ErlenwaldOnline.x86_64
+          B="$PWD/build"
+          godot --headless --path game --export-release "Windows Desktop" "$B/windows/game/ErlenwaldOnline.exe"
+          godot --headless --path game --export-release "Linux" "$B/linux/game/ErlenwaldOnline.x86_64"
           godot --headless --path launcher --import || true
-          godot --headless --path launcher --export-release "Windows Desktop" ../build/windows/launcher/Launcher.exe
-          godot --headless --path launcher --export-release "Linux" ../build/linux/launcher/Launcher.x86_64
+          godot --headless --path launcher --export-release "Windows Desktop" "$B/windows/launcher/Launcher.exe"
+          godot --headless --path launcher --export-release "Linux" "$B/linux/launcher/Launcher.x86_64"
+          test -s "$B/windows/game/ErlenwaldOnline.pck" && test -s "$B/linux/launcher/Launcher.pck"
           for plat in windows linux; do cp -r build/audio/music build/$plat/game/music; done
 
       - name: Updater self-test
