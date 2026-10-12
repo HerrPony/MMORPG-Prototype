@@ -202,8 +202,9 @@ func TestLevelCap40(t *testing.T) {
 
 func TestHunterSkillStartsAutoShot(t *testing.T) {
 	w := newTestWorld(t)
-	e, _ := addPlayer(t, w, "Anna", "hunter", 5)
+	e, out := addPlayer(t, w, "Anna", "hunter", 5)
 	wolf := findMob(w, "wolf")
+	wolf.MaxHP, wolf.HP = 10000, 10000 // a lucky aimed shot must not kill it
 	e.X, e.Z = clearShotPos(t, wolf, 10)
 	e.Y = gamedata.Height(e.X, e.Z)
 	e.P.Target = wolf.ID
@@ -211,12 +212,12 @@ func TestHunterSkillStartsAutoShot(t *testing.T) {
 	w.tryCast(e, "h_aimed")
 	// (running the world on could kill the wolf, which ends the auto shot again)
 	if !e.P.Auto {
-		t.Fatal("an offensive skill should start the hunter's auto shot")
+		t.Fatalf("an offensive skill should start the hunter's auto shot (%v, wolf dead=%v)", out.last("err"), wolf.Dead)
 	}
 	m, _ := addPlayer(t, w, "Bert", "mage", 5)
 	m.X, m.Z, m.Y = e.X, e.Z, e.Y
 	m.P.Target = wolf.ID
-	w.tryCast(m, "m_bolt")
+	w.tryCast(m, "m_frost")
 	run(w, 3)
 	if m.P.Auto {
 		t.Fatal("only hunters start auto attacks with skills")
