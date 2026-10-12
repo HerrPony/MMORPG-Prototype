@@ -1,0 +1,91 @@
+name: Native client Windows smoke test
+
+# Installs the published Windows installer on a real Windows runner, lets the launcher download the game from the
+# published update tree, starts the game headless and uninstalls again.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag with the installer"
+        required: false
+        default: "native-v1.0.0"
+  push:
+    paths: [".github/workflows/native-client-windows-smoke.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      TAG: ${{ github.event.inputs.tag || 'native-v1.0.0' }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Download the installer
+        shell: pwsh
+        run: |
+          gh release download $env:TAG --repo $env:GITHUB_REPOSITORY --pattern 'ErlenwaldOnline-Setup.exe' --dir $env:RUNNER_TEMP
+          Get-Item "$env:RUNNER_TEMP\ErlenwaldOnline-Setup.exe" | Select-Object Name, Length
+
+      - name: Install silently
+        shell: pwsh
+        run: |
+          $p = Start-Process "$env:RUNNER_TEMP\ErlenwaldOnline-Setup.exe" -ArgumentList '/S', '/D=C:\ErlenwaldTest' -Wait -PassThru
+          "installer exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { exit 1 }
+          foreach ($f in 'Launcher.exe', 'Launcher.pck', 'launcher_defaults.json', 'Uninstall.exe') {
+            if (-not (Test-Path "C:\ErlenwaldTest\$f")) { throw "missing $f" }
+          }
+          Get-ChildItem C:\ErlenwaldTest | Select-Object Name, Length
+          if (-not (Test-Path "$env:USERPROFILE\Desktop\Erlenwald Online.lnk") -and -not (Test-Path "$env:PUBLIC\Desktop\Erlenwald Online.lnk")) { Write-Warning "desktop shortcut not found (user profile may differ)" }
+          if (-not (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ErlenwaldOnline' -ErrorAction SilentlyContinue)) { throw "uninstall registry entry missing" }
+
+      - name: Fetch the update tree
+        shell: pwsh
+        run: |
+          git clone --depth 1 --branch gh-pages "https://x-access-token:$env:GH_TOKEN@github.com/$env:GITHUB_REPOSITORY.git" "$env:RUNNER_TEMP\pages"
+          Get-ChildItem "$env:RUNNER_TEMP\pages\updates" | Select-Object Name
+          Start-Process python -ArgumentList '-m', 'http.server', '8099', '--bind', '127.0.0.1', '--directory', "$env:RUNNER_TEMP\pages\updates" -WindowStyle Hidden
+          Start-Sleep 3
+
+      - name: Launcher installs the game (command line mode, headless)
+        shell: pwsh
+        run: |
+          $out = "$env:RUNNER_TEMP\launcher.log"
+          $p = Start-Process 'C:\ErlenwaldTest\Launcher.exe' -ArgumentList '--headless', '--log-file', $out, '--', '--cli-update', '--url', 'http://127.0.0.1:8099', '--root', 'C:\ErlenwaldTest' -Wait -PassThru
+          Get-Content $out
+          "launcher exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { exit 1 }
+          if (-not (Select-String -Path $out -Pattern 'RESULT: ok' -Quiet)) { throw "launcher did not report success" }
+          foreach ($f in 'game\ErlenwaldOnline.exe', 'game\ErlenwaldOnline.pck', 'game\installed.json') {
+            if (-not (Test-Path "C:\ErlenwaldTest\$f")) { throw "missing $f" }
+          }
+          Get-ChildItem C:\ErlenwaldTest\game | Select-Object Name, Length
+
+      - name: Game starts (headless, quits by itself)
+        shell: pwsh
+        run: |
+          $log = "$env:RUNNER_TEMP\game.log"
+          $p = Start-Process 'C:\ErlenwaldTest\game\ErlenwaldOnline.exe' -ArgumentList '--headless', '--log-file', $log, '--quit-after', '120' -Wait -PassThru
+          Get-Content $log
+          "game exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { exit 1 }
+          if (Select-String -Path $log -Pattern 'SCRIPT ERROR|Parse Error|Failed to load' -Quiet) { throw "script errors in the game log" }
+
+      - name: Launcher update check is quiet when everything is current
+        shell: pwsh
+        run: |
+          $out = "$env:RUNNER_TEMP\launcher2.log"
+          $p = Start-Process 'C:\ErlenwaldTest\Launcher.exe' -ArgumentList '--headless', '--log-file', $out, '--', '--cli-update', '--url', 'http://127.0.0.1:8099', '--root', 'C:\ErlenwaldTest' -Wait -PassThru
+          Get-Content $out
+          if (Select-String -Path $out -Pattern 'Lade ' -Quiet) { throw "second run downloaded again" }
+
+      - name: Uninstall
+        shell: pwsh
+        run: |
+          $p = Start-Process 'C:\ErlenwaldTest\Uninstall.exe' -ArgumentList '/S', '_?=C:\ErlenwaldTest' -Wait -PassThru
+          "uninstaller exit code: $($p.ExitCode)"
+          if (Test-Path 'C:\ErlenwaldTest\Launcher.exe') { throw "launcher still installed" }
+          if (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ErlenwaldOnline') { throw "registry entry still there" }
