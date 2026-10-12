@@ -2,11 +2,11 @@
  "format": 1,
  "product": "erlenwald",
  "platform": "windows",
- "version": "1.0.0",
- "released": "2026-10-12T14:14:24Z",
+ "version": "1.0.1",
+ "released": "2026-10-12T16:23:23Z",
  "launch": "ErlenwaldOnline.exe",
  "objects": "objects/{h2}/{h}",
- "notes": "[b]Version 1.0.0 – Der native Client[/b]\n• Low-Poly-Desktop-Client mit Launcher und automatischen Updates\n",
+ "notes": "[b]Version 1.0.1[/b]\n",
  "files": [
   {
    "path": "ErlenwaldOnline.exe",
@@ -15,176 +15,176 @@
   },
   {
    "path": "ErlenwaldOnline.pck",
-   "sha256": "a281aa3af55cd57167142347209ec13b70cc2cef3de182ad2bb1d9cee231abbe",
-   "size": 1262704
+   "sha256": "b3d18324b421623be33f151ad79c7afb6914c3816ebc1a5b7d7cb9b8f7edfa9f",
+   "size": 1265680
   },
   {
    "path": "music/blossom_day.ogg",
-   "sha256": "0263de6d323440d080b10918e41c3c5ef3d62f775878a755ba85f678194150eb",
-   "size": 680827
+   "sha256": "46b0cecccd17350ab1e34dd60f5dd6c69578b309d823fd276427b65351f735e3",
+   "size": 683806
   },
   {
    "path": "music/blossom_fight.ogg",
-   "sha256": "6ca8db7048455f703b430748254d1e83fae5dbb5259cf0edef83da09d58683a5",
-   "size": 463236
+   "sha256": "93b01dbd12f695e8037aec8aba6b51c6f52ebe7e5654cd1ad68ced08fdc80896",
+   "size": 462875
   },
   {
    "path": "music/blossom_night.ogg",
-   "sha256": "7587de00149ba03fe5729f1ea92baed1234801afb6f23b461ec40e18d1b55331",
-   "size": 469393
+   "sha256": "8f25b32cfbbdf3e79d7614f84461ea8d784f920f71526a3ec4c6c33f7c39a318",
+   "size": 471297
   },
   {
    "path": "music/desert_day.ogg",
-   "sha256": "8cb3d4bb73ba58d4f20cedc3996613704740fdb2b318951589126ca40d9fe73a",
-   "size": 538780
+   "sha256": "8277af230ce9b4796a78e214daff1cd72f5f7fff65aa70a1c9e9dc6a7288e704",
+   "size": 539936
   },
   {
    "path": "music/desert_fight.ogg",
-   "sha256": "615199f7ae16509a75badff87f84a4a99d36f274124c765c2359cd92d5760b3c",
-   "size": 340011
+   "sha256": "a03467440abeff89c2f7ce40f01d6eb240c7b92b3e3b10ba7885ebb94fa44916",
+   "size": 339806
   },
   {
    "path": "music/desert_night.ogg",
-   "sha256": "ff7c77b58edfc343a8f59f5cf46c4f4546c03159ac2bd596152b4bb55c4b6c53",
-   "size": 371840
+   "sha256": "c5c92a33ab8b63bef74c02c527c7a5a5ebc30c9457d00edc9173d5f4f09b8d38",
+   "size": 371446
   },
   {
    "path": "music/dungeon.ogg",
-   "sha256": "ac2489edcfd0dbb08159c347e66645726db62508a297a1628428789ee833ee91",
-   "size": 749838
+   "sha256": "6bc4bcf1fd4391c36db4bfa8f01abacd536f9b659e8b83b23706c76839b1dc3f",
+   "size": 746731
   },
   {
    "path": "music/dungeon_fight.ogg",
-   "sha256": "8074f2228dc58ed23a18915e76d4783573358f05f2c9e85db0b5cfd767d2e254",
-   "size": 504347
+   "sha256": "eb0f01fec66944464527c46c1b9edd183a0560244ae89247a50aae143f416c79",
+   "size": 504485
   },
   {
    "path": "music/forest_day.ogg",
-   "sha256": "a7528546febe0bfffe7b16681e3d9be9b00e477aeaa49e5d50deb70f76a49aaa",
-   "size": 667918
+   "sha256": "3e44bb8a771a7de0583e1440b5e6e9668d46d48fec701285f3351d786870fcdf",
+   "size": 668881
   },
   {
    "path": "music/forest_fight.ogg",
-   "sha256": "20d3a3f3208ff36b94bfda6b12e2ff087b60ccb3666a666d703c8bc9c1472a3e",
-   "size": 422484
+   "sha256": "a7e882c36734ddb9e49af904526a80c9c2f3e410a0ada790fff6ec0253e8671d",
+   "size": 422847
   },
   {
    "path": "music/forest_night.ogg",
-   "sha256": "1b392ccb0561d0a214f812466aca6423973861b99f7f9c30f16257646e466e1a",
-   "size": 433999
+   "sha256": "7babc72aa4386733f402c0ad173c914d4986ecb10c207681ede374be75efe20f",
+   "size": 433034
   },
   {
    "path": "music/jungle_day.ogg",
-   "sha256": "f96b434e5ef3efa14ee680ddb3826c2388fac58d278dd82264e16d7033bd7697",
-   "size": 483503
+   "sha256": "cc2c8341d447a2ec362cd013d9ce1732415f7e7d86d32aa0ceb194317628b4ea",
+   "size": 483102
   },
   {
    "path": "music/jungle_fight.ogg",
-   "sha256": "3d0510615410f16ce49de81fc23a6be82b62cddd3ad1df13f0750f6c81ec12c3",
-   "size": 327452
+   "sha256": "872725341fdb5caf0439e43931f74a12733d4c3273be812bf465968191fc536f",
+   "size": 327864
   },
   {
    "path": "music/jungle_night.ogg",
-   "sha256": "bb45e4ad106fcf4515ef875f81217a445879ad69e6b45d6c64ebf5a83531f3f1",
-   "size": 334010
+   "sha256": "2fc2ce4eb3a5f33008721b519cd9d670b1091c422f9a2d877b1058921d15ad69",
+   "size": 334222
   },
   {
    "path": "music/menu.ogg",
-   "sha256": "cde45dfc9d5a4f2841bc05129e2a1fd5e17889e569d06ba511d4deca317cd75c",
-   "size": 565254
+   "sha256": "27fee1fb00602c9794163e6a0e94505aede984220cb7738344acddd1837c8d41",
+   "size": 565760
   },
   {
    "path": "music/mesa_day.ogg",
-   "sha256": "62b1b88d4ad58bafe146c738352c1d28bc75efc58f6da8a859882897a2f303f8",
-   "size": 536580
+   "sha256": "de40c640f8ca7633ace494797d3a821f028f3fd403805d4cfa0f2b2e335035d9",
+   "size": 538083
   },
   {
    "path": "music/mesa_fight.ogg",
-   "sha256": "357ef8db27442c0b642facc83c7a814b6e7d4b24211484ed983ca639c7378473",
-   "size": 374807
+   "sha256": "70c17c996ca4e168a30c631822a5156d49b5d9a0afb491ac16a7bef3a128840f",
+   "size": 374420
   },
   {
    "path": "music/mesa_night.ogg",
-   "sha256": "75a5f2dcd8e5ab1200e43e4604edbedf8cc0f355aebc5fd64a3ec1ce998df858",
-   "size": 386784
+   "sha256": "7114a6e1b99702275049f38716cbcbfdfcab467f5a1368102b8f2437d0891728",
+   "size": 387543
   },
   {
    "path": "music/plains_day.ogg",
-   "sha256": "538fa208c73c5dbc58fa7731486652bdf3f7c40f1c340cb898d6f86cdd4b6696",
-   "size": 579029
+   "sha256": "60cd3c4db227af1b5f6f86a904f868e9069b58330e3921769173c171f92cb79c",
+   "size": 579340
   },
   {
    "path": "music/plains_fight.ogg",
-   "sha256": "4209953193bd03baa678b0a9ac6d1a4d10d4e8c397d194f4c716acbe9381295f",
-   "size": 373568
+   "sha256": "15ad630f6993a6f90b47187732b2e3b08ae2c4066411595938b5679a913ca2bb",
+   "size": 372808
   },
   {
    "path": "music/plains_night.ogg",
-   "sha256": "22d68a6e7ed0775f299020e37b15572d27930bc883d1ce0df897bce8d60350d4",
-   "size": 377707
+   "sha256": "e8a2e4c6de710d7be78fdf6dd50c4acc59c6bea14f37553d52938e5046c37c72",
+   "size": 377097
   },
   {
    "path": "music/sea_day.ogg",
-   "sha256": "46bcdd228ce7eb2ac17b36e264772d64f8c137d0e17746bb2b0c4932976e714e",
-   "size": 633458
+   "sha256": "59f851957bd9699a496f6cf564ec556cf29445ef9a6513023921821e7088a24e",
+   "size": 628481
   },
   {
    "path": "music/sea_fight.ogg",
-   "sha256": "5bb6cd3e2449afa34827ea006bdf4ea8f695d76c2d7acd296527d20de361d54a",
-   "size": 397625
+   "sha256": "a8f894286c6bfcc1b36bcfceb06a917d46467f64cfe4378ae788872bd8bca6d0",
+   "size": 398571
   },
   {
    "path": "music/sea_night.ogg",
-   "sha256": "5848854abdfdf7f71f01164691d36ffc57c614b1b7069509691d953a6d0fbcba",
-   "size": 403075
+   "sha256": "11b7b7c520c8d043bd04d5f1662c16316afef75d0dfd39b526d4701fc5fae383",
+   "size": 403770
   },
   {
    "path": "music/snow_day.ogg",
-   "sha256": "fcc950d2f8c13b7fd4dbec9debcb974435cb5ded353aec66559840cc51012674",
-   "size": 754529
+   "sha256": "70948bf1f8400eeab0693889dae96435fafc5f42a8b13f0e3f40c7d537450fb2",
+   "size": 756743
   },
   {
    "path": "music/snow_fight.ogg",
-   "sha256": "706a90b2723b7143d30d926d8e61d85403750d6b0db0120ea4fbcca9364b54db",
-   "size": 510522
+   "sha256": "3af0980e38ce1101c33d8336d75ab9335d2dfc90c903f463452dc4a6b7c1a593",
+   "size": 509013
   },
   {
    "path": "music/snow_night.ogg",
-   "sha256": "2500b7b46b6dc20fb5b20dc1205760e7d3403719d789690dd6bada3704ce145e",
-   "size": 513643
+   "sha256": "cd511db18ec7c8232716d3dfb51de471719dd292c741da07f233613a3aa07eed",
+   "size": 512134
   },
   {
    "path": "music/swamp_day.ogg",
-   "sha256": "dbcf7a9db0a13ba34beb8fba8171d82738b17ecba660a929f71bb1b201fa20dc",
-   "size": 835284
+   "sha256": "48a140303276e5aa2efa970b67424e693f2456bcc290afcea8a028fb5bedffa3",
+   "size": 835848
   },
   {
    "path": "music/swamp_fight.ogg",
-   "sha256": "a02a1eb52d97543a3a3a80b4d3edd2c3ae46b4937349140fe6086d4db2266012",
-   "size": 563762
+   "sha256": "cf0f80c6971c43ca4ce67dd3b72b502569b25655d34dc7a66324eacce5603ba8",
+   "size": 565420
   },
   {
    "path": "music/swamp_night.ogg",
-   "sha256": "17a0d51779727d43dcf5db6fedfb0232fafe8b49516cd788d2a241d58b9a5334",
-   "size": 594481
+   "sha256": "4a5d98eb9d2d68c099610a92cbc514df9883890c9db8cc256bc634e83e3f350c",
+   "size": 593555
   },
   {
    "path": "music/volcano_day.ogg",
-   "sha256": "f3695b45c507862878b68eff8d128509a51e61e02f2353f26567aaa9410d7795",
-   "size": 669505
+   "sha256": "c738a8cfb345f918479e3c0e4582d5269b5eaa802185fa4cb1f0c9d1155bb2d1",
+   "size": 666114
   },
   {
    "path": "music/volcano_fight.ogg",
-   "sha256": "72ee0ff893c41771d866e1b1e1a503b32ff33beaef69594308dea8f05c2d3a86",
-   "size": 455050
+   "sha256": "b2566584745ee52ea62fc38427ece9f1bc60f36ae8cb693d64fb75804bf960f1",
+   "size": 455958
   },
   {
    "path": "music/volcano_night.ogg",
-   "sha256": "e87bcaea40fb3a82590eb1e1984f5e69d786ef6ea27e0371de54575d994dbaba",
-   "size": 461057
+   "sha256": "a3a226055a950a7aef5584f326dd0d03e7d401329c453752b43cdac4dd37d7c5",
+   "size": 461521
   }
  ],
- "launcher_version": "1.0.0",
+ "launcher_version": "1.0.1",
  "launcher_files": [
   {
    "path": "Launcher.exe",
@@ -193,8 +193,8 @@
   },
   {
    "path": "Launcher.pck",
-   "sha256": "e828fdfae08d05232fbc5307d9beb32d22462fd7660a257609f84394a8af3a80",
-   "size": 35044
+   "sha256": "7bb45b239900b9365aed848f2f059b2b781c7eb957af46157ca395722d36a175",
+   "size": 35060
   }
  ]
 }
