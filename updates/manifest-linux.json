@@ -2,16 +2,16 @@
  "format": 1,
  "product": "erlenwald",
  "platform": "linux",
- "version": "1.0.2",
- "released": "2026-10-12T16:33:13Z",
+ "version": "1.0.4",
+ "released": "2026-10-12T16:48:16Z",
  "launch": "ErlenwaldOnline.x86_64",
  "objects": "objects/{h2}/{h}",
- "notes": "[b]Version 1.0.2[/b]\n[b]Behoben[/b]\n[list]\n[*]„Welt betreten“ in der Charakterauswahl funktioniert wieder. Der Client hat die Charakter-IDs des Servers falsch gelesen, deshalb passierte beim Klick nichts. Dasselbe betraf das Löschen von Charakteren und die automatische Auswahl eines neu erstellten Charakters.\n[/list]\n\n[b]Version 1.0.1[/b]\n[b]Verbessert[/b]\n[list]\n[*]Der Bogen sieht jetzt aus wie im Web-Client: ein durchgehender Bogen mit Griff, Sehne und aufgelegtem Pfeil.\n[*]Neue Schützenhaltung für Bogenträger: Bogenarm nach vorn, Zughand an der Sehne.\n[*]Neue Schuss-Animation: Der Bogen wird gespannt, die Sehne schnellt los, der Pfeil ist kurz weg und liegt dann wieder an. Der Pfeil fliegt im Moment des Loslassens ab (0,3 Sekunden nach Schussbeginn).\n[/list]\n[b]Behoben[/b]\n[list]\n[*]Der Button „Welt betreten“ ruft jetzt eine eigene Funktion auf (Vorarbeit für den Fix in 1.0.2).\n[/list]\n[b]Technik[/b]\n[list]\n[*]Die Musik wird beim Bauen pro Titel zwischengespeichert, nur geänderte Titel werden neu gerendert.\n[*]Veröffentlichung der Updates überträgt nur noch neue Dateien und wiederholt bei Serverfehlern; Downloads im Build-Prozess werden bei Fehlern wiederholt.\n[/list]\n\n",
+ "notes": "[b]Version 1.0.4[/b]\n[b]Behoben[/b]\n[list]\n[*]Charaktere haben wieder Lauf-Animationen: Beine und Arme schwingen beim Gehen und Rennen.\n[*]Bogen-Animation: Der Bogenarm streckt sich beim Schuss nach vorne, die Sehne wird gespannt und losgelassen.\n[*]Nahkampf- und Zauber-Animationen der menschlichen Modelle (Schlag, Zauberhaltung) funktionieren wieder.\n[*]Wölfe und andere Vierbeiner springen beim Angriff als ganzes Tier nach vorn: Beine, Kopf und Schwanz bewegen sich mit, nicht nur der Körper.\n[*]Die goldenen Quest-Bereichsmarker ragen nicht mehr über den Rand der Minimap hinaus.\n[*]Der Launcher zeigt Changelogs jetzt korrekt als Aufzählung an (vorher erschienen [list] und [*] als Text).\n[/list]\n[b]Technik[/b]\n[list]\n[*]Menschenmodelle registrieren ihre Gliedmaßen für das Animationssystem.\n[*]Minimap-Marker werden auf den runden Kartenausschnitt beschnitten (auch im Web-Client).\n[/list]\n",
  "files": [
   {
    "path": "ErlenwaldOnline.pck",
-   "sha256": "eae6c84d6b625435d9010063cdbdc768b1d2b0ed33a115a21f85862364627141",
-   "size": 1265696
+   "sha256": "677689ad00eb015a21ad1a105e14ee114351909f484c23a84ebfb760f4b28c99",
+   "size": 1267136
   },
   {
    "path": "ErlenwaldOnline.x86_64",
@@ -185,12 +185,12 @@
    "size": 461521
   }
  ],
- "launcher_version": "1.0.2",
+ "launcher_version": "1.0.4",
  "launcher_files": [
   {
    "path": "Launcher.pck",
-   "sha256": "014977c69f3289c50b1a70c3d317398ab04d800ea33bf6c1d6492d833fa467f8",
-   "size": 35060
+   "sha256": "593d784d7e1f2bd8f5ac17dfadfeaa9efe0ef6cf2d61813a1ff1c203f8b413a2",
+   "size": 35140
   },
   {
    "path": "Launcher.x86_64",
