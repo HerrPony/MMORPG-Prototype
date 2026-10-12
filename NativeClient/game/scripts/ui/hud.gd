@@ -394,7 +394,7 @@ func _layout() -> void:
 	size = vs
 	var W := vs.x
 	var H := vs.y
-	p_frame.position = Vector2(W * 0.5 - 520, H * 0.725)
+	p_frame.position = Vector2(W * 0.5 - 470, H * 0.725)
 	t_frame.position = Vector2(W * 0.5 + 280, H * 0.725)
 	party_box.position = Vector2(16, 112)
 	pet_box.position = Vector2(W * 0.5 + 285, H * 0.725 + 84)
