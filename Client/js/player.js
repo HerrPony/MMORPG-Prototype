@@ -21,6 +21,7 @@ export class Controller {
     this.vy = 0;
     this.grounded = true;
     this.autorun = false;
+    this.joy = { x: 0, y: 0 }; // virtual joystick (touch), -1..1, y>0 = forward
     this.rmb = false; this.lmb = false;
     this.down = { x: 0, y: 0, t: 0, acc: 0, btn: -1 };
     this.lastSend = 0; this.lastSent = { x: 0, y: 0, z: 0, r: 0 };
@@ -195,7 +196,9 @@ export class Controller {
     let fw = (k.w ? 1 : 0) - (k.s ? 1 : 0) + (both || this.autorun ? 1 : 0);
     let rt = (k.d ? 1 : 0) - (k.a ? 1 : 0);
     if (dead || S.typing) { fw = 0; rt = 0; }
-    fw = Math.max(-1, Math.min(1, fw));
+    fw = Math.max(-1, Math.min(1, fw + (dead ? 0 : this.joy.y)));
+    if (!dead) rt = Math.max(-1, Math.min(1, rt + this.joy.x));
+    const joyMag = dead ? 0 : Math.hypot(this.joy.x, this.joy.y);
 
     const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
     let dx = fx * fw + -fz * rt, dz = fz * fw + fx * rt;
@@ -205,6 +208,7 @@ export class Controller {
       dx /= len; dz /= len;
       speed = fw < 0 && rt === 0 ? BACK : k.shift ? WALK : RUN;
       if (fw < 0 && rt !== 0) speed = RUN * 0.8;
+      if (joyMag > 0.01 && !k.w && !k.s && !k.a && !k.d) speed = joyMag < 0.5 ? WALK : RUN; // analog stick: any direction, half stick = walk
     }
     // facing
     if (!dead) {
