@@ -2,16 +2,16 @@
  "format": 1,
  "product": "erlenwald",
  "platform": "linux",
- "version": "1.0.5",
- "released": "2026-10-12T17:14:19Z",
+ "version": "1.0.6",
+ "released": "2026-10-12T17:44:47Z",
  "launch": "ErlenwaldOnline.x86_64",
  "objects": "objects/{h2}/{h}",
- "notes": "[b]Version 1.0.5[/b]\n[b]Behoben[/b]\n[list]\n[*]Fähre: Spieler an Deck werden wieder mit dem Schiff mitbewegt. Man bleibt auf der fahrenden Fähre stehen und muss nicht mehr hinterherlaufen.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Die vom Server gesendete Schiff-ID wurde als Kommazahl gelesen und fand das Schiff nicht; sie wird jetzt als Ganzzahl nachgeschlagen.\n[/list]\n",
+ "notes": "[b]Version 1.0.6[/b]\n[b]Neu[/b]\n[list]\n[*]Schwimmen: Man kann jetzt vom Ufer aus ins Wasser gehen und schwimmen (im nativen und im Web-Client). Im tiefen Wasser bewegt man sich langsamer, springen ist dort nicht möglich. Andere Spieler sehen dich schwimmen.\n[*]Schwimmgrenze: Geschwommen werden kann nur im Küstenstreifen. Das offene Meer bleibt gesperrt, auf den anderen Kontinent kommt man weiterhin nur mit der Fähre.\n[*]Neue Schwimm-Animation: Der Charakter legt sich nach vorn, krault mit den Armen und strampelt mit den Beinen. Im Stand tritt er Wasser.\n[*]Wellen und Wasserringe: Schwimmende ziehen Wellenringe über die Wasseroberfläche, beim Eintauchen spritzt es.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Wasser deutlich realistischer: bewegte Wellen mit weicher Dünung und feinen Kräuselungen, Spiegelung des Himmels (je flacher der Blick, desto stärker), Farbe nach Wassertiefe von Türkis im Flachen bis Tiefblau, Licht in den Wellenkämmen, Schaumkante am Ufer und Schaumkronen auf steilen Wellen.\n[*]Die Kamera taucht nicht mehr unter die Wasseroberfläche.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Server erlaubt Positionen im Küstenstreifen des Meeres (Meeresboden bis -6,8 m). Die Sperre zwischen den Kontinenten ist per Test abgesichert.\n[*]Der Wasser-Shader läuft auch mit dem Kompatibilitäts-Renderer (OpenGL) mit korrekter Tiefenberechnung, die Wasserfläche ist feiner unterteilt.\n[*]Der Launcher-Changelog wird künftig aus NativeClient/release-notes/<Version>.txt gelesen, wenn der Release per Tag ausgelöst wird.\n[/list]\n",
  "files": [
   {
    "path": "ErlenwaldOnline.pck",
-   "sha256": "e0af273801712acb39c57ce1b59f6ba8d82c8c34236b68bfddd7cab7d8914158",
-   "size": 1267136
+   "sha256": "3a7b5a69202e9dd3821bfa7ccd6dd772b492a3fb76fb7e8382b20e57699f117a",
+   "size": 1272816
   },
   {
    "path": "ErlenwaldOnline.x86_64",
@@ -185,11 +185,11 @@
    "size": 461521
   }
  ],
- "launcher_version": "1.0.5",
+ "launcher_version": "1.0.6",
  "launcher_files": [
   {
    "path": "Launcher.pck",
-   "sha256": "f87075f945be5ec80dc210f9bf3127f889593b55621d058bea1e4713fb6cf9a6",
+   "sha256": "8d38968f7b5778b5e56a310aa85aa39d3b75d0f4240d4fc4ef53096b05ca5bdc",
    "size": 35140
   },
   {
