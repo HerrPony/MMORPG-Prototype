@@ -2,16 +2,16 @@
  "format": 1,
  "product": "erlenwald",
  "platform": "linux",
- "version": "1.0.6",
- "released": "2026-10-12T17:44:47Z",
+ "version": "1.0.7",
+ "released": "2026-10-12T18:27:41Z",
  "launch": "ErlenwaldOnline.x86_64",
  "objects": "objects/{h2}/{h}",
- "notes": "[b]Version 1.0.6[/b]\n[b]Neu[/b]\n[list]\n[*]Schwimmen: Man kann jetzt vom Ufer aus ins Wasser gehen und schwimmen (im nativen und im Web-Client). Im tiefen Wasser bewegt man sich langsamer, springen ist dort nicht möglich. Andere Spieler sehen dich schwimmen.\n[*]Schwimmgrenze: Geschwommen werden kann nur im Küstenstreifen. Das offene Meer bleibt gesperrt, auf den anderen Kontinent kommt man weiterhin nur mit der Fähre.\n[*]Neue Schwimm-Animation: Der Charakter legt sich nach vorn, krault mit den Armen und strampelt mit den Beinen. Im Stand tritt er Wasser.\n[*]Wellen und Wasserringe: Schwimmende ziehen Wellenringe über die Wasseroberfläche, beim Eintauchen spritzt es.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Wasser deutlich realistischer: bewegte Wellen mit weicher Dünung und feinen Kräuselungen, Spiegelung des Himmels (je flacher der Blick, desto stärker), Farbe nach Wassertiefe von Türkis im Flachen bis Tiefblau, Licht in den Wellenkämmen, Schaumkante am Ufer und Schaumkronen auf steilen Wellen.\n[*]Die Kamera taucht nicht mehr unter die Wasseroberfläche.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Server erlaubt Positionen im Küstenstreifen des Meeres (Meeresboden bis -6,8 m). Die Sperre zwischen den Kontinenten ist per Test abgesichert.\n[*]Der Wasser-Shader läuft auch mit dem Kompatibilitäts-Renderer (OpenGL) mit korrekter Tiefenberechnung, die Wasserfläche ist feiner unterteilt.\n[*]Der Launcher-Changelog wird künftig aus NativeClient/release-notes/<Version>.txt gelesen, wenn der Release per Tag ausgelöst wird.\n[/list]\n",
+ "notes": "[b]Version 1.0.7[/b]\n[b]Neu[/b]\n[list]\n[*]Laternen und Licht bei Nacht (nativer und Web-Client): Entlang der Wege und vor den Häusern stehen jetzt Laternenpfähle, und in den Häusern brennt Licht. Beim Einbruch der Dunkelheit gehen sie von selbst an, am Morgen wieder aus. Jedes Fenster und jede Laterne schaltet etwas versetzt und flackert leicht.\n[*]Die Laternen und Häuser leuchten wirklich: Sie erhellen Boden, Wände und Spieler in ihrer Umgebung.\n[*]Nativer Client: Das Laternenlicht wirft realistische Schatten (Pfähle, Häuser, Bäume und Spieler), die nächsten Lichter mit Schatten, weiter entfernte als weicher Schein mit Lichthof.\n[*]Launcher: Der Changelog zeigt jetzt auch alle früheren Versionen, die neueste zuerst.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Nativer Client: Realistischerer Boden. Gras mit Halmen, Büscheln, trockenen Stellen und Blumen, gewellter Sand, Erdwege mit Kieseln, Kopfsteinpflaster mit einzeln gerundeten Steinen, Felsschichten an steilen Hängen, glitzernder Schnee, rissige Vulkanasche und Schlamm, der feucht glänzt. Das Gelände ist weich schattiert statt kantig.\n[*]Nativer Client: Neuer Gebäude-Shader. Mauerwerk aus Steinquadern, Holzbohlen, Putz und Dachschindeln mit feinem Relief, auf dem Sonne, Mond und Laternenlicht spielen.\n[*]Nativer Client: Neue Fenster- und Laternen-Shader mit warmem Licht und leichtem Kerzenflackern.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Server sendet die Laternenpositionen (nach Straßen und Häusern) mit der Welt, beide Clients zeigen dieselben Laternen. Ein Test prüft die Platzierung.\n[*]Das Laternenlicht nutzt einen Pool aus Lichtern, die immer den nächsten Laternen zugewiesen werden. Die Zahl der Lichter und der Schattenwerfer hängt von der Schattenqualität ab. Mit dem Kompatibilitäts-Renderer (OpenGL) werden Würfel-Schatten verwendet.\n[*]Der Launcher liest die Versionsgeschichte aus dem Update-Manifest (Feld history, aus NativeClient/release-notes).\n[/list]\n",
  "files": [
   {
    "path": "ErlenwaldOnline.pck",
-   "sha256": "3a7b5a69202e9dd3821bfa7ccd6dd772b492a3fb76fb7e8382b20e57699f117a",
-   "size": 1272816
+   "sha256": "8d74182e5a02b5805b2f5e3492a9a6bfc14575749de581c96d79cc903129b802",
+   "size": 1294864
   },
   {
    "path": "ErlenwaldOnline.x86_64",
@@ -185,12 +185,46 @@
    "size": 461521
   }
  ],
- "launcher_version": "1.0.6",
+ "history": [
+  {
+   "version": "1.0.7",
+   "notes": "[b]Version 1.0.7[/b]\n[b]Neu[/b]\n[list]\n[*]Laternen und Licht bei Nacht (nativer und Web-Client): Entlang der Wege und vor den Häusern stehen jetzt Laternenpfähle, und in den Häusern brennt Licht. Beim Einbruch der Dunkelheit gehen sie von selbst an, am Morgen wieder aus. Jedes Fenster und jede Laterne schaltet etwas versetzt und flackert leicht.\n[*]Die Laternen und Häuser leuchten wirklich: Sie erhellen Boden, Wände und Spieler in ihrer Umgebung.\n[*]Nativer Client: Das Laternenlicht wirft realistische Schatten (Pfähle, Häuser, Bäume und Spieler), die nächsten Lichter mit Schatten, weiter entfernte als weicher Schein mit Lichthof.\n[*]Launcher: Der Changelog zeigt jetzt auch alle früheren Versionen, die neueste zuerst.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Nativer Client: Realistischerer Boden. Gras mit Halmen, Büscheln, trockenen Stellen und Blumen, gewellter Sand, Erdwege mit Kieseln, Kopfsteinpflaster mit einzeln gerundeten Steinen, Felsschichten an steilen Hängen, glitzernder Schnee, rissige Vulkanasche und Schlamm, der feucht glänzt. Das Gelände ist weich schattiert statt kantig.\n[*]Nativer Client: Neuer Gebäude-Shader. Mauerwerk aus Steinquadern, Holzbohlen, Putz und Dachschindeln mit feinem Relief, auf dem Sonne, Mond und Laternenlicht spielen.\n[*]Nativer Client: Neue Fenster- und Laternen-Shader mit warmem Licht und leichtem Kerzenflackern.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Server sendet die Laternenpositionen (nach Straßen und Häusern) mit der Welt, beide Clients zeigen dieselben Laternen. Ein Test prüft die Platzierung.\n[*]Das Laternenlicht nutzt einen Pool aus Lichtern, die immer den nächsten Laternen zugewiesen werden. Die Zahl der Lichter und der Schattenwerfer hängt von der Schattenqualität ab. Mit dem Kompatibilitäts-Renderer (OpenGL) werden Würfel-Schatten verwendet.\n[*]Der Launcher liest die Versionsgeschichte aus dem Update-Manifest (Feld history, aus NativeClient/release-notes).\n[/list]"
+  },
+  {
+   "version": "1.0.6",
+   "notes": "[b]Version 1.0.6[/b]\n[b]Neu[/b]\n[list]\n[*]Schwimmen: Man kann jetzt vom Ufer aus ins Wasser gehen und schwimmen (im nativen und im Web-Client). Im tiefen Wasser bewegt man sich langsamer, springen ist dort nicht möglich. Andere Spieler sehen dich schwimmen.\n[*]Schwimmgrenze: Geschwommen werden kann nur im Küstenstreifen. Das offene Meer bleibt gesperrt, auf den anderen Kontinent kommt man weiterhin nur mit der Fähre.\n[*]Neue Schwimm-Animation: Der Charakter legt sich nach vorn, krault mit den Armen und strampelt mit den Beinen. Im Stand tritt er Wasser.\n[*]Wellen und Wasserringe: Schwimmende ziehen Wellenringe über die Wasseroberfläche, beim Eintauchen spritzt es.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Wasser deutlich realistischer: bewegte Wellen mit weicher Dünung und feinen Kräuselungen, Spiegelung des Himmels (je flacher der Blick, desto stärker), Farbe nach Wassertiefe von Türkis im Flachen bis Tiefblau, Licht in den Wellenkämmen, Schaumkante am Ufer und Schaumkronen auf steilen Wellen.\n[*]Die Kamera taucht nicht mehr unter die Wasseroberfläche.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Server erlaubt Positionen im Küstenstreifen des Meeres (Meeresboden bis -6,8 m). Die Sperre zwischen den Kontinenten ist per Test abgesichert.\n[*]Der Wasser-Shader läuft auch mit dem Kompatibilitäts-Renderer (OpenGL) mit korrekter Tiefenberechnung, die Wasserfläche ist feiner unterteilt.\n[*]Der Launcher-Changelog wird künftig aus NativeClient/release-notes/<Version>.txt gelesen, wenn der Release per Tag ausgelöst wird.\n[/list]"
+  },
+  {
+   "version": "1.0.5",
+   "notes": "[b]Version 1.0.5[/b]\n[b]Behoben[/b]\n[list]\n[*]Fähre: Spieler an Deck werden wieder mit dem Schiff mitbewegt. Man bleibt auf der fahrenden Fähre stehen und muss nicht mehr hinterherlaufen.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Die vom Server gesendete Schiff-ID wurde als Kommazahl gelesen und fand das Schiff nicht; sie wird jetzt als Ganzzahl nachgeschlagen.\n[/list]"
+  },
+  {
+   "version": "1.0.4",
+   "notes": "[b]Version 1.0.4[/b]\n[b]Behoben[/b]\n[list]\n[*]Launcher: Listen im Changelog werden als Aufzählung mit Punkten angezeigt.\n[/list]"
+  },
+  {
+   "version": "1.0.3",
+   "notes": "[b]Version 1.0.3[/b]\n[b]Neu[/b]\n[list]\n[*]Minimap: Bereiche (zum Beispiel Zielgebiete von Quests) werden mit Markern angezeigt.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Neue Lauf- und Bogenanimation der Charaktere.\n[*]Wölfe greifen jetzt mit einer eigenen Angriffsanimation an.\n[/list]"
+  },
+  {
+   "version": "1.0.2",
+   "notes": "[b]Version 1.0.2[/b]\n[b]Behoben[/b]\n[list]\n[*]\"Welt betreten\" funktioniert wieder: Die Charakter-IDs sind Texte, nicht Zahlen, und werden jetzt richtig verarbeitet.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Version auf 1.0.2 angehoben.\n[/list]"
+  },
+  {
+   "version": "1.0.1",
+   "notes": "[b]Version 1.0.1[/b]\n[b]Behoben[/b]\n[list]\n[*]Der Button \"Welt betreten\" in der Charakterauswahl funktioniert zuverlässig.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Der Bogen sieht aus wie im Web-Client: durchgehender Bogen mit Griff, Sehne und Pfeil.\n[*]Neue Schützenhaltung mit Spann- und Loslass-Animation, der Pfeil startet kurz nach Schussbeginn.\n[/list]"
+  },
+  {
+   "version": "1.0.0",
+   "notes": "[b]Version 1.0.0[/b]\n[b]Neu[/b]\n[list]\n[*]Der native Desktop-Client für Windows und Linux ist da: bessere Grafik mit Echtzeitschatten, Bloom, Himmels- und Wasser-Shader, Tag-/Nachtzyklus und flüssigerer Steuerung.\n[*]Alle Funktionen des Web-Clients: Welt, Quests, Kampf, Gruppen, Händler, Greifenflüge, Dungeons und Weltkarte.\n[*]Viele Einstellungen für Grafik, Audio und Steuerung, dazu frei belegbare Tasten und Gamepad-Unterstützung.\n[*]Launcher mit automatischem Update: Er findet neue Versionen selbst, lädt nur geänderte Dateien und repariert beschädigte Installationen.\n[*]Windows-Installer und Installationsskript für Linux.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Client nutzt dasselbe Protokoll wie der Web-Client, der Server bleibt unverändert.\n[/list]"
+  }
+ ],
+ "launcher_version": "1.0.7",
  "launcher_files": [
   {
    "path": "Launcher.pck",
-   "sha256": "8d38968f7b5778b5e56a310aa85aa39d3b75d0f4240d4fc4ef53096b05ca5bdc",
-   "size": 35140
+   "sha256": "71be753dd346c2cf7ca5529ea7d449d1107e69823f7c29d9a4d5304b0521680f",
+   "size": 35524
   },
   {
    "path": "Launcher.x86_64",
