@@ -10,6 +10,7 @@ on:
         required: false
         default: "native-v1.0.0"
   push:
+    branches: ["**"]
     paths: [".github/workflows/native-client-windows-smoke.yml"]
 
 permissions:
