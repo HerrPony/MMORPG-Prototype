@@ -1,0 +1,5 @@
+[b]Version 1.0.4[/b]
+[b]Behoben[/b]
+[list]
+[*]Launcher: Listen im Changelog werden als Aufzählung mit Punkten angezeigt.
+[/list]

@@ -1,0 +1,10 @@
+[b]Version 1.0.3[/b]
+[b]Neu[/b]
+[list]
+[*]Minimap: Bereiche (zum Beispiel Zielgebiete von Quests) werden mit Markern angezeigt.
+[/list]
+[b]Geändert[/b]
+[list]
+[*]Neue Lauf- und Bogenanimation der Charaktere.
+[*]Wölfe greifen jetzt mit einer eigenen Angriffsanimation an.
+[/list]

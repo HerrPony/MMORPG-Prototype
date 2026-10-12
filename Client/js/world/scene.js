@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { W, setWorldData, heightAt, SWIM_FLOOR, biomeAt, distToPoly, smoothstep, BIOME_KEYS } from '../util.js';
 import { buildVegetation } from './vegetation.js';
 import { buildTowns, buildCabin, ships } from './buildings.js';
+import { buildLamps } from './lamps.js';
 import { buildDungeon } from './dungeon.js';
 import { sunInfo } from '../daynight.js';
 
@@ -244,6 +245,7 @@ export function buildWorld(scenery, renderer) {
   const solids = buildTowns(scene, scenery.buildings);
   buildCabin(scenery.house, scene);
   buildBridges(scene, scenery.bridges);
+  const lamps = buildLamps(scene, scenery);
   const walls = scenery.house;
   const R = 0.4;
 
@@ -353,7 +355,7 @@ export function buildWorld(scenery, renderer) {
       sun.target.position.set(x, y, z);
       sun.position.set(x + lightDir.x * 110, y + lightDir.y * 110, z + lightDir.z * 110);
     },
-    update(dt) { updateLook(dt); for (const sh of ships) sh.update(dt, {}); water.position.y = -0.12 + Math.sin(performance.now() / 1400) * 0.04; },
+    update(dt, cam) { updateLook(dt); lamps.update(dt, cam || sky.position, sunInfo().day); for (const sh of ships) sh.update(dt, {}); water.position.y = -0.12 + Math.sin(performance.now() / 1400) * 0.04; },
     enterDungeon(info) { dungeon = buildDungeon(info); return dungeon; },
     leaveDungeon() { dungeon = null; },
     get dungeon() { return dungeon; },

@@ -30,6 +30,7 @@ var terrain: MeshInstance3D
 var water: MeshInstance3D
 var props_root: Node3D
 var buildings_root: Node3D
+var lamps: Lamps
 var look_cur := {}
 var look_tgt := {}
 var zone_key := "forest"
@@ -57,6 +58,10 @@ func build() -> void:
 	Buildings.build(buildings_root)
 	Buildings.build_cabin(buildings_root)
 	Buildings.build_bridges(buildings_root)
+	lamps = Lamps.new()
+	lamps.name = "Lamps"
+	add_child(lamps)
+	lamps.build()
 	look_cur = _look_dict(LOOK["forest"])
 	look_tgt = look_cur.duplicate()
 	built = true
@@ -140,6 +145,8 @@ func apply_settings() -> void:
 	vp.scaling_3d_scale = clampf(float(v["res_scale"]), 0.5, 1.0)
 	if water and water.material_override:
 		(water.material_override as ShaderMaterial).set_shader_parameter("quality", float(v["water_quality"]))
+	if lamps:
+		lamps.configure()
 	rebuild_props.call_deferred()
 	if props_root:
 		for c in props_root.get_children():
@@ -363,8 +370,10 @@ func update(dt: float) -> void:
 	var amb_night := Color(0.3, 0.38, 0.64)
 	env.ambient_light_color = amb_night.lerp(amb_day, day)
 	env.ambient_light_energy = maxf(0.45, look_cur["hemi"] * (0.5 + 0.5 * day) * 0.8)
-	# windows and lamps glow at night
+	# windows and lamps glow at night, the lamps also light up their surroundings
 	Buildings.glow_material().set_shader_parameter("night", night)
+	if lamps:
+		lamps.update(dt, cam.global_position if cam else Vector3.ZERO, day)
 
 ## Called every frame with the player's position: the light and its shadows follow.
 func follow(p: Vector3) -> void:

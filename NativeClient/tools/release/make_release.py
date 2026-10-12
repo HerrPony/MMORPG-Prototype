@@ -70,6 +70,24 @@ def prune(out):
     return removed
 
 
+def version_key(v):
+    return tuple(int(x) if x.isdigit() else 0 for x in v.split("."))
+
+
+def collect_history(notes_dir, version, notes):
+    """Changelogs of all releases up to this version, newest first: [{"version": ..., "notes": ...}]."""
+    found = {}
+    if notes_dir and os.path.isdir(notes_dir):
+        for name in os.listdir(notes_dir):
+            v, ext = os.path.splitext(name)
+            if ext == ".txt" and v and all(p.isdigit() for p in v.split(".")) and version_key(v) <= version_key(version):
+                with open(os.path.join(notes_dir, name), encoding="utf-8") as f:
+                    found[v] = f.read().strip()
+    if notes.strip():
+        found[version] = notes.strip()   # the notes given for this release win over the file
+    return [{"version": v, "notes": found[v]} for v in sorted(found, key=version_key, reverse=True)]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--platform", required=True, choices=["windows", "linux", "macos"])
@@ -79,7 +97,8 @@ def main():
     ap.add_argument("--launch", help="executable inside game-dir (default: ErlenwaldOnline.exe / .x86_64)")
     ap.add_argument("--launcher-dir", help="folder with the launcher files (Launcher.exe + Launcher.pck)")
     ap.add_argument("--launcher-version", default="1.0.0")
-    ap.add_argument("--notes", help="text/BBCode file shown in the launcher")
+    ap.add_argument("--notes", help="text/BBCode file shown in the launcher (the notes of this version)")
+    ap.add_argument("--notes-dir", help="folder with <version>.txt changelogs of all releases; the launcher shows the whole history")
     ap.add_argument("--prune", action="store_true", help="remove unreferenced objects afterwards")
     a = ap.parse_args()
 
@@ -91,12 +110,15 @@ def main():
     if a.notes:
         with open(a.notes, encoding="utf-8") as f:
             notes = f.read()
+    history = collect_history(a.notes_dir, a.version, notes)
     files = [entry(rel, full, a.out) for rel, full in collect(a.game_dir)]
     manifest = {
         "format": 1, "product": "erlenwald", "platform": a.platform, "version": a.version,
         "released": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "launch": launch,
         "objects": "objects/{h2}/{h}", "notes": notes, "files": files,
     }
+    if history:
+        manifest["history"] = history
     if a.launcher_dir:
         manifest["launcher_version"] = a.launcher_version
         manifest["launcher_files"] = [entry(rel, full, a.out) for rel, full in collect(a.launcher_dir)]

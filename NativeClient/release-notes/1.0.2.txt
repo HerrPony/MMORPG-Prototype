@@ -1,0 +1,9 @@
+[b]Version 1.0.2[/b]
+[b]Behoben[/b]
+[list]
+[*]"Welt betreten" funktioniert wieder: Die Charakter-IDs sind Texte, nicht Zahlen, und werden jetzt richtig verarbeitet.
+[/list]
+[b]Technik[/b]
+[list]
+[*]Version auf 1.0.2 angehoben.
+[/list]

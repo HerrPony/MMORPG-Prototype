@@ -1,0 +1,10 @@
+[b]Version 1.0.1[/b]
+[b]Behoben[/b]
+[list]
+[*]Der Button "Welt betreten" in der Charakterauswahl funktioniert zuverlässig.
+[/list]
+[b]Geändert[/b]
+[list]
+[*]Der Bogen sieht aus wie im Web-Client: durchgehender Bogen mit Griff, Sehne und Pfeil.
+[*]Neue Schützenhaltung mit Spann- und Loslass-Animation, der Pfeil startet kurz nach Schussbeginn.
+[/list]

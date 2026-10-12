@@ -63,7 +63,7 @@ static func build(parent: Node3D) -> void:
 			"dock": _dock(ctx, b)
 	for key in chunks:
 		var c: Ctx = chunks[key]
-		var mi := c.main.instance()
+		var mi := c.main.instance(material())
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		parent.add_child(mi)
 		if not c.glow.verts.is_empty():
@@ -75,12 +75,19 @@ static func build(parent: Node3D) -> void:
 			wi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			parent.add_child(wi)
 
+static var _mat: ShaderMaterial = null
+## Surface of the walls and roofs (bricks, planks, shingles) - the vertex colours decide the base colour.
+static func material() -> ShaderMaterial:
+	if _mat == null:
+		_mat = ShaderMaterial.new()
+		_mat.shader = load("res://assets/shaders/building.gdshader")
+	return _mat
+
 static var _glow_mat: ShaderMaterial = null
 ## Windows and lamps: dim glass by day, bright light at night (the world sets the "night" parameter).
 static func glow_material() -> ShaderMaterial:
 	if _glow_mat == null:
-		var sh := Shader.new()
-		sh.code = "shader_type spatial;\nrender_mode specular_disabled;\nuniform float night = 0.0;\nvoid fragment(){ ALBEDO = COLOR.rgb * (0.35 + 0.15 * (1.0 - night)); EMISSION = COLOR.rgb * vec3(1.0, 0.8, 0.5) * (0.05 + 1.25 * night); ROUGHNESS = 0.6; }\n"
+		var sh: Shader = load("res://assets/shaders/window_glow.gdshader")
 		_glow_mat = ShaderMaterial.new()
 		_glow_mat.shader = sh
 	return _glow_mat

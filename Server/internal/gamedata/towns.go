@@ -389,6 +389,7 @@ type Scenery struct {
 	Towns     []*Town        `json:"towns"`
 	POIs      []*POI         `json:"pois"`
 	Buildings []Building     `json:"buildings"`
+	Lamps     []Lamp         `json:"lamps"`
 	House     []Box          `json:"house"` // the cabin at the world origin (with door)
 	Roads     [][][2]float64 `json:"roads"`
 	Rivers    []River        `json:"rivers"`
@@ -470,7 +471,7 @@ func baseScenery() Scenery {
 	}
 	return Scenery{
 		X0: WorldMinX, Z0: WorldMinZ, Cell: GridCell, NX: GridNX, NZ: GridNZ, Conts: Continents, Heights: HeightmapB64(), Biomes: BiomemapB64(),
-		Zones: Zones, Towns: Towns, POIs: POIs, Buildings: Buildings(), House: house,
+		Zones: Zones, Towns: Towns, POIs: POIs, Buildings: Buildings(), Lamps: Lamps(), House: house,
 		Roads: roads, Rivers: Rivers, Lakes: Lakes, Bridges: bridges(), Clears: clears,
 	}
 }

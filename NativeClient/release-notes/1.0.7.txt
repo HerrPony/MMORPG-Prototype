@@ -1,0 +1,20 @@
+[b]Version 1.0.7[/b]
+[b]Neu[/b]
+[list]
+[*]Laternen und Licht bei Nacht (nativer und Web-Client): Entlang der Wege und vor den Häusern stehen jetzt Laternenpfähle, und in den Häusern brennt Licht. Beim Einbruch der Dunkelheit gehen sie von selbst an, am Morgen wieder aus. Jedes Fenster und jede Laterne schaltet etwas versetzt und flackert leicht.
+[*]Die Laternen und Häuser leuchten wirklich: Sie erhellen Boden, Wände und Spieler in ihrer Umgebung.
+[*]Nativer Client: Das Laternenlicht wirft realistische Schatten (Pfähle, Häuser, Bäume und Spieler), die nächsten Lichter mit Schatten, weiter entfernte als weicher Schein mit Lichthof.
+[*]Launcher: Der Changelog zeigt jetzt auch alle früheren Versionen, die neueste zuerst.
+[/list]
+[b]Geändert[/b]
+[list]
+[*]Nativer Client: Realistischerer Boden. Gras mit Halmen, Büscheln, trockenen Stellen und Blumen, gewellter Sand, Erdwege mit Kieseln, Kopfsteinpflaster mit einzeln gerundeten Steinen, Felsschichten an steilen Hängen, glitzernder Schnee, rissige Vulkanasche und Schlamm, der feucht glänzt. Das Gelände ist weich schattiert statt kantig.
+[*]Nativer Client: Neuer Gebäude-Shader. Mauerwerk aus Steinquadern, Holzbohlen, Putz und Dachschindeln mit feinem Relief, auf dem Sonne, Mond und Laternenlicht spielen.
+[*]Nativer Client: Neue Fenster- und Laternen-Shader mit warmem Licht und leichtem Kerzenflackern.
+[/list]
+[b]Technik[/b]
+[list]
+[*]Der Server sendet die Laternenpositionen (nach Straßen und Häusern) mit der Welt, beide Clients zeigen dieselben Laternen. Ein Test prüft die Platzierung.
+[*]Das Laternenlicht nutzt einen Pool aus Lichtern, die immer den nächsten Laternen zugewiesen werden. Die Zahl der Lichter und der Schattenwerfer hängt von der Schattenqualität ab. Mit dem Kompatibilitäts-Renderer (OpenGL) werden Würfel-Schatten verwendet.
+[*]Der Launcher liest die Versionsgeschichte aus dem Update-Manifest (Feld history, aus NativeClient/release-notes).
+[/list]

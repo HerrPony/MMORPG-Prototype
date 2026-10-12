@@ -38,6 +38,8 @@ Zwei Kontinente (je ca. 600 × 600 m), vom Server als Höhen- und Biomkarte erze
   einfach hinüberlaufen, an Deck frei bewegen und im Zielhafen wieder über den Steg von Bord gehen.
 - **Schwimmen:** Von der Küste aus kann man ins Meer gehen und schwimmen (langsamer, kein Springen). Geschwommen wird nur im Küstenstreifen (Meeresboden bis -6,8 m,
   gleiche Werte in Server und Clients); das offene Meer ist gesperrt – auf den anderen Kontinent kommt man nur mit der Fähre.
+- **Laternen:** Entlang der Wege und vor den Häusern stehen Laternenpfähle (der Server legt sie fest, `gamedata/lamps.go`), in den Häusern brennt Licht.
+  Bei Nacht gehen sie von selbst an und leuchten (im nativen Client mit Schatten).
 - Orte lösen beim Betreten ein Namensbanner aus und werden auf der Weltkarte (M, Reiter pro Kontinent) aufgedeckt.
   Aktive Quests markieren ihr Zielgebiet golden auf Weltkarte und Minimap.
 - Gegner spawnen nie auf Straßen. Maximalstufe 40, alle 2 Stufen eine neue Fertigkeit beim Klassenlehrer.

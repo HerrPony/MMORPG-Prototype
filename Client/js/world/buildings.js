@@ -2,6 +2,11 @@ import * as THREE from 'three';
 import { heightAt } from '../util.js';
 import { makeShip } from './ship.js';
 
+// window glass: shared, so that all of them can light up at night (see lamps.js)
+export const windowMats = [];
+const WIN = new THREE.MeshLambertMaterial({ color: 0xffe9a0, emissive: 0xffc870, emissiveIntensity: 0.1 });
+windowMats.push(WIN);
+
 const M = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
 const box = (w, h, d, m) => { const x = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); x.castShadow = x.receiveShadow = true; return x; };
 const cyl = (rt, rb, h, m, s = 12) => { const x = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, s), m); x.castShadow = true; return x; };
@@ -68,7 +73,7 @@ function house(b, hh) {
   }
   // door and windows on the south side
   const door = box(1.3, 2.2, 0.2, M(0x3a2410)); door.position.set(0, lift + 1.1, b.d / 2 + 0.05); g.add(door);
-  const wm = b.s === 'obsidian' ? new THREE.MeshBasicMaterial({ color: 0xff7a30 }) : M(0xffe9a0, { emissive: 0x5a4a1a });
+  const wm = b.s === 'obsidian' ? new THREE.MeshBasicMaterial({ color: 0xff7a30 }) : WIN;
   for (const sx of [-1, 1]) { const w = box(0.9, 0.9, 0.2, wm); w.position.set(sx * b.w * 0.28, lift + b.h * 0.6, b.d / 2 + 0.05); g.add(w); }
   if (b.k === 'hut') { const st2 = box(2.2, 0.3, 2.0, trim); st2.position.set(0, 0.5, b.d / 2 + 1.3); g.add(st2); }
   g.position.set(b.x, hh, b.z);
@@ -274,7 +279,7 @@ export function buildCabin(boxes, scene) {
   const chim = box(0.9, 2.6, 0.9, stone); chim.position.set(-2.8, h0 + 4.4, -1.6); g.add(chim);
   const frame = box(2.1, 0.2, 0.5, wood); frame.position.set(0, h0 + 2.5, 4); g.add(frame);
   for (const sx of [-1, 1]) { const post = box(0.2, 2.5, 0.5, wood); post.position.set(sx * 1.0, h0 + 1.25, 4); g.add(post); }
-  const winM = M(0xffe9a0, { emissive: 0x6a5a20 });
+  const winM = WIN;
   for (const [x, z, ry] of [[-3.2, 4.0, 0], [3.2, 4.0, 0], [-5, 0, Math.PI / 2], [5, 0, Math.PI / 2]]) {
     const w = box(1.1, 0.9, 0.5, winM); w.position.set(x, h0 + 1.8, z); w.rotation.y = ry; g.add(w);
   }
