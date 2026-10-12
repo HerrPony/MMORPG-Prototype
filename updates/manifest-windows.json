@@ -2,11 +2,11 @@
  "format": 1,
  "product": "erlenwald",
  "platform": "windows",
- "version": "1.0.4",
- "released": "2026-10-12T16:48:15Z",
+ "version": "1.0.5",
+ "released": "2026-10-12T17:14:18Z",
  "launch": "ErlenwaldOnline.exe",
  "objects": "objects/{h2}/{h}",
- "notes": "[b]Version 1.0.4[/b]\n[b]Behoben[/b]\n[list]\n[*]Charaktere haben wieder Lauf-Animationen: Beine und Arme schwingen beim Gehen und Rennen.\n[*]Bogen-Animation: Der Bogenarm streckt sich beim Schuss nach vorne, die Sehne wird gespannt und losgelassen.\n[*]Nahkampf- und Zauber-Animationen der menschlichen Modelle (Schlag, Zauberhaltung) funktionieren wieder.\n[*]Wölfe und andere Vierbeiner springen beim Angriff als ganzes Tier nach vorn: Beine, Kopf und Schwanz bewegen sich mit, nicht nur der Körper.\n[*]Die goldenen Quest-Bereichsmarker ragen nicht mehr über den Rand der Minimap hinaus.\n[*]Der Launcher zeigt Changelogs jetzt korrekt als Aufzählung an (vorher erschienen [list] und [*] als Text).\n[/list]\n[b]Technik[/b]\n[list]\n[*]Menschenmodelle registrieren ihre Gliedmaßen für das Animationssystem.\n[*]Minimap-Marker werden auf den runden Kartenausschnitt beschnitten (auch im Web-Client).\n[/list]\n",
+ "notes": "[b]Version 1.0.5[/b]\n[b]Behoben[/b]\n[list]\n[*]Fähre: Spieler an Deck werden wieder mit dem Schiff mitbewegt. Man bleibt auf der fahrenden Fähre stehen und muss nicht mehr hinterherlaufen.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Die vom Server gesendete Schiff-ID wurde als Kommazahl gelesen und fand das Schiff nicht; sie wird jetzt als Ganzzahl nachgeschlagen.\n[/list]\n",
  "files": [
   {
    "path": "ErlenwaldOnline.exe",
@@ -15,7 +15,7 @@
   },
   {
    "path": "ErlenwaldOnline.pck",
-   "sha256": "677689ad00eb015a21ad1a105e14ee114351909f484c23a84ebfb760f4b28c99",
+   "sha256": "e0af273801712acb39c57ce1b59f6ba8d82c8c34236b68bfddd7cab7d8914158",
    "size": 1267136
   },
   {
@@ -184,7 +184,7 @@
    "size": 461521
   }
  ],
- "launcher_version": "1.0.4",
+ "launcher_version": "1.0.5",
  "launcher_files": [
   {
    "path": "Launcher.exe",
@@ -193,7 +193,7 @@
   },
   {
    "path": "Launcher.pck",
-   "sha256": "593d784d7e1f2bd8f5ac17dfadfeaa9efe0ef6cf2d61813a1ff1c203f8b413a2",
+   "sha256": "f87075f945be5ec80dc210f9bf3127f889593b55621d058bea1e4713fb6cf9a6",
    "size": 35140
   }
  ]
