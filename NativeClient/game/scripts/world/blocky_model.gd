@@ -16,6 +16,7 @@ var bob := 0.0
 var wing_speed := 9.0
 var glow_nodes: Array = []   # nodes that pulse (crystals, wisps)
 var t := 0.0
+var rest_z: Dictionary = {}  # quadrupeds: resting z of each pivot, so an attack can lunge the whole animal
 var player_class := ""
 var bow: Node3D = null       # archer rig, set by Models.humanoid when a bow is held
 
@@ -154,10 +155,14 @@ func _anim_human(dt: float, amp: float, airborne: bool) -> void:
 
 func _anim_quad(dt: float, amp: float, airborne: bool) -> void:
 	var s := sin(phase * 0.85)
-	_swing("leg_fl", s * amp)
-	_swing("leg_br", s * amp)
-	_swing("leg_fr", -s * amp)
-	_swing("leg_bl", -s * amp)
+	var atk := 0.0
+	if attack_t >= 0.0:
+		atk = sin(attack_t / 0.45 * PI)
+	# the whole animal lunges (all pivots move together), the front legs reach out, the hind legs push off
+	_swing("leg_fl", s * amp - atk * 0.9)
+	_swing("leg_fr", -s * amp - atk * 0.9)
+	_swing("leg_br", s * amp + atk * 0.5)
+	_swing("leg_bl", -s * amp + atk * 0.5)
 	var tail: Node3D = parts.get("tail")
 	if tail:
 		tail.rotation.y = sin(t * 4.0) * 0.25 * (0.4 + amp)
@@ -166,11 +171,17 @@ func _anim_quad(dt: float, amp: float, airborne: bool) -> void:
 	if head:
 		head.rotation.x = sin(t * 1.3) * 0.04
 		if attack_t >= 0.0:
-			head.rotation.x = 0.5 * sin(attack_t / 0.45 * PI)
+			head.rotation.x = 0.5 * atk
+	if rest_z.is_empty():
+		for n in ["body", "head", "tail", "leg_fl", "leg_fr", "leg_bl", "leg_br"]:
+			var pn: Node3D = parts.get(n)
+			if pn:
+				rest_z[n] = pn.position.z
+	for n in rest_z:
+		var pn2: Node3D = parts.get(n)
+		if pn2:
+			pn2.position.z = rest_z[n] + 0.35 * atk
 	if body:
-		body.position.z = 0.0
-		if attack_t >= 0.0:
-			body.position.z = 0.35 * sin(attack_t / 0.45 * PI)
 		body.position.y = absf(s) * amp * 0.03
 
 func _anim_crawler(dt: float, amp: float) -> void:

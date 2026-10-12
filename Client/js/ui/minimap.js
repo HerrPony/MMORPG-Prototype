@@ -65,6 +65,8 @@ export function drawMinimap(camYaw) {
   const Wd = cv.width, c = Wd / 2, scale = c / VIEW; // canvas px per meter
   const L = S.local;
   g.clearRect(0, 0, Wd, Wd);
+  g.save();
+  g.beginPath(); g.arc(c, c, c, 0, Math.PI * 2); g.clip(); // keep area markers inside the round map
   if (S.instance) {
     g.fillStyle = '#16141a'; g.fillRect(0, 0, Wd, Wd);
     g.save(); g.translate(c, c); g.rotate(camYaw - Math.PI); g.scale(scale, scale);
@@ -149,6 +151,7 @@ export function drawMinimap(camYaw) {
   g.fillStyle = '#fff'; g.strokeStyle = '#000'; g.lineWidth = 2;
   g.beginPath(); g.moveTo(0, -11); g.lineTo(8, 9); g.lineTo(0, 4); g.lineTo(-8, 9); g.closePath(); g.fill(); g.stroke();
   g.restore();
+  g.restore(); // circular clip
 
   const n = $('mm-north'), R = 80;
   n.style.left = (88 + Math.sin(phi) * R) + 'px';

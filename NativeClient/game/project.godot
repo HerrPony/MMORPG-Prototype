@@ -8,7 +8,7 @@ config/description="Nativer Client für Erlenwald Online"
 config/icon="res://icon.svg"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.5", "Forward Plus")
-config/version="1.0.2"
+config/version="1.0.3"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="ErlenwaldOnline/game"
 

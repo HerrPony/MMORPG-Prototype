@@ -456,6 +456,10 @@ static func humanoid(spec: Dictionary) -> BlockyModel:
 		for side in [-1, 1]:
 			wb.box(Vector3(side * 0.45, 0.1, -0.1), Vector3(0.7, 0.05, 0.35), skin.darkened(0.2), Vector3(0, side * 20, side * -25))
 		_part(rig, "wings", Vector3(0, 1.1, -0.18), wb)
+	# register the pivots by name, BlockyModel animates them (walking, arm swing, bow draw ...)
+	for ch in rig.get_children():
+		if ch is Node3D:
+			mdl.parts[String(ch.name)] = ch
 	var is_big: bool = mdl.kind == "golem"
 	mdl.height = (1.85 + hat_h) * sc * body.y * (1.0 if not is_big else 1.0)
 	mdl.player_class = spec.get("player_class", "")

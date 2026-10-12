@@ -32,6 +32,37 @@ func update_view(yaw: float) -> void:
 	north.position = size / 2.0 + Vector2(cos(ang), sin(ang)) * (size.x / 2.0 - 10.0) - Vector2(5, 10)
 	queue_redraw()
 
+## Quest area circle (fill + dashed outline) limited to the round map, so it never spills over the rim.
+func _area_clipped(p: Vector2, rr: float, c: Vector2, limit: float) -> void:
+	var n := 64
+	var area := PackedVector2Array()
+	var disc := PackedVector2Array()
+	for i in n:
+		var a := TAU * i / n
+		area.append(p + Vector2(cos(a), sin(a)) * rr)
+		disc.append(c + Vector2(cos(a), sin(a)) * limit)
+	for poly in Geometry2D.intersect_polygons(area, disc):
+		if poly.size() >= 3 and not Geometry2D.triangulate_polygon(poly).is_empty():
+			draw_colored_polygon(poly, Color(1, 0.78, 0.16, 0.15))
+	# dashed outline: only the dashes that lie inside the map
+	var dashes := maxi(16, int(rr / 2.0))
+	var col := Color(1, 0.84, 0.25, 0.85)
+	for i in range(0, dashes, 2):
+		var a0 := TAU * i / dashes
+		var a1 := TAU * (i + 1) / dashes
+		var pts := PackedVector2Array()
+		for k in 5:
+			var q := p + Vector2(cos(lerpf(a0, a1, k / 4.0)), sin(lerpf(a0, a1, k / 4.0))) * rr
+			if (q - c).length() <= limit:
+				pts.append(q)
+			elif pts.size() >= 2:
+				draw_polyline(pts, col, 2.0, true)
+				pts = PackedVector2Array()
+			else:
+				pts = PackedVector2Array()
+		if pts.size() >= 2:
+			draw_polyline(pts, col, 2.0, true)
+
 func _draw() -> void:
 	var c := size / 2.0
 	var sc := px_scale()
@@ -54,8 +85,7 @@ func _draw() -> void:
 			var rr: float = a.r * sc
 			var d := (p - c).length()
 			if d < size.x / 2.0 + rr:
-				draw_circle(p, rr, Color(1, 0.78, 0.16, 0.15))
-				dashed_circle(p, rr, Color(1, 0.84, 0.25, 0.85))
+				_area_clipped(p, rr, c, size.x / 2.0 - 3.0)
 				if a.k == "npc":
 					text_out(p + Vector2(0, 6), "?", 18, Color("ffd01a"))
 			if d > size.x / 2.0 - 6.0:
