@@ -26,6 +26,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -54,10 +55,21 @@ jobs:
           unzip -q -j templates.tpz 'templates/*' -d ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
           godot --version
 
-      - name: Tools (NSIS, ffmpeg, Chromium for the music renderer)
+      - name: Tools (NSIS, ffmpeg)
+        timeout-minutes: 10
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          NEEDRESTART_MODE: a
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq nsis ffmpeg
+
+      - name: Chromium for the music renderer
+        timeout-minutes: 10
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          NEEDRESTART_MODE: a
+        run: |
           mkdir -p "$RUNNER_TEMP/node" && cd "$RUNNER_TEMP/node" && npm init -y >/dev/null && npm i playwright >/dev/null
           npx playwright install --with-deps chromium
 
@@ -65,6 +77,7 @@ jobs:
         run: GODOT=godot NativeClient/tools/check_scripts.sh
 
       - name: Render music (pre-rendered OGG from the WebAudio score)
+        timeout-minutes: 45
         run: |
           export NODE_PATH="$RUNNER_TEMP/node/node_modules"
           node NativeClient/tools/music/render_music.mjs "$GITHUB_WORKSPACE/NativeClient/build/audio" --music-only
