@@ -54,3 +54,13 @@ Alle Modelle sind selbst erzeugte Pixel-Modelle ohne fremde Dateien: Figuren und
 mit kleinen Pixel-Texturen bemalt werden (`Client/js/world/human.js`, `beasts.js`, `creatures2.js`).
 Spieler zeigen gewählte Haut-/Haarfarbe und Geschlecht sowie die angelegte Ausrüstung; Skelette, Zombies, Mumien, Yetis, Kobolde,
 Elementare usw. haben eigene Stile und Proportionen. Welt, Musik und Effekte werden ebenfalls im Browser erzeugt.
+## Mobile / Touch (Querformat)
+
+Auf Smartphones und Tablets erkennt der Client automatisch Touch-Geräte und blendet eine virtuelle Steuerung ein:
+
+- **Linke Bildschirmhälfte** (unten): schwebender Joystick – leicht kippen = gehen, voll = rennen
+- **Rechte Seite**: Kamera drehen durch Wischen, Zwei-Finger-Pinch = Zoom, Tippen = Ziel wählen (NPCs/Objekte/Beute werden direkt benutzt, bei Gegnern/Spielern zweites Tippen = Angriff/Menü)
+- **Buttons**: ⚔️ Angriff (Auto-Ziel), ⤒ Springen, 🎯 nächstes Ziel, ✋ Interagieren/Looten, 💬 Chat
+- Aktionsleiste (2×7) und Menüleiste oben; lange auf einen Taschen-Slot drücken = Rechtsklick (benutzen/anlegen)
+- Vollbild + Querformat-Sperre werden beim ersten Tippen angefordert; im Hochformat erscheint ein Hinweis zum Drehen.
+  iPhone/Safari kennt keine Fullscreen-API: dort „Zum Home-Bildschirm“ hinzufügen (Web-App-Modus, Vollbild).

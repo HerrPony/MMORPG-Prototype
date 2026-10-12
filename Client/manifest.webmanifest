@@ -1,0 +1,9 @@
+{
+  "name": "Erlenwald Online",
+  "short_name": "Erlenwald",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0b0d10",
+  "theme_color": "#0b0d10"
+}

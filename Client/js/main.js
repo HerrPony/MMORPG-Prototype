@@ -11,6 +11,7 @@ import { loadHumanAssets } from './world/models.js';
 import { Controller } from './player.js';
 import { ui, initUI, enterHud, leaveHud, updateUI } from './ui/index.js';
 import { renderTracker } from './ui/hud.js';
+import { initTouch } from './touch.js';
 
 const canvas = $('gl');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -133,6 +134,8 @@ net.on('skills', () => audio.sfx('learn'));
 net.on('loot', () => audio.sfx('loot'));
 net.on('kicked', (m) => { alert(m.text); location.reload(); });
 net.on('_close', () => { alert('Verbindung zum Server getrennt.'); location.reload(); });
+
+initTouch(() => game?.controller, ui);
 
 // ---- audio + fullscreen ----
 const unlock = () => audio.start();

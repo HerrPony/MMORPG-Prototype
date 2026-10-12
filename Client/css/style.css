@@ -266,3 +266,83 @@ button.danger { color: #ff8a8a; }
 #sys-btns button { width: 30px; height: 30px; background: var(--glass-flat); border: 1px solid var(--edge-soft); border-radius: 5px; color: #fff; font-size: 15px; backdrop-filter: blur(4px); }
 #sys-btns button:hover { border-color: var(--gold); }
 input[type=range] { padding: 0; accent-color: #d9a93a; }
+
+/* ---------- Touch / Mobil (Querformat) ---------- */
+#touch-ui, #rotate-hint { display: none; }
+body.touch { overscroll-behavior: none; touch-action: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+body.touch input { user-select: text; -webkit-user-select: text; touch-action: manipulation; }
+body.touch #sys-btns { top: max(4px, env(safe-area-inset-top)); left: max(6px, env(safe-area-inset-left)); }
+body.touch #sys-btns button { width: 34px; height: 34px; }
+
+/* Bitte drehen */
+@media (orientation: portrait) {
+  body.touch #rotate-hint { position: fixed; inset: 0; z-index: 999; display: grid; place-items: center; text-align: center; background: #0b0d10; color: var(--gold); padding: 24px; font-family: var(--serif); }
+  body.touch #rotate-hint .ri { font-size: 64px; }
+  body.touch #rotate-hint p { font-size: 18px; margin: 10px 0 0; }
+}
+
+/* Steuerelemente nur im Spiel */
+body.touch #hud:not(.hidden) ~ #touch-ui { display: block; }
+body.touch #touch-ui { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+#joy { position: fixed; width: 140px; height: 140px; left: calc(max(14px, env(safe-area-inset-left)) + 10px); bottom: calc(max(12px, env(safe-area-inset-bottom)) + 14px); top: auto; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02)); border: 2px solid rgba(240, 207, 122, .35); opacity: .55; display: grid; place-items: center; }
+#joy.active { opacity: .9; bottom: auto; }
+#joy .knob { width: 60px; height: 60px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #f4dc98, #a9822c); border: 2px solid #3b2a08; box-shadow: 0 2px 8px #000a; }
+.tbtn { position: fixed; pointer-events: auto; width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-size: 24px; color: #fff; background: radial-gradient(circle at 40% 35%, rgba(90, 76, 50, .85), rgba(18, 14, 10, .85)); border: 2px solid var(--gold-dim); box-shadow: 0 3px 10px #000a; }
+.tbtn.on { transform: scale(.92); border-color: var(--gold); filter: brightness(1.3); }
+.tbtn.big { width: 78px; height: 78px; font-size: 34px; }
+:root { --tr: max(14px, env(safe-area-inset-right)); --tb: max(12px, env(safe-area-inset-bottom)); }
+#t-atk { right: calc(var(--tr) + 10px); bottom: calc(var(--tb) + 10px); }
+#t-jump { right: calc(var(--tr) + 92px); bottom: calc(var(--tb) + 6px); }
+#t-tgt { right: calc(var(--tr) + 94px); bottom: calc(var(--tb) + 70px); }
+#t-use { right: calc(var(--tr) + 20px); bottom: calc(var(--tb) + 98px); }
+#t-chat { right: calc(var(--tr) + 160px); bottom: calc(var(--tb) + 10px); width: 40px; height: 40px; font-size: 18px; }
+
+/* HUD kompakter */
+body.touch { --slot: 38px; }
+body.touch #hud { font-size: 11px; }
+body.touch #bottom { padding-bottom: max(4px, env(safe-area-inset-bottom)); background: none; }
+body.touch #hud { z-index: 25; }
+body.touch #xpbar { width: 300px; margin-bottom: 3px; }
+body.touch #bar-wrap { flex-direction: column; align-items: center; gap: 3px; }
+body.touch .cap { display: none; }
+body.touch #actionbar { display: grid; grid-template-columns: repeat(7, var(--slot)); gap: 3px; padding: 5px 6px; }
+body.touch .slot { font-size: 20px; }
+body.touch .slot .key { display: none; }
+body.touch #micro { position: fixed; top: max(4px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); margin: 0; padding: 3px 5px; }
+body.touch #micro button { width: 38px; height: 34px; }
+body.touch #castbar { bottom: 112px; }
+body.touch .uframe { bottom: auto; top: max(44px, calc(env(safe-area-inset-top) + 40px)); transform: scale(.78); }
+body.touch #pframe { left: max(2px, env(safe-area-inset-left)); transform-origin: left top; }
+body.touch #tframe { left: 200px; transform-origin: left top; }
+body.touch #petframes { left: 12px; bottom: auto; top: 130px; }
+body.touch #partyframes { top: 128px; left: max(6px, env(safe-area-inset-left)); }
+body.touch #topright { top: max(4px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); width: 130px; }
+body.touch #minimap-wrap { width: 100px; height: 100px; margin-top: 4px; }
+body.touch #zonebar { padding: 1px 8px; font-size: 10px; }
+body.touch #tracker { display: none; }
+body.touch #chat { display: none; left: max(8px, env(safe-area-inset-left)); bottom: auto; top: 40px; width: 300px; z-index: 30; }
+body.touch #chat.open { display: block; }
+body.touch #chat-log { height: 90px; font-size: 12px; }
+body.touch #zb-zone { font-size: 30px; }
+body.touch #levelup { font-size: 40px; }
+body.touch #zonebanner { top: 8%; }
+body.touch #deathbox { top: 22%; }
+
+/* Fenster passen ins Querformat */
+body.touch .win { top: 4px !important; bottom: auto !important; max-height: calc(100% - 8px); overflow-y: auto; transform: none; }
+body.touch #questlog, body.touch #menuwin { left: 50% !important; transform: translateX(-50%); }
+body.touch .win.wide { width: min(640px, calc(100vw - 16px)); }
+body.touch #dialog { width: min(440px, calc(100vw - 24px)); }
+body.touch #dialog .wbody { max-height: 48vh; }
+body.touch #mapwin { width: auto; }
+body.touch .wtitle { cursor: default; }
+body.touch .wtitle .x { font-size: 20px; padding: 0 8px; }
+body.touch button.small { padding: 9px 14px; }
+body.touch #tooltip { max-width: 220px; }
+
+/* Menü-Bildschirme niedrig */
+@media (pointer: coarse) and (max-height: 520px) {
+  .login-panel { width: 340px; padding: 12px 18px; } .login-panel h1 { font-size: 26px; margin-bottom: 8px; }
+  .side-panel { width: 280px; padding: 12px 16px; max-height: 96vh; } .side-panel.wide { width: 400px; }
+  button.big { margin-top: 8px; padding: 9px; }
+}
