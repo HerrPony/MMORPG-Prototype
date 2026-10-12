@@ -579,8 +579,7 @@ func open_player_menu(ent_id: int, pos: Vector2) -> void:
 		player_menu.add_item("⭐ Zum Anführer machen", 2)
 		player_menu.add_item("🚪 Aus Gruppe werfen", 3)
 	player_menu.add_item("💬 Anflüstern", 4)
-	player_menu.position = Vector2i(get_window().position) + Vector2i(pos)
-	player_menu.popup(Rect2i(Vector2i(get_viewport().get_mouse_position()) + Vector2i(get_window().position), Vector2i(10, 10)))
+	player_menu.popup(Rect2i(Vector2i(pos), Vector2i.ZERO))
 
 func _on_player_menu(id: int) -> void:
 	match id:

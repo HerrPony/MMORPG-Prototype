@@ -1,0 +1,139 @@
+name: Native client release
+
+# Builds the Godot desktop client, the launcher and the installers, publishes the update tree that the launcher
+# reads (GitHub Pages branch "gh-pages", folder updates/) and attaches the installers to a GitHub release.
+#   - push of a tag native-v1.2.3          -> release 1.2.3
+#   - manual run (workflow_dispatch)        -> version from the input
+on:
+  push:
+    tags: ["native-v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Client version (for example 1.0.1)"
+        required: true
+      notes:
+        description: "Text for the launcher's news panel (BBCode allowed)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: "4.5.1"
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: ver
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          INPUT_NOTES: ${{ github.event.inputs.notes }}
+        run: |
+          if [ "$EVENT" = "push" ]; then v="${GITHUB_REF_NAME#native-v}"; else v="$INPUT_VERSION"; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          notes="$INPUT_NOTES"
+          if [ -z "${notes// /}" ]; then notes="[b]Version $v[/b]"; fi
+          printf '%s\n' "$notes" > "$RUNNER_TEMP/notes.txt"
+
+      - name: Install Godot and export templates
+        run: |
+          base="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable"
+          curl -fsSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -fsSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q godot.zip && sudo mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          unzip -q -j templates.tpz 'templates/*' -d ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          godot --version
+
+      - name: Tools (NSIS, ffmpeg, Chromium for the music renderer)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq nsis ffmpeg
+          mkdir -p "$RUNNER_TEMP/node" && cd "$RUNNER_TEMP/node" && npm init -y >/dev/null && npm i playwright >/dev/null
+          npx playwright install --with-deps chromium
+
+      - name: Render music (pre-rendered OGG from the WebAudio score)
+        run: |
+          export NODE_PATH="$RUNNER_TEMP/node/node_modules"
+          node NativeClient/tools/music/render_music.mjs "$GITHUB_WORKSPACE/NativeClient/build/audio" --music-only
+
+      - name: Export game and launcher
+        run: |
+          set -e
+          cd NativeClient
+          sed -i "s|^config/version=.*|config/version=\"${{ steps.ver.outputs.version }}\"|" game/project.godot
+          godot --headless --path game --import || true
+          for plat in windows linux; do
+            mkdir -p build/$plat/game build/$plat/launcher
+          done
+          godot --headless --path game --export-release "Windows Desktop" ../build/windows/game/ErlenwaldOnline.exe
+          godot --headless --path game --export-release "Linux" ../build/linux/game/ErlenwaldOnline.x86_64
+          godot --headless --path launcher --import || true
+          godot --headless --path launcher --export-release "Windows Desktop" ../build/windows/launcher/Launcher.exe
+          godot --headless --path launcher --export-release "Linux" ../build/linux/launcher/Launcher.x86_64
+          for plat in windows linux; do cp -r build/audio/music build/$plat/game/music; done
+
+      - name: Updater self-test
+        run: GODOT=godot NativeClient/tools/test_launcher.sh
+
+      - name: Update tree
+        run: |
+          set -e
+          cd NativeClient
+          mkdir -p build/pages
+          # keep what is already published so that objects of older versions stay available for a while
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch --depth 1 origin gh-pages
+            git archive FETCH_HEAD | tar -x -C build/pages
+          fi
+          mkdir -p build/pages/updates
+          for plat in windows linux; do
+            python3 tools/release/make_release.py --platform $plat --version "${{ steps.ver.outputs.version }}" \
+              --game-dir build/$plat/game --launcher-dir build/$plat/launcher --launcher-version "${{ steps.ver.outputs.version }}" \
+              --notes "$RUNNER_TEMP/notes.txt" --out build/pages/updates
+          done
+          # drop objects that no manifest refers to
+          python3 - <<'PY'
+          import sys
+          sys.path.insert(0, "tools/release")
+          import make_release
+          print("pruned", make_release.prune("build/pages/updates"))
+          PY
+
+      - name: Installers
+        run: |
+          set -e
+          cd NativeClient
+          VERSION="${{ steps.ver.outputs.version }}" tools/build_installer.sh
+          VERSION="${{ steps.ver.outputs.version }}" BUNDLE_GAME=1 tools/build_installer.sh
+          mkdir -p build/dist/linux && cp build/linux/launcher/* installer/linux/install.sh installer/linux/uninstall.sh build/dist/linux/
+          tar -C build/dist/linux -czf build/dist/ErlenwaldOnline-linux.tar.gz .
+
+      - name: Publish updates (GitHub Pages branch)
+        run: |
+          set -e
+          cd NativeClient/build/pages
+          git init -q -b gh-pages
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          touch .nojekyll
+          git add -A
+          git commit -q -m "Client ${{ steps.ver.outputs.version }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
+
+      - name: GitHub release with installers
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: native-v${{ steps.ver.outputs.version }}
+          name: Erlenwald Online Client ${{ steps.ver.outputs.version }}
+          files: |
+            NativeClient/build/dist/ErlenwaldOnline-Setup.exe
+            NativeClient/build/dist/ErlenwaldOnline-Setup-Full.exe
+            NativeClient/build/dist/ErlenwaldOnline-linux.tar.gz

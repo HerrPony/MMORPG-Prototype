@@ -47,10 +47,20 @@ func _shot(a: PackedStringArray) -> void:
 	var opens: PackedStringArray = []
 	if a.has("--open"):
 		opens = a[a.find("--open") + 1].split(",")
+	if a.has("--hour"):
+		DayNight.forced = float(a[a.find("--hour") + 1])
+	var chats: PackedStringArray = []
+	if a.has("--chat"):
+		chats = a[a.find("--chat") + 1].split(";")
+	var sent := false
 	var t := 0.0
 	while t < delay:
 		await get_tree().process_frame
 		t += get_process_delta_time()
+		if S.in_world and main.spawned and not sent and chats.size() > 0 and t > 3.0:
+			sent = true
+			for c in chats:
+				Net.send("chat", {"text": c})
 		if S.in_world and main.spawned and opens.size() > 0 and t > delay - 2.0:
 			for o in opens:
 				main.windows.toggle(o)
@@ -114,5 +124,7 @@ func _play(a: PackedStringArray) -> void:
 			await get_tree().create_timer(0.5).timeout
 		check.call("damage events received (%d)" % seen.dmg, seen.dmg > 0)
 		check.call("mob lost hp (%d -> %d)" % [hp0, mob.hp], mob.hp < hp0 or mob.d)
+	print("music dir: ", Sound._music_dir, " track: ", Sound._track)
+	check.call("music plays a fight track after combat", Sound._music_dir == "" or Sound._track.ends_with("_fight"))
 	print("PLAY RESULT: " + ("OK" if res.ok else "FAILED"))
 	get_tree().quit()

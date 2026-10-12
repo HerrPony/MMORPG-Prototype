@@ -34,6 +34,11 @@ const SLOT_KEYS := [KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_
 func _ready() -> void:
 	v = DEFAULTS.duplicate()
 	load_file()
+	# the launcher passes the game server: ErlenwaldOnline -- --server host:port
+	var a := OS.get_cmdline_user_args()
+	var si := a.find("--server")
+	if si >= 0 and si + 1 < a.size() and a[si + 1] != "":
+		v["server"] = a[si + 1]
 	_setup_input()
 	apply_window()
 
@@ -78,7 +83,9 @@ func _setup_input() -> void:
 		ev.physical_keycode = SLOT_KEYS[i] as Key
 		InputMap.action_add_event(name, ev)
 	# gamepad
-	var pad := {"jump": JOY_BUTTON_A, "interact": JOY_BUTTON_X, "target_next": JOY_BUTTON_RIGHT_SHOULDER, "menu": JOY_BUTTON_START}
+	var pad := {"jump": JOY_BUTTON_A, "interact": JOY_BUTTON_X, "target_next": JOY_BUTTON_RIGHT_SHOULDER, "menu": JOY_BUTTON_START,
+		"slot_0": JOY_BUTTON_B, "slot_1": JOY_BUTTON_Y, "slot_2": JOY_BUTTON_LEFT_SHOULDER, "slot_3": JOY_BUTTON_DPAD_UP, "slot_4": JOY_BUTTON_DPAD_RIGHT,
+		"slot_5": JOY_BUTTON_DPAD_DOWN, "slot_6": JOY_BUTTON_DPAD_LEFT, "toggle_bags": JOY_BUTTON_BACK, "autorun": JOY_BUTTON_LEFT_STICK}
 	for a in pad:
 		var jb := InputEventJoypadButton.new()
 		jb.button_index = pad[a] as JoyButton
