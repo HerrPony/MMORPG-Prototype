@@ -22,7 +22,7 @@ jobs:
       - name: Install Godot
         run: |
           base="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable"
-          curl -fsSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 10 -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
           unzip -q godot.zip && sudo mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
       - name: Compile all game scripts
         run: GODOT=godot NativeClient/tools/check_scripts.sh
