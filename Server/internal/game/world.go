@@ -41,6 +41,7 @@ type World struct {
 	sceneryJSON json.RawMessage
 	defsJSON    json.RawMessage
 	lastSave    float64
+	pathBudget  int // path searches left in this tick
 }
 
 func New(cfg config.Config, store storage.Store) *World {
@@ -150,6 +151,7 @@ func (w *World) Run(ctx context.Context) {
 func (w *World) tick() {
 	w.now += w.dt
 	w.tickN++
+	w.pathBudget = 6
 	for _, e := range w.ents {
 		w.tickEffects(e)
 		switch e.Kind {

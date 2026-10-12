@@ -148,7 +148,7 @@ func (w *World) tickPet(e *Entity) {
 		dd := dist(e, tgt)
 		if pt.Kind == "elemental" {
 			if dd > 17 {
-				w.moveToward(e, tgt.X, tgt.Z, 7.5)
+				w.walkTo(e, tgt.X, tgt.Z, 7.5)
 			} else {
 				e.R = math.Atan2(tgt.X-e.X, tgt.Z-e.Z)
 			}
@@ -160,7 +160,7 @@ func (w *World) tickPet(e *Entity) {
 			}
 		} else {
 			if dd > 2.4 {
-				w.moveToward(e, tgt.X, tgt.Z, 8)
+				w.walkTo(e, tgt.X, tgt.Z, 8)
 			} else {
 				e.R = math.Atan2(tgt.X-e.X, tgt.Z-e.Z)
 			}
@@ -177,9 +177,9 @@ func (w *World) tickPet(e *Entity) {
 	d := dist(e, owner)
 	switch {
 	case d > 14:
-		w.moveToward(e, owner.X, owner.Z, 11)
+		w.walkTo(e, owner.X, owner.Z, 11)
 	case d > 4.5:
-		w.moveToward(e, owner.X, owner.Z, 7.5)
+		w.walkTo(e, owner.X, owner.Z, 7.5)
 	}
 	// slow regeneration out of combat
 	if w.tickN%20 == 0 && e.HP < e.MaxHP {

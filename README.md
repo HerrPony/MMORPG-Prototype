@@ -91,3 +91,10 @@ Im Editor (2D-Karte, Mausrad = Zoom, rechte Maustaste = schieben, Strg+Z/Y, Strg
 und lädt die Clients der Spieler neu. Die Datei liegt als Schicht über den Standarddaten im Code: „Auf Standard
 zurücksetzen“ stellt die Code-Werte wieder her; Änderungen im Code an nicht bearbeiteten Dingen bleiben wirksam.
 Nicht editierbar: Dungeons, Items, Fertigkeiten, Straßen/Flüsse/Orte.
+
+## Pathfinding
+
+Mobs und Begleiter laufen um Hindernisse herum. Der Server baut beim Start (und nach Editor-Änderungen) aus Gelände,
+Props und Gebäuden ein 1-m-Navigationsgitter (`Server/internal/gamedata/nav.go`), sucht mit A* eine Route und glättet sie.
+Es gibt nichts von Hand zu pflegen: Was im Editor gesetzt wird, ist automatisch auch für die Wegfindung ein Hindernis.
+Ist ein Ziel unerreichbar (z. B. Spieler hinter einer Klippe), geben Mobs nach einigen Sekunden auf und gehen heim.

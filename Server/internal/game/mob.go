@@ -68,6 +68,34 @@ func (w *World) moveToward(e *Entity, tx, tz, speed float64) float64 {
 	return d - step
 }
 
+// walkTo moves e towards (tx,tz) like moveToward, but walks around obstacles: with a clear line it goes straight,
+// otherwise it follows an A* route over the navigation grid (recomputed when the target moves or the route
+// gets old). Dungeons have no grid and use the straight line. Returns the distance left to the current waypoint.
+func (w *World) walkTo(e *Entity, tx, tz, speed float64) float64 {
+	n := &e.Nav
+	if e.Inst != 0 || math.Hypot(tx-e.X, tz-e.Z) < 1.5 || gamedata.NavLineFree(e.X, e.Z, tx, tz) {
+		n.Path = nil
+		return w.moveToward(e, tx, tz, speed)
+	}
+	stale := n.Path == nil || math.Hypot(tx-n.GX, tz-n.GZ) > 3 || w.now-n.At > 2.5
+	if stale && w.now >= n.Fail && w.pathBudget > 0 {
+		w.pathBudget--
+		path, _, ok := gamedata.FindPath(e.X, e.Z, tx, tz, 20000)
+		if ok {
+			n.Path, n.GX, n.GZ, n.At = path, tx, tz, w.now
+		} else {
+			n.Path, n.Fail = nil, w.now+1 // unreachable: try again in a second, meanwhile slide along
+		}
+	}
+	for len(n.Path) > 0 && math.Hypot(n.Path[0][0]-e.X, n.Path[0][1]-e.Z) < 0.7 {
+		n.Path = n.Path[1:]
+	}
+	if len(n.Path) == 0 {
+		return w.moveToward(e, tx, tz, speed)
+	}
+	return w.moveToward(e, n.Path[0][0], n.Path[0][1], speed)
+}
+
 // hasLOS reports whether a has a clear line to b (open world only). Trees and rocks block ranged attacks,
 // buildings block everything.
 func (w *World) hasLOS(a, b *Entity, trees bool) bool {
@@ -192,7 +220,8 @@ func (w *World) tickMob(e *Entity) {
 	if t == nil {
 		switch {
 		case m.Returning:
-			if w.moveToward(e, m.SX, m.SZ, d.Speed*1.4) < 0.5 || e.Stuck > 2 {
+			w.walkTo(e, m.SX, m.SZ, d.Speed*1.4)
+			if math.Hypot(e.X-m.SX, e.Z-m.SZ) < 0.5 || e.Stuck > 2 {
 				if e.Stuck > 2 { // wedged behind an obstacle: beam home
 					e.X, e.Z = m.SX, m.SZ
 					e.Y = gamedata.Height(e.X, e.Z)
@@ -225,7 +254,7 @@ func (w *World) tickMob(e *Entity) {
 	}
 	if d.Range > 0 { // ranged attackers keep their distance
 		if dd > d.Range*0.9 || !los {
-			w.moveToward(e, t.X, t.Z, sp)
+			w.walkTo(e, t.X, t.Z, sp)
 		} else {
 			e.R = math.Atan2(t.X-e.X, t.Z-e.Z)
 		}
@@ -236,7 +265,7 @@ func (w *World) tickMob(e *Entity) {
 		}
 	} else {
 		if dd > 2.2*math.Max(1, d.Scale*0.8) {
-			w.moveToward(e, t.X, t.Z, sp)
+			w.walkTo(e, t.X, t.Z, sp)
 		} else {
 			e.R = math.Atan2(t.X-e.X, t.Z-e.Z)
 		}
@@ -268,7 +297,7 @@ func (w *World) idleMob(e *Entity) {
 		a := w.rng.Float64() * 2 * math.Pi
 		r := 1 + w.rng.Float64()*2.5
 		m.WX, m.WZ = m.SX+math.Cos(a)*r, m.SZ+math.Sin(a)*r
-		if gamedata.Height(m.WX, m.WZ) > 0.2 {
+		if gamedata.Height(m.WX, m.WZ) > 0.2 && gamedata.NavLineFree(e.X, e.Z, m.WX, m.WZ) {
 			m.Wandering = true
 		} else {
 			m.WanderWait = 2

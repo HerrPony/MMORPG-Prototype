@@ -338,6 +338,7 @@ func kindIndex2(name string) int {
 
 // ResetProps forgets the generated props and colliders (after the terrain, spawns or buildings changed).
 func resetProps() {
+	resetNav()
 	propsOnce = sync.Once{}
 	collOnce = sync.Once{}
 	propList = nil

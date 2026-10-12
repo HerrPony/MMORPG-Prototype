@@ -417,3 +417,25 @@ func TestAdminEditsApplyAndReset(t *testing.T) {
 		t.Fatal("invalid edit accepted")
 	}
 }
+
+func TestMobWalksAroundBuilding(t *testing.T) {
+	w := newTestWorld(t)
+	e, _ := addPlayer(t, w, "Anna", "warrior", 5)
+	wolf := findMob(w, "wolf")
+	// wolf west of the cabin at the origin, player east of it
+	wolf.X, wolf.Z, wolf.M.SX, wolf.M.SZ = -14, 0, -14, 0
+	wolf.Y = gamedata.Height(wolf.X, wolf.Z)
+	e.X, e.Z = 14, 0
+	e.Y = gamedata.Height(e.X, e.Z)
+	e.MaxHP, e.HP = 1000000, 1000000
+	w.addThreat(wolf, e.ID, 1)
+	closest := 1e9
+	for i := 0; i < 20*40 && closest > 3; i++ { // up to 40 s
+		w.tick()
+		e.P.LastMove = w.now
+		closest = math.Min(closest, dist(wolf, e))
+	}
+	if closest > 3.5 {
+		t.Fatalf("wolf never got around the building (closest %.1f m, now at %.1f,%.1f)", closest, wolf.X, wolf.Z)
+	}
+}
