@@ -64,3 +64,11 @@ Auf Smartphones und Tablets erkennt der Client automatisch Touch-Geräte und ble
 - Aktionsleiste (2×7) und Menüleiste oben; lange auf einen Taschen-Slot drücken = Rechtsklick (benutzen/anlegen)
 - Vollbild + Querformat-Sperre werden beim ersten Tippen angefordert; im Hochformat erscheint ein Hinweis zum Drehen.
   iPhone/Safari kennt keine Fullscreen-API: dort „Zum Home-Bildschirm“ hinzufügen (Web-App-Modus, Vollbild).
+
+## Welt-Hindernisse (Bäume, Felsen, Gebäude)
+
+Wo welche Props stehen, wird **nur an einer Stelle** festgelegt: `Server/internal/gamedata/props.go` (`generateProps`).
+Die Liste wird beim Login an die Clients geschickt (`scenery.props`). Der Client zeichnet daraus die Vegetation und
+baut sein Kollisionsgitter, der Server nutzt sie für Mob-Bewegung und Sichtlinie (`collide.go`).
+Neue Prop-Arten: Namen in `PropKinds` ergänzen und das Modell in `Client/js/world/vegetation.js` (`parts()`) anlegen.
+Gebäude kommen aus `towns.go` und gelten für Client und Server gleichermaßen.

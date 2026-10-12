@@ -1,10 +1,5 @@
 import * as THREE from 'three';
-import { W, heightAt, biomeAt, distToPoly } from '../util.js';
-
-function rng(seed) {
-  let s = seed >>> 0;
-  return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
-}
+import { W, heightAt, biomeAt } from '../util.js';
 
 const mat = (c) => new THREE.MeshLambertMaterial({ color: c });
 const white = new THREE.MeshLambertMaterial({ color: 0xffffff });
@@ -113,117 +108,23 @@ const BIOME_LEAF = {
 };
 
 // Builds all vegetation (instanced, in chunks) and returns the tree collision grid.
+// Draws the props the server placed (sc.pk = kind names, sc.props = packed list, see Server gamedata/props.go) and
+// returns the collision grid (8x8 m cells of {x,z,r}) built from the same list. The server decides what stands
+// where; nothing is generated here.
 export function buildVegetation(scene, sc) {
   const K = parts();
-  const r = rng(2024);
   const chunks = new Map(); // key -> kind -> [{x,y,z,s,ry,biome}]
   const grid = {};          // collision cells
-  const clears = sc.clears;
-  const roads = sc.roads;
-  const rivers = sc.rivers;
-  const lakes = sc.lakes;
-  const STEP = 3;
-
-  const blocked = (x, z) => {
-    for (const c of clears) if (Math.hypot(x - c.x, z - c.z) < c.r + 1.2) return true;
-    for (const rd of roads) if (distToPoly(x, z, rd) < 3.2) return true;
-    for (const b of sc.buildings) if (b.k !== 'wall' && Math.abs(x - b.x) < b.w / 2 + 2 && Math.abs(z - b.z) < b.d / 2 + 2) return true;
-    for (const b of sc.house) if (Math.abs(x - b.x) < b.w / 2 + 3 && Math.abs(z - b.z) < b.d / 2 + 3) return true;
-    return false;
-  };
-
-  const add = (kind, x, z, s, biome, solid) => {
+  const bin = Uint8Array.from(atob(sc.props), (c) => c.charCodeAt(0));
+  for (let o = 0; o + 8 <= bin.length; o += 8) {
+    const kind = sc.pk[bin[o]];
+    const x = W.x0 + (bin[o + 1] | (bin[o + 2] << 8)) / 40, z = W.z0 + (bin[o + 3] | (bin[o + 4] << 8)) / 40;
+    const s = bin[o + 5] / 100, ry = bin[o + 6] / 255 * 6.28, solid = bin[o + 7] / 100;
     const key = Math.floor(x / 64) + ',' + Math.floor(z / 64);
     let c = chunks.get(key);
     if (!c) { c = {}; chunks.set(key, c); }
-    (c[kind] ||= []).push({ x, z, s, ry: r() * 6.28, biome });
-    if (solid) {
-      const gk = Math.floor(x / 8) + ',' + Math.floor(z / 8);
-      (grid[gk] ||= []).push({ x, z, r: solid * s });
-    }
-  };
-
-  const xEnd = W.x0 + (W.nx - 1) * W.cell - 4, zEnd = W.z0 + (W.nz - 1) * W.cell - 4;
-  for (let z = W.z0 + 4; z < zEnd; z += STEP) {
-    for (let x = W.x0 + 4; x < xEnd; x += STEP) {
-      const px = x + (r() - 0.5) * STEP, pz = z + (r() - 0.5) * STEP;
-      const b = biomeAt(px, pz);
-      if (b === 0 || b === 10) continue;
-      const h = heightAt(px, pz);
-      if (h < 0.35) {
-        if (b === 3 && h > -1.0 && h < 0.35 && r() < 0.12 && !blocked(px, pz)) add('reed', px, pz, 0.9 + r() * 0.8, b, 0);
-        continue;
-      }
-      const q = r();
-      if (q > 0.5) continue; // quick reject: most cells stay empty
-      if (blocked(px, pz)) continue;
-      const slope = Math.abs(heightAt(px + 2, pz) - h) + Math.abs(heightAt(px, pz + 2) - h);
-      const s = 0.8 + r() * 0.9;
-      const u = r();
-      switch (b) {
-        case 1: // forest
-          if (u < 0.55) add(r() < 0.72 ? 'pine' : 'oak', px, pz, s, b, 0.5);
-          else if (u < 0.62) add('bush', px, pz, s, b, 0.4);
-          else if (u < 0.66) add('rock', px, pz, s * 0.8, b, 0.6);
-          else if (u < 0.90) add('tuft', px, pz, s, b, 0);
-          else add('flower', px, pz, s, b, 0);
-          break;
-        case 2: // plains
-          if (u < 0.08) add('oak', px, pz, s, b, 0.5);
-          else if (u < 0.12) add('bush', px, pz, s, b, 0.4);
-          else if (u < 0.40) add('tuft', px, pz, s, b, 0);
-          else if (u < 0.55) add('flower', px, pz, s, b, 0);
-          break;
-        case 3: // swamp
-          if (u < 0.22) add('dead', px, pz, s, b, 0.4);
-          else if (u < 0.32) add('mushroom', px, pz, s, b, 0);
-          else if (u < 0.38) add('bush', px, pz, s, b, 0.4);
-          else if (u < 0.55) add('tuft', px, pz, s, b, 0);
-          break;
-        case 4: // snow
-          if (h > 24 || slope > 3.2) { if (u < 0.25) add('rock', px, pz, s * 1.4, b, 0.9); }
-          else if (u < 0.30) add('snowpine', px, pz, s, b, 0.5);
-          else if (u < 0.34) add('rock', px, pz, s * 1.1, b, 0.8);
-          break;
-        case 5: // desert
-          if (u < 0.06) add('cactus', px, pz, s, b, 0.5);
-          else if (u < 0.085) add('rock', px, pz, s, b, 0.7);
-          else if (u < 0.10 && h < 1.8) add('palm', px, pz, s, b, 0.4);
-          else if (u < 0.105) add('bones', px, pz, s, b, 0);
-          else if (u < 0.15) add('bush', px, pz, s * 0.7, b, 0);
-          break;
-        case 6: // jungle: dense and tall
-          if (u < 0.46) add('jtree', px, pz, s * 1.05, b, 0.7);
-          else if (u < 0.51 && h < 2.2) add('palm', px, pz, s, b, 0.4);
-          else if (u < 0.68) add('fern', px, pz, s, b, 0);
-          else if (u < 0.76) add('bamboo', px, pz, s * 0.9, b, 0.4);
-          else if (u < 0.82) add('bush', px, pz, s, b, 0.4);
-          else if (u < 0.88) add('flower', px, pz, s, b, 0);
-          else if (u < 0.9) add('rock', px, pz, s, b, 0.6);
-          break;
-        case 7: // cherry blossom groves
-          if (u < 0.2) add('sakura', px, pz, s, b, 0.5);
-          else if (u < 0.28) add('bamboo', px, pz, s, b, 0.4);
-          else if (u < 0.32) add('bush', px, pz, s * 0.8, b, 0.4);
-          else if (u < 0.34) add('rock', px, pz, s * 0.8, b, 0.6);
-          else if (u < 0.58) add('tuft', px, pz, s, b, 0);
-          else if (u < 0.72) add('flower', px, pz, s, b, 0);
-          break;
-        case 8: // red canyons
-          if (u < 0.045 && slope < 2.5) add('mesapillar', px, pz, s * 1.2, b, 1.3);
-          else if (u < 0.12) add('rock', px, pz, s * 1.1, b, 0.8);
-          else if (u < 0.16) add('cactus', px, pz, s, b, 0.5);
-          else if (u < 0.26) add('drybush', px, pz, s, b, 0);
-          else if (u < 0.28) add('bones', px, pz, s, b, 0);
-          break;
-        case 9: // volcanic ash
-          if (u < 0.12 && slope < 3) add('charred', px, pz, s, b, 0.4);
-          else if (u < 0.25) add('rock', px, pz, s * 1.2, b, 0.8);
-          else if (u < 0.32) add('obsidian', px, pz, s, b, 0.7);
-          else if (u < 0.36) add('ember', px, pz, s, b, 0);
-          break;
-      }
-    }
+    (c[kind] ||= []).push({ x, z, s, ry, biome: biomeAt(x, z) });
+    if (solid > 0) (grid[Math.floor(x / 8) + ',' + Math.floor(z / 8)] ||= []).push({ x, z, r: solid * s });
   }
 
   const dummy = new THREE.Object3D();
