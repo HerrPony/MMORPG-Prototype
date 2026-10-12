@@ -140,7 +140,7 @@ func _build_halos() -> void:
 	for n in idx.size():
 		var s: Dictionary = sources[idx[n]]
 		mm.set_instance_transform(n, Transform3D(Basis.IDENTITY, s.p))
-		mm.set_instance_custom_data(n, Color(s.ph / TAU, 4.2, s.halo, 0.0))
+		mm.set_instance_custom_data(n, Color(s.ph / TAU, 3.4, s.halo, 0.0))
 	halo_mm = MultiMeshInstance3D.new()
 	halo_mm.multimesh = mm
 	halo_mm.material_override = halo_mat
