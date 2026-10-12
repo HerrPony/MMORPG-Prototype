@@ -48,7 +48,9 @@ type Entity struct {
 	HP    int
 	MaxHP int
 	Dead  bool
-	Inst  int // dungeon instance id, 0 = open world
+	Inst  int     // dungeon instance id, 0 = open world
+	Stuck float64 // seconds a mover has been blocked by an obstacle
+	Nav   navState
 
 	// temporary effects
 	Dots        []Dot
@@ -198,3 +200,11 @@ func dist(a, b *Entity) float64 { return math.Hypot(a.X-b.X, a.Z-b.Z) }
 func clampf(v, lo, hi float64) float64 { return math.Max(lo, math.Min(hi, v)) }
 
 func round2(v float64) float64 { return math.Round(v*100) / 100 }
+
+// navState is a walker's current route around obstacles (see World.walkTo).
+type navState struct {
+	Path   [][2]float64 // waypoints still to visit
+	GX, GZ float64      // the target the path was computed for
+	At     float64      // when it was computed
+	Fail   float64      // no new search before this time after a failed one
+}

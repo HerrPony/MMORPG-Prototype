@@ -64,3 +64,37 @@ Auf Smartphones und Tablets erkennt der Client automatisch Touch-Geräte und ble
 - Aktionsleiste (2×7) und Menüleiste oben; lange auf einen Taschen-Slot drücken = Rechtsklick (benutzen/anlegen)
 - Vollbild + Querformat-Sperre werden beim ersten Tippen angefordert; im Hochformat erscheint ein Hinweis zum Drehen.
   iPhone/Safari kennt keine Fullscreen-API: dort „Zum Home-Bildschirm“ hinzufügen (Web-App-Modus, Vollbild).
+
+## Welt-Hindernisse (Bäume, Felsen, Gebäude)
+
+Wo welche Props stehen, wird **nur an einer Stelle** festgelegt: `Server/internal/gamedata/props.go` (`generateProps`).
+Die Liste wird beim Login an die Clients geschickt (`scenery.props`). Der Client zeichnet daraus die Vegetation und
+baut sein Kollisionsgitter, der Server nutzt sie für Mob-Bewegung und Sichtlinie (`collide.go`).
+Neue Prop-Arten: Namen in `PropKinds` ergänzen und das Modell in `Client/js/world/vegetation.js` (`parts()`) anlegen.
+Gebäude kommen aus `towns.go` und gelten für Client und Server gleichermaßen.
+
+## Admin-Modus & Map-Editor
+
+Accounts auf der Admin-Liste dürfen die Welt bearbeiten: `-admins name1,name2` (oder Umgebungsvariable
+`MMORPG_ADMINS`, im Docker-Setup in `docker-compose.yml`). **Den Account vorher normal registrieren**, sonst könnte
+ihn jemand anderes anlegen. Admins sehen im Spiel oben links den Button 🛠; der Editor ist unter `/editor.html`
+erreichbar (Anmeldung mit dem Spiel-Account). Jede Editor-Nachricht wird serverseitig erneut auf Admin-Rechte geprüft.
+
+Im Editor (2D-Karte, Mausrad = Zoom, rechte Maustaste = schieben, Strg+Z/Y, Strg+S = speichern):
+
+- **Spawns, Sammelobjekte, Gebäude** setzen, verschieben (ziehen/Pfeiltasten), löschen; Aggro-Radius einblendbar
+- **Props** (Bäume, Felsen …) malen und wegradieren, **Gelände** formen (anheben/absenken/glätten/ebnen) und **Biome** malen
+- **Quests, Mobs, NPCs**: Definitionen als JSON bearbeiten, duplizieren/neu anlegen (Tabs oben); NPCs lassen sich auf der Karte verschieben
+- **Prüfen**: findet Spawns im Wasser, zu dicht stehende Spawns, Quests mit fehlenden Mobs/NPCs
+
+„Speichern“ schreibt `world_edits.json` im Datenverzeichnis, wendet die Änderungen sofort auf den laufenden Server an
+und lädt die Clients der Spieler neu. Die Datei liegt als Schicht über den Standarddaten im Code: „Auf Standard
+zurücksetzen“ stellt die Code-Werte wieder her; Änderungen im Code an nicht bearbeiteten Dingen bleiben wirksam.
+Nicht editierbar: Dungeons, Items, Fertigkeiten, Straßen/Flüsse/Orte.
+
+## Pathfinding
+
+Mobs und Begleiter laufen um Hindernisse herum. Der Server baut beim Start (und nach Editor-Änderungen) aus Gelände,
+Props und Gebäuden ein 1-m-Navigationsgitter (`Server/internal/gamedata/nav.go`), sucht mit A* eine Route und glättet sie.
+Es gibt nichts von Hand zu pflegen: Was im Editor gesetzt wird, ist automatisch auch für die Wegfindung ein Hindernis.
+Ist ein Ziel unerreichbar (z. B. Spieler hinter einer Klippe), geben Mobs nach einigen Sekunden auf und gehen heim.

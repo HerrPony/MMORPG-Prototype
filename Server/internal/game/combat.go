@@ -83,6 +83,9 @@ func (w *World) checkCast(e *Entity, sk *gamedata.Skill, t *Entity) string {
 		if sk.MinRange > 0 && d < sk.MinRange {
 			return "Das Ziel ist zu nah."
 		}
+		if !w.hasLOS(e, t, true) {
+			return "Kein Sichtkontakt zum Ziel."
+		}
 	}
 	switch sk.Kind {
 	case gamedata.KindAoE:

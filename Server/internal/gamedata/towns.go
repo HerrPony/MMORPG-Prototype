@@ -395,6 +395,8 @@ type Scenery struct {
 	Lakes     []Lake         `json:"lakes"`
 	Bridges   []Bridge       `json:"bridges"`
 	Clears    []Clearing     `json:"clears"`
+	PropKinds []string       `json:"pk"`
+	Props     string         `json:"props"` // packed, see PropsB64
 }
 
 func segIntersect(a, b, c, d [2]float64) (float64, float64, bool) {
@@ -430,6 +432,14 @@ func bridges() []Bridge {
 
 // BuildScenery returns the static world layout sent to clients.
 func BuildScenery() Scenery {
+	sc := baseScenery()
+	sc.PropKinds = PropKinds
+	sc.Props = PropsB64(worldProps(sc))
+	return sc
+}
+
+// baseScenery is everything except the props (which are generated from it).
+func baseScenery() Scenery {
 	ensureWorld()
 	const hw, hd, t, wallH = 5.0, 4.0, 0.4, 3.0
 	const doorW = 1.8

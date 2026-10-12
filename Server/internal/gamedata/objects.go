@@ -33,8 +33,9 @@ var Objects = map[string]*ObjectDef{
 }
 
 type ObjectSpawn struct {
-	Obj  string
-	X, Z float64
+	Obj string  `json:"obj"`
+	X   float64 `json:"x"`
+	Z   float64 `json:"z"`
 }
 
 var ObjectSpawns []ObjectSpawn
@@ -67,7 +68,7 @@ var (
 func Init() {
 	initOnce.Do(func() {
 		buildSpawns()
-		spawnsAll = append([]Spawn(nil), Spawns...)
+		spawnsAll = spreadSpawns(Spawns)
 		for i := range spawnsAll { // the hand placed spawns also keep off the roads
 			spawnsAll[i].X, spawnsAll[i].Z = offRoad(spawnsAll[i].X, spawnsAll[i].Z)
 		}
@@ -114,4 +115,49 @@ func Init() {
 func AllSpawns() []Spawn {
 	Init()
 	return spawnsAll
+}
+
+// spreadSpawns pushes the hand placed spawns of each mob type apart (away from the group's centre) until
+// they keep packSpacing from each other, so every mob can be pulled on its own.
+func spreadSpawns(in []Spawn) []Spawn {
+	out := append([]Spawn(nil), in...)
+	byMob := map[string][]int{}
+	for i, s := range out {
+		byMob[s.Mob] = append(byMob[s.Mob], i)
+	}
+	for _, idx := range byMob {
+		var cx, cz float64
+		for _, i := range idx {
+			cx += out[i].X
+			cz += out[i].Z
+		}
+		cx /= float64(len(idx))
+		cz /= float64(len(idx))
+		for f := 1.0; f < 6; f += 0.1 {
+			ok := true
+			for a := 0; a < len(idx) && ok; a++ {
+				for b := a + 1; b < len(idx); b++ {
+					pa, pb := in[idx[a]], in[idx[b]]
+					if math.Hypot((pa.X-pb.X)*f, (pa.Z-pb.Z)*f) < packSpacing {
+						ok = false
+						break
+					}
+				}
+			}
+			if ok {
+				for _, i := range idx {
+					out[i].X = cx + (in[i].X-cx)*f
+					out[i].Z = cz + (in[i].Z-cz)*f
+				}
+				break
+			}
+		}
+		for _, i := range idx { // keep every spawn on dry, walkable ground
+			for k := 0; k < 30 && !(Height(out[i].X, out[i].Z) >= 0.8 && Walkable(out[i].X, out[i].Z)); k++ {
+				out[i].X += (cx - out[i].X) * 0.1
+				out[i].Z += (cz - out[i].Z) * 0.1
+			}
+		}
+	}
+	return out
 }

@@ -97,7 +97,7 @@ func (w *World) tickPlayer(e *Entity) {
 		basic := w.basicSkill(e)
 		if t == nil || t.Kind != KindMob || t.Dead || basic == nil {
 			p.Auto = false
-		} else if w.now >= p.CD[basic.ID] && dist(e, t) <= basic.Range+1.0 && p.Res >= float64(basic.Cost) {
+		} else if w.now >= p.CD[basic.ID] && dist(e, t) <= basic.Range+1.0 && p.Res >= float64(basic.Cost) && w.hasLOS(e, t, true) {
 			w.execSkill(e, basic, t)
 		}
 	}

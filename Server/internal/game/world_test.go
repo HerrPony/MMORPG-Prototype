@@ -2,6 +2,7 @@ package game
 
 import (
 	"encoding/json"
+	"math"
 	"testing"
 	"time"
 
@@ -33,12 +34,13 @@ func (f *fakeOut) last(t string) map[string]any {
 
 func newTestWorld(t *testing.T) *World {
 	t.Helper()
-	store, err := storage.OpenJSON(t.TempDir())
+	dir := t.TempDir()
+	store, err := storage.OpenJSON(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = store.Close() })
-	return New(config.Config{TickRate: 50 * time.Millisecond, SnapshotEach: 2, AutosaveEach: time.Hour}, store)
+	return New(config.Config{TickRate: 50 * time.Millisecond, SnapshotEach: 2, AutosaveEach: time.Hour, DataDir: dir}, store)
 }
 
 func addPlayer(t *testing.T, w *World, name, class string, level int) (*Entity, *fakeOut) {
@@ -52,6 +54,18 @@ func addPlayer(t *testing.T, w *World, name, class string, level int) (*Entity, 
 func run(w *World, secs float64) {
 	for i := 0; i < int(secs/w.dt); i++ {
 		w.tick()
+	}
+}
+
+// drain runs the commands queued with Do (normally done by Run).
+func drain(w *World) {
+	for {
+		select {
+		case f := <-w.cmds:
+			f()
+		default:
+			return
+		}
 	}
 }
 
@@ -83,7 +97,7 @@ func TestKillWolfGivesXPAndPersonalLoot(t *testing.T) {
 	w := newTestWorld(t)
 	e, _ := addPlayer(t, w, "Anna", "mage", 1)
 	wolf := findMob(w, "wolf")
-	e.X, e.Z = wolf.X-8, wolf.Z
+	e.X, e.Z = clearShotPos(t, wolf, 8)
 	e.Y = gamedata.Height(e.X, e.Z)
 	e.P.Target = wolf.ID
 	for i := 0; i < 400 && !wolf.Dead; i++ {
@@ -229,7 +243,7 @@ func TestWarriorStanceAndTaunt(t *testing.T) {
 		t.Fatal("defensive stance should reduce damage taken")
 	}
 	wolf := findMob(w, "wolf")
-	e.X, e.Z = wolf.X-5, wolf.Z
+	e.X, e.Z = clearShotPos(t, wolf, 5)
 	e.P.Target = wolf.ID
 	e.P.Res = 50
 	w.now += 5
@@ -257,7 +271,7 @@ func TestMageElementalAndHunterPet(t *testing.T) {
 	h, _ := addPlayer(t, w, "Hans", "hunter", 12)
 	h.P.Char.Skills = append(h.P.Char.Skills, "h_tame", "h_callpet")
 	wolf := findMob(w, "wolf")
-	h.X, h.Z = wolf.X-6, wolf.Z
+	h.X, h.Z = clearShotPos(t, wolf, 6)
 	h.P.Target = wolf.ID
 	w.tryCast(h, "h_tame")
 	run(w, 7)
@@ -305,4 +319,123 @@ func (w *World) npcByID(id string) *Entity {
 		}
 	}
 	return nil
+}
+
+func TestMobsRespectObstaclesAndSpacing(t *testing.T) {
+	sp := gamedata.AllSpawns()
+	tooClose := 0
+	for i, a := range sp {
+		for _, b := range sp[i+1:] {
+			if math.Hypot(a.X-b.X, a.Z-b.Z) < 3.9 {
+				tooClose++
+			}
+		}
+	}
+	if tooClose > 0 {
+		t.Fatalf("%d spawn pairs closer than 3.9 m", tooClose)
+	}
+	// a body pushed into a building ends up outside of it
+	for _, b := range gamedata.BuildScenery().House {
+		x, z := gamedata.Collide(b.X, b.Z, 0.4)
+		if math.Abs(x-b.X) < b.W/2 && math.Abs(z-b.Z) < b.D/2 {
+			t.Fatalf("still inside wall at %.1f,%.1f", b.X, b.Z)
+		}
+	}
+	// no line of sight through the cabin wall (north wall at z=-4)
+	if !gamedata.LineBlocked(0, -8, 0, 0, false) {
+		t.Fatal("shot through the house wall")
+	}
+}
+
+func TestAdminEditsApplyAndReset(t *testing.T) {
+	w := newTestWorld(t)
+	e, out := addPlayer(t, w, "Anna", "warrior", 5)
+	_ = e
+	nSpawns := len(gamedata.AllSpawns())
+	nWolf := 0
+	for _, s := range gamedata.AllSpawns() {
+		if s.Mob == "wolf" {
+			nWolf++
+		}
+	}
+	h0 := gamedata.Height(30, 0)
+	save := func(body string) protocol.M {
+		o := &fakeOut{}
+		w.AdminSave(o, []byte(body))
+		drain(w)
+		if m := o.last("adminError"); m != nil {
+			t.Fatalf("adminError: %v", m)
+		}
+		return o.last("adminSaved")
+	}
+	// add a spawn, raise terrain, drop a tree, change a quest title
+	q, _ := json.Marshal(gamedata.Quests["wolf_plague"])
+	var qm map[string]any
+	_ = json.Unmarshal(q, &qm)
+	qm["title"] = "Neue Wolfsplage"
+	qb, _ := json.Marshal(qm)
+	gx, gz := int((30-gamedata.WorldMinX)/gamedata.GridCell), int((0-gamedata.WorldMinZ)/gamedata.GridCell)
+	body := `{"spawns":` + func() string {
+		l := append(append([]gamedata.Spawn(nil), gamedata.AllSpawns()...), gamedata.Spawn{Mob: "wolf", X: 31, Z: 40})
+		b, _ := json.Marshal(l)
+		return string(b)
+	}() + `,"heights":[[` + itoa(gx) + `,` + itoa(gz) + `,` + itoa(int(h0*20)+100) + `]],"quests":{"wolf_plague":` + string(qb) + `}}`
+	if save(body) == nil {
+		t.Fatal("not saved")
+	}
+	if len(gamedata.AllSpawns()) != nSpawns+1 {
+		t.Fatalf("spawn not added: %d", len(gamedata.AllSpawns()))
+	}
+	if gamedata.Height(30, 0) < h0+4.5 {
+		t.Fatalf("terrain edit not applied: %.2f -> %.2f", h0, gamedata.Height(30, 0))
+	}
+	if gamedata.Quests["wolf_plague"].Title != "Neue Wolfsplage" {
+		t.Fatal("quest edit not applied")
+	}
+	wolves := 0
+	for _, en := range w.ents {
+		if en.M != nil && en.M.Def.ID == "wolf" && en.Inst == 0 {
+			wolves++
+		}
+	}
+	if wolves != nWolf+1 {
+		t.Fatalf("world entities not rebuilt: %d wolves, want %d", wolves, nWolf+1)
+	}
+	if out.last("worldChanged") == nil {
+		t.Fatal("players were not told to reload")
+	}
+	// reset everything
+	save(`{"reset":["spawns","terrain","quests:wolf_plague"]}`)
+	if len(gamedata.AllSpawns()) != nSpawns || gamedata.Height(30, 0) != h0 || gamedata.Quests["wolf_plague"].Title == "Neue Wolfsplage" {
+		t.Fatalf("reset did not restore the defaults: spawns %d/%d height %v/%v title %q", len(gamedata.AllSpawns()), nSpawns, gamedata.Height(30, 0), h0, gamedata.Quests["wolf_plague"].Title)
+	}
+	// invalid edits are rejected and change nothing
+	o := &fakeOut{}
+	w.AdminSave(o, []byte(`{"spawns":[{"mob":"nonexistent","x":0,"z":0}]}`))
+	drain(w)
+	if o.last("adminError") == nil || len(gamedata.AllSpawns()) != nSpawns {
+		t.Fatal("invalid edit accepted")
+	}
+}
+
+func TestMobWalksAroundBuilding(t *testing.T) {
+	w := newTestWorld(t)
+	e, _ := addPlayer(t, w, "Anna", "warrior", 5)
+	wolf := findMob(w, "wolf")
+	// wolf west of the cabin at the origin, player east of it
+	wolf.X, wolf.Z, wolf.M.SX, wolf.M.SZ = -14, 0, -14, 0
+	wolf.Y = gamedata.Height(wolf.X, wolf.Z)
+	e.X, e.Z = 14, 0
+	e.Y = gamedata.Height(e.X, e.Z)
+	e.MaxHP, e.HP = 1000000, 1000000
+	w.addThreat(wolf, e.ID, 1)
+	closest := 1e9
+	for i := 0; i < 20*40 && closest > 3; i++ { // up to 40 s
+		w.tick()
+		e.P.LastMove = w.now
+		closest = math.Min(closest, dist(wolf, e))
+	}
+	if closest > 3.5 {
+		t.Fatalf("wolf never got around the building (closest %.1f m, now at %.1f,%.1f)", closest, wolf.X, wolf.Z)
+	}
 }

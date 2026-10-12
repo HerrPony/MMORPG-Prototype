@@ -41,10 +41,17 @@ type World struct {
 	sceneryJSON json.RawMessage
 	defsJSON    json.RawMessage
 	lastSave    float64
+	pathBudget  int // path searches left in this tick
 }
 
 func New(cfg config.Config, store storage.Store) *World {
 	gamedata.Init()
+	if ed, err := gamedata.LoadEdits(editsPath(cfg)); err != nil {
+		log.Printf("world_edits.json: %v (ignoriert)", err)
+	} else if err := gamedata.ApplyEdits(ed); err != nil {
+		log.Printf("world_edits.json ungültig: %v (ignoriert)", err)
+		_ = gamedata.ApplyEdits(&gamedata.Edits{})
+	}
 	w := &World{
 		cfg:       cfg,
 		store:     store,
@@ -61,6 +68,13 @@ func New(cfg config.Config, store storage.Store) *World {
 		nextParty: 1,
 		dt:        cfg.TickRate.Seconds(),
 	}
+	w.refreshStatic()
+	w.spawnStatic()
+	return w
+}
+
+// refreshStatic rebuilds the cached scenery/definition payloads sent to clients.
+func (w *World) refreshStatic() {
 	w.sceneryJSON, _ = json.Marshal(gamedata.BuildScenery())
 	w.defsJSON, _ = json.Marshal(protocol.M{
 		"items":  gamedata.Items,
@@ -68,8 +82,6 @@ func New(cfg config.Config, store storage.Store) *World {
 		"skills": gamedata.Skills,
 		"pois":   gamedata.POIs,
 	})
-	w.spawnStatic()
-	return w
 }
 
 func (w *World) newID() int {
@@ -139,6 +151,7 @@ func (w *World) Run(ctx context.Context) {
 func (w *World) tick() {
 	w.now += w.dt
 	w.tickN++
+	w.pathBudget = 6
 	for _, e := range w.ents {
 		w.tickEffects(e)
 		switch e.Kind {
