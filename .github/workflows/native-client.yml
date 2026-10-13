@@ -128,9 +128,13 @@ jobs:
             git archive FETCH_HEAD | tar -x -C build/pages
           fi
           mkdir -p build/pages/updates
+          # the launcher has its own version (launcher/project.godot): a release that only changes the game keeps it,
+          # so the launchers that are installed do not update themselves
+          LAUNCHER_VERSION="$(grep -oP 'config/version="\K[^"]+' launcher/project.godot)"
+          echo "launcher version $LAUNCHER_VERSION"
           for plat in windows linux; do
             python3 tools/release/make_release.py --platform $plat --version "${{ steps.ver.outputs.version }}" \
-              --game-dir build/$plat/game --launcher-dir build/$plat/launcher --launcher-version "${{ steps.ver.outputs.version }}" \
+              --game-dir build/$plat/game --launcher-dir build/$plat/launcher --launcher-version "$LAUNCHER_VERSION" \
               --notes "$RUNNER_TEMP/notes.txt" --notes-dir release-notes --out build/pages/updates
           done
           # drop objects that no manifest refers to
