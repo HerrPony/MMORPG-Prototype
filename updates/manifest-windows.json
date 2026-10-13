@@ -2,11 +2,11 @@
  "format": 1,
  "product": "erlenwald",
  "platform": "windows",
- "version": "1.0.8",
- "released": "2026-10-13T04:38:40Z",
+ "version": "1.0.9",
+ "released": "2026-10-13T06:20:03Z",
  "launch": "ErlenwaldOnline.exe",
  "objects": "objects/{h2}/{h}",
- "notes": "[b]Version 1.0.8[/b]\n[b]Neu[/b]\n[list]\n[*]Die Kontinente sind etwa doppelt so groß (rund 900 × 900 m statt 600 × 600 m). Städte, Dörfer, Lager, Seen und Flüsse liegen weiter auseinander, die Wege dazwischen sind länger. Die Dörfer selbst bleiben so groß wie zuvor.\n[*]Sonnenburg ist jetzt eine echte Burgstadt: Stadtmauer mit Zinnen, Wehrgängen und Strebepfeilern, Ecktürme und Zwischentürme mit Fahnen, zwei Torhäuser mit Fallgitter und Bannern (West und Süd), dazu eine innere Burg im Norden mit eigener Mauer, Tor und einem mächtigen Bergfried mit Türmen und Flaggen.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Wölfe, Spinnen, Banditen, Bären und die anderen Gegner halten Abstand zu den Siedlungen: Rund um das erste Dorf Eichenhain ist es jetzt mindestens 130 m weit ruhig, bei den anderen Dörfern rund 80 m. Wolfshügel, Bärenklamm, Spinnenwald und das Banditenlager sind samt Gegnern nach außen gerückt.\n[*]Die Piere der Häfen reichen bis zum Liegeplatz der Fähre. Die Fahrt über das Meer dauert wegen der größeren Entfernung etwas länger.\n[*]Die Stadt Sonnenburg und ihre Umgebung sind größer: Das Pflaster, die Straßen und das ebene Gelände wurden angepasst.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Alle Positionen der Welt werden zentral mit dem Faktor WorldScale (1.5) angepasst (gamedata/zzz_scale.go). Dinge, die zu einem Ort gehören, bleiben dabei an ihrem Ort, NPCs und Objekte im Wasser werden an Land gesetzt.\n[*]Neues Gebäude \"archgate\" (Torbogen der Burgtore, ohne Kollision). Die Prop-Positionen werden mit 1/24 m statt 1/40 m kodiert, weil die Welt breiter ist.\n[*]Gespeicherte Kartenänderungen des Editors für die alte Weltgröße werden nicht mehr angewendet (die Datei wird zu world_edits.json.unscaled umbenannt).\n[/list]\n",
+ "notes": "[b]Version 1.0.9[/b]\n[b]Behoben[/b]\n[list]\n[*]Launcher: Ein Update, das nur das Spiel betrifft, löst kein Launcher-Update mehr aus. Der Launcher lädt sich nicht mehr selbst herunter und startet nicht mehr neu, solange er selbst unverändert ist.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Launcher hat jetzt seine eigene Versionsnummer (launcher/project.godot). Der Release-Workflow trägt sie ins Manifest ein, statt der Spielversion. Der Launcher ersetzt sich nur, wenn die Launcher-Version im Manifest eine andere ist und sich eine Launcher-Datei im Inhalt unterscheidet. Fehlende Launcher-Dateien werden weiter repariert.\n[*]Dieses Update bringt den Launcher einmalig auf 1.0.9 (er enthält die Änderung).\n[/list]\n",
  "files": [
   {
    "path": "ErlenwaldOnline.exe",
@@ -15,7 +15,7 @@
   },
   {
    "path": "ErlenwaldOnline.pck",
-   "sha256": "ce550829a511d4be0b14bfd319fe8cb0e10ecce491c05a06cd4dfc5cddc9acb3",
+   "sha256": "4c5b4f0bbef70c6b669fa48f791db8cc2469827704e552a076d4b05529f4f917",
    "size": 1298064
   },
   {
@@ -186,6 +186,10 @@
  ],
  "history": [
   {
+   "version": "1.0.9",
+   "notes": "[b]Version 1.0.9[/b]\n[b]Behoben[/b]\n[list]\n[*]Launcher: Ein Update, das nur das Spiel betrifft, löst kein Launcher-Update mehr aus. Der Launcher lädt sich nicht mehr selbst herunter und startet nicht mehr neu, solange er selbst unverändert ist.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Launcher hat jetzt seine eigene Versionsnummer (launcher/project.godot). Der Release-Workflow trägt sie ins Manifest ein, statt der Spielversion. Der Launcher ersetzt sich nur, wenn die Launcher-Version im Manifest eine andere ist und sich eine Launcher-Datei im Inhalt unterscheidet. Fehlende Launcher-Dateien werden weiter repariert.\n[*]Dieses Update bringt den Launcher einmalig auf 1.0.9 (er enthält die Änderung).\n[/list]"
+  },
+  {
    "version": "1.0.8",
    "notes": "[b]Version 1.0.8[/b]\n[b]Neu[/b]\n[list]\n[*]Die Kontinente sind etwa doppelt so groß (rund 900 × 900 m statt 600 × 600 m). Städte, Dörfer, Lager, Seen und Flüsse liegen weiter auseinander, die Wege dazwischen sind länger. Die Dörfer selbst bleiben so groß wie zuvor.\n[*]Sonnenburg ist jetzt eine echte Burgstadt: Stadtmauer mit Zinnen, Wehrgängen und Strebepfeilern, Ecktürme und Zwischentürme mit Fahnen, zwei Torhäuser mit Fallgitter und Bannern (West und Süd), dazu eine innere Burg im Norden mit eigener Mauer, Tor und einem mächtigen Bergfried mit Türmen und Flaggen.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Wölfe, Spinnen, Banditen, Bären und die anderen Gegner halten Abstand zu den Siedlungen: Rund um das erste Dorf Eichenhain ist es jetzt mindestens 130 m weit ruhig, bei den anderen Dörfern rund 80 m. Wolfshügel, Bärenklamm, Spinnenwald und das Banditenlager sind samt Gegnern nach außen gerückt.\n[*]Die Piere der Häfen reichen bis zum Liegeplatz der Fähre. Die Fahrt über das Meer dauert wegen der größeren Entfernung etwas länger.\n[*]Die Stadt Sonnenburg und ihre Umgebung sind größer: Das Pflaster, die Straßen und das ebene Gelände wurden angepasst.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Alle Positionen der Welt werden zentral mit dem Faktor WorldScale (1.5) angepasst (gamedata/zzz_scale.go). Dinge, die zu einem Ort gehören, bleiben dabei an ihrem Ort, NPCs und Objekte im Wasser werden an Land gesetzt.\n[*]Neues Gebäude \"archgate\" (Torbogen der Burgtore, ohne Kollision). Die Prop-Positionen werden mit 1/24 m statt 1/40 m kodiert, weil die Welt breiter ist.\n[*]Gespeicherte Kartenänderungen des Editors für die alte Weltgröße werden nicht mehr angewendet (die Datei wird zu world_edits.json.unscaled umbenannt).\n[/list]"
   },
@@ -222,7 +226,7 @@
    "notes": "[b]Version 1.0.0[/b]\n[b]Neu[/b]\n[list]\n[*]Der native Desktop-Client für Windows und Linux ist da: bessere Grafik mit Echtzeitschatten, Bloom, Himmels- und Wasser-Shader, Tag-/Nachtzyklus und flüssigerer Steuerung.\n[*]Alle Funktionen des Web-Clients: Welt, Quests, Kampf, Gruppen, Händler, Greifenflüge, Dungeons und Weltkarte.\n[*]Viele Einstellungen für Grafik, Audio und Steuerung, dazu frei belegbare Tasten und Gamepad-Unterstützung.\n[*]Launcher mit automatischem Update: Er findet neue Versionen selbst, lädt nur geänderte Dateien und repariert beschädigte Installationen.\n[*]Windows-Installer und Installationsskript für Linux.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Client nutzt dasselbe Protokoll wie der Web-Client, der Server bleibt unverändert.\n[/list]"
   }
  ],
- "launcher_version": "1.0.8",
+ "launcher_version": "1.0.9",
  "launcher_files": [
   {
    "path": "Launcher.exe",
@@ -231,8 +235,8 @@
   },
   {
    "path": "Launcher.pck",
-   "sha256": "baf93ed484f644485c376ac07d36e38481eb2c72daeaee085b32b5b2873bd88f",
-   "size": 35524
+   "sha256": "812fa7189a64aeda4f55c6b40f398436e401938c143de65984b81028d5131947",
+   "size": 35620
   }
  ]
 }
