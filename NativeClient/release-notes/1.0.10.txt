@@ -1,0 +1,15 @@
+[b]Version 1.0.10[/b]
+[b]Neu[/b]
+[list]
+[*]Der öffentliche Spielserver ist jetzt voreingestellt: Der Client verbindet sich standardmäßig mit game.herrpony.de (verschlüsselt). Du musst keine Serveradresse mehr eingeben.
+[*]Auf der Webseite gibt es einen Knopf „Jetzt spielen“, der direkt den Web-Client unter game.herrpony.de öffnet.
+[/list]
+[b]Geändert[/b]
+[list]
+[*]Alte Installationen, die noch die frühere Standardadresse (localhost:8080) gespeichert hatten, wechseln beim Start des Launchers automatisch auf game.herrpony.de. Eine eigene Adresse kannst du weiterhin in den Launcher-Einstellungen oder auf dem Anmeldebildschirm eintragen.
+[/list]
+[b]Technik[/b]
+[list]
+[*]Standardserver in Spiel, Launcher und Windows-Installer auf https://game.herrpony.de gesetzt (Verbindung per wss://). Adressen mit http://, https://, ws:// oder wss:// werden weiterhin akzeptiert.
+[*]Dieses Update enthält eine Launcher-Änderung, der Launcher aktualisiert sich daher einmalig auf 1.0.10.
+[/list]

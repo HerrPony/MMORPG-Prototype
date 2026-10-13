@@ -1,8 +1,8 @@
 ; Erlenwald Online - Windows installer (NSIS, per-user install, no administrator rights needed).
 ;
 ; Build (see tools/build_installer.sh):
-;   makensis -DVERSION=1.0.9 -DLAUNCHER_DIR=<dir with Launcher.exe + Launcher.pck> [-DGAME_DIR=<exported game, bundles it>]
-;            [-DUPDATE_URL=https://updates.example.org] [-DGAME_SERVER=play.example.org:8080] -DOUTFILE=Setup.exe installer.nsi
+;   makensis -DVERSION=1.0.10 -DLAUNCHER_DIR=<dir with Launcher.exe + Launcher.pck> [-DGAME_DIR=<exported game, bundles it>]
+;            [-DUPDATE_URL=https://updates.example.org] [-DGAME_SERVER=play.example.org] -DOUTFILE=Setup.exe installer.nsi
 ;
 ; Without GAME_DIR it is a small "web installer": the launcher downloads the game on its first start.
 
@@ -11,7 +11,7 @@ Unicode true
 !include "FileFunc.nsh"
 
 !ifndef VERSION
-  !define VERSION "1.0.9"
+  !define VERSION "1.0.10"
 !endif
 !ifndef OUTFILE
   !define OUTFILE "ErlenwaldOnline-Setup.exe"
@@ -20,7 +20,7 @@ Unicode true
   !define UPDATE_URL "https://herrpony.github.io/MMORPG-Prototype/updates"
 !endif
 !ifndef GAME_SERVER
-  !define GAME_SERVER "localhost:8080"
+  !define GAME_SERVER "https://game.herrpony.de"
 !endif
 
 !define APP "Erlenwald Online"

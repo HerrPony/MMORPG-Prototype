@@ -6,7 +6,7 @@ signal changed
 const PATH := "user://settings.cfg"
 
 const DEFAULTS := {
-	"server": "localhost:8080", "username": "",
+	"server": "https://game.herrpony.de", "username": "",
 	# graphics
 	"preset": "high", "window_mode": "windowed", "vsync": true, "fps_limit": 0, "res_scale": 1.0, "msaa": 2, "taa": false, "fxaa": false, "fsr": false,
 	"shadows": 3, "shadow_distance": 90, "view_distance": 300, "ssao": true, "ssil": false, "bloom": true, "fog": true, "volumetric_fog": false,

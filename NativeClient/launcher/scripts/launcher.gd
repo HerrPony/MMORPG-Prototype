@@ -11,7 +11,7 @@ const RECHECK_SECONDS := 600.0
 var cfg := {"update_url": "", "server": "", "auto_update": true, "close_on_launch": false, "root": ""}
 var root := ""
 var updater: Updater
-var own_version := "1.0.9"
+var own_version := "1.0.10"
 var busy := false
 var state := "checking"       # checking | updating | ready | needs_install | error | offline
 var cli := {}
@@ -84,12 +84,15 @@ func _defaults_file() -> Dictionary:
 func _load_config() -> void:
 	var d := _defaults_file()
 	cfg.update_url = str(d.get("update_url", DEFAULT_UPDATE_URL))
-	cfg.server = str(d.get("server", "localhost:8080"))
+	cfg.server = str(d.get("server", "https://game.herrpony.de"))
 	var cf := ConfigFile.new()
 	if cf.load(CFG_PATH) == OK:
 		for k in cfg:
 			if cf.has_section_key("launcher", k):
 				cfg[k] = cf.get_value("launcher", k)
+	# installations from before the public server still carry the old built-in default
+	if cfg.server == "localhost:8080":
+		cfg.server = "https://game.herrpony.de"
 	if cli.has("url"):
 		cfg.update_url = cli.url
 	if cli.has("root"):

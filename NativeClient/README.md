@@ -23,7 +23,7 @@ NativeClient/
 1. Server starten (siehe Haupt-README), z. B. `cd Server && go run ./cmd/server`
 2. Client starten – entweder über den Installer/Launcher (siehe unten) oder direkt mit Godot:
    `godot --path NativeClient/game` (Godot 4.5.1 genügt, keine weiteren Abhängigkeiten)
-3. Serveradresse eintragen (Standard `localhost:8080`), Account anlegen, Charakter erstellen, spielen.
+3. Serveradresse eintragen (Standard `https://game.herrpony.de`, für einen lokalen Server z. B. `localhost:8080`), Account anlegen, Charakter erstellen, spielen.
 
 ### Steuerung (alles in den Einstellungen umbelegbar)
 

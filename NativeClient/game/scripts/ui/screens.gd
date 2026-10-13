@@ -100,7 +100,7 @@ func _build_login() -> void:
 	tabs.add_child(tab_login)
 	tabs.add_child(tab_register)
 	v.add_child(tabs)
-	in_server = _field(v, "Server", "localhost:8080", String(Settings.v["server"]))
+	in_server = _field(v, "Server", "https://game.herrpony.de", String(Settings.v["server"]))
 	in_user = _field(v, "Benutzername", "", String(Settings.v["username"]))
 	in_pass = _field(v, "Passwort", "", "", true)
 	in_pass2 = _field(v, "Passwort wiederholen", "", "", true)
@@ -140,7 +140,7 @@ func _set_mode(m: String) -> void:
 func _server_url() -> String:
 	var s := in_server.text.strip_edges()
 	if s == "":
-		s = "localhost:8080"
+		s = "https://game.herrpony.de"
 	if s.begins_with("ws://") or s.begins_with("wss://"):
 		return s if s.ends_with("/ws") else s.trim_suffix("/") + "/ws"
 	if s.begins_with("http://"):
