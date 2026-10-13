@@ -100,3 +100,4 @@ footer ul { list-style: none; padding: 0; margin: 0; display: flex; gap: 8px 20p
 .dl h3 svg { width: 28px; height: 28px; color: var(--gold); flex: none; }
 .dl .btn { text-align: left; }
 .dl[data-for].recommended { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+.main a.play{color:var(--gold2);font-weight:700}
