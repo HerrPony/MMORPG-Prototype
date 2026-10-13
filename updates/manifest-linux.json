@@ -2,16 +2,16 @@
  "format": 1,
  "product": "erlenwald",
  "platform": "linux",
- "version": "1.0.7",
- "released": "2026-10-12T18:27:41Z",
+ "version": "1.0.8",
+ "released": "2026-10-13T04:38:40Z",
  "launch": "ErlenwaldOnline.x86_64",
  "objects": "objects/{h2}/{h}",
- "notes": "[b]Version 1.0.7[/b]\n[b]Neu[/b]\n[list]\n[*]Laternen und Licht bei Nacht (nativer und Web-Client): Entlang der Wege und vor den Häusern stehen jetzt Laternenpfähle, und in den Häusern brennt Licht. Beim Einbruch der Dunkelheit gehen sie von selbst an, am Morgen wieder aus. Jedes Fenster und jede Laterne schaltet etwas versetzt und flackert leicht.\n[*]Die Laternen und Häuser leuchten wirklich: Sie erhellen Boden, Wände und Spieler in ihrer Umgebung.\n[*]Nativer Client: Das Laternenlicht wirft realistische Schatten (Pfähle, Häuser, Bäume und Spieler), die nächsten Lichter mit Schatten, weiter entfernte als weicher Schein mit Lichthof.\n[*]Launcher: Der Changelog zeigt jetzt auch alle früheren Versionen, die neueste zuerst.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Nativer Client: Realistischerer Boden. Gras mit Halmen, Büscheln, trockenen Stellen und Blumen, gewellter Sand, Erdwege mit Kieseln, Kopfsteinpflaster mit einzeln gerundeten Steinen, Felsschichten an steilen Hängen, glitzernder Schnee, rissige Vulkanasche und Schlamm, der feucht glänzt. Das Gelände ist weich schattiert statt kantig.\n[*]Nativer Client: Neuer Gebäude-Shader. Mauerwerk aus Steinquadern, Holzbohlen, Putz und Dachschindeln mit feinem Relief, auf dem Sonne, Mond und Laternenlicht spielen.\n[*]Nativer Client: Neue Fenster- und Laternen-Shader mit warmem Licht und leichtem Kerzenflackern.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Server sendet die Laternenpositionen (nach Straßen und Häusern) mit der Welt, beide Clients zeigen dieselben Laternen. Ein Test prüft die Platzierung.\n[*]Das Laternenlicht nutzt einen Pool aus Lichtern, die immer den nächsten Laternen zugewiesen werden. Die Zahl der Lichter und der Schattenwerfer hängt von der Schattenqualität ab. Mit dem Kompatibilitäts-Renderer (OpenGL) werden Würfel-Schatten verwendet.\n[*]Der Launcher liest die Versionsgeschichte aus dem Update-Manifest (Feld history, aus NativeClient/release-notes).\n[/list]\n",
+ "notes": "[b]Version 1.0.8[/b]\n[b]Neu[/b]\n[list]\n[*]Die Kontinente sind etwa doppelt so groß (rund 900 × 900 m statt 600 × 600 m). Städte, Dörfer, Lager, Seen und Flüsse liegen weiter auseinander, die Wege dazwischen sind länger. Die Dörfer selbst bleiben so groß wie zuvor.\n[*]Sonnenburg ist jetzt eine echte Burgstadt: Stadtmauer mit Zinnen, Wehrgängen und Strebepfeilern, Ecktürme und Zwischentürme mit Fahnen, zwei Torhäuser mit Fallgitter und Bannern (West und Süd), dazu eine innere Burg im Norden mit eigener Mauer, Tor und einem mächtigen Bergfried mit Türmen und Flaggen.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Wölfe, Spinnen, Banditen, Bären und die anderen Gegner halten Abstand zu den Siedlungen: Rund um das erste Dorf Eichenhain ist es jetzt mindestens 130 m weit ruhig, bei den anderen Dörfern rund 80 m. Wolfshügel, Bärenklamm, Spinnenwald und das Banditenlager sind samt Gegnern nach außen gerückt.\n[*]Die Piere der Häfen reichen bis zum Liegeplatz der Fähre. Die Fahrt über das Meer dauert wegen der größeren Entfernung etwas länger.\n[*]Die Stadt Sonnenburg und ihre Umgebung sind größer: Das Pflaster, die Straßen und das ebene Gelände wurden angepasst.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Alle Positionen der Welt werden zentral mit dem Faktor WorldScale (1.5) angepasst (gamedata/zzz_scale.go). Dinge, die zu einem Ort gehören, bleiben dabei an ihrem Ort, NPCs und Objekte im Wasser werden an Land gesetzt.\n[*]Neues Gebäude \"archgate\" (Torbogen der Burgtore, ohne Kollision). Die Prop-Positionen werden mit 1/24 m statt 1/40 m kodiert, weil die Welt breiter ist.\n[*]Gespeicherte Kartenänderungen des Editors für die alte Weltgröße werden nicht mehr angewendet (die Datei wird zu world_edits.json.unscaled umbenannt).\n[/list]\n",
  "files": [
   {
    "path": "ErlenwaldOnline.pck",
-   "sha256": "8d74182e5a02b5805b2f5e3492a9a6bfc14575749de581c96d79cc903129b802",
-   "size": 1294864
+   "sha256": "ce550829a511d4be0b14bfd319fe8cb0e10ecce491c05a06cd4dfc5cddc9acb3",
+   "size": 1298064
   },
   {
    "path": "ErlenwaldOnline.x86_64",
@@ -187,6 +187,10 @@
  ],
  "history": [
   {
+   "version": "1.0.8",
+   "notes": "[b]Version 1.0.8[/b]\n[b]Neu[/b]\n[list]\n[*]Die Kontinente sind etwa doppelt so groß (rund 900 × 900 m statt 600 × 600 m). Städte, Dörfer, Lager, Seen und Flüsse liegen weiter auseinander, die Wege dazwischen sind länger. Die Dörfer selbst bleiben so groß wie zuvor.\n[*]Sonnenburg ist jetzt eine echte Burgstadt: Stadtmauer mit Zinnen, Wehrgängen und Strebepfeilern, Ecktürme und Zwischentürme mit Fahnen, zwei Torhäuser mit Fallgitter und Bannern (West und Süd), dazu eine innere Burg im Norden mit eigener Mauer, Tor und einem mächtigen Bergfried mit Türmen und Flaggen.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Wölfe, Spinnen, Banditen, Bären und die anderen Gegner halten Abstand zu den Siedlungen: Rund um das erste Dorf Eichenhain ist es jetzt mindestens 130 m weit ruhig, bei den anderen Dörfern rund 80 m. Wolfshügel, Bärenklamm, Spinnenwald und das Banditenlager sind samt Gegnern nach außen gerückt.\n[*]Die Piere der Häfen reichen bis zum Liegeplatz der Fähre. Die Fahrt über das Meer dauert wegen der größeren Entfernung etwas länger.\n[*]Die Stadt Sonnenburg und ihre Umgebung sind größer: Das Pflaster, die Straßen und das ebene Gelände wurden angepasst.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Alle Positionen der Welt werden zentral mit dem Faktor WorldScale (1.5) angepasst (gamedata/zzz_scale.go). Dinge, die zu einem Ort gehören, bleiben dabei an ihrem Ort, NPCs und Objekte im Wasser werden an Land gesetzt.\n[*]Neues Gebäude \"archgate\" (Torbogen der Burgtore, ohne Kollision). Die Prop-Positionen werden mit 1/24 m statt 1/40 m kodiert, weil die Welt breiter ist.\n[*]Gespeicherte Kartenänderungen des Editors für die alte Weltgröße werden nicht mehr angewendet (die Datei wird zu world_edits.json.unscaled umbenannt).\n[/list]"
+  },
+  {
    "version": "1.0.7",
    "notes": "[b]Version 1.0.7[/b]\n[b]Neu[/b]\n[list]\n[*]Laternen und Licht bei Nacht (nativer und Web-Client): Entlang der Wege und vor den Häusern stehen jetzt Laternenpfähle, und in den Häusern brennt Licht. Beim Einbruch der Dunkelheit gehen sie von selbst an, am Morgen wieder aus. Jedes Fenster und jede Laterne schaltet etwas versetzt und flackert leicht.\n[*]Die Laternen und Häuser leuchten wirklich: Sie erhellen Boden, Wände und Spieler in ihrer Umgebung.\n[*]Nativer Client: Das Laternenlicht wirft realistische Schatten (Pfähle, Häuser, Bäume und Spieler), die nächsten Lichter mit Schatten, weiter entfernte als weicher Schein mit Lichthof.\n[*]Launcher: Der Changelog zeigt jetzt auch alle früheren Versionen, die neueste zuerst.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Nativer Client: Realistischerer Boden. Gras mit Halmen, Büscheln, trockenen Stellen und Blumen, gewellter Sand, Erdwege mit Kieseln, Kopfsteinpflaster mit einzeln gerundeten Steinen, Felsschichten an steilen Hängen, glitzernder Schnee, rissige Vulkanasche und Schlamm, der feucht glänzt. Das Gelände ist weich schattiert statt kantig.\n[*]Nativer Client: Neuer Gebäude-Shader. Mauerwerk aus Steinquadern, Holzbohlen, Putz und Dachschindeln mit feinem Relief, auf dem Sonne, Mond und Laternenlicht spielen.\n[*]Nativer Client: Neue Fenster- und Laternen-Shader mit warmem Licht und leichtem Kerzenflackern.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Server sendet die Laternenpositionen (nach Straßen und Häusern) mit der Welt, beide Clients zeigen dieselben Laternen. Ein Test prüft die Platzierung.\n[*]Das Laternenlicht nutzt einen Pool aus Lichtern, die immer den nächsten Laternen zugewiesen werden. Die Zahl der Lichter und der Schattenwerfer hängt von der Schattenqualität ab. Mit dem Kompatibilitäts-Renderer (OpenGL) werden Würfel-Schatten verwendet.\n[*]Der Launcher liest die Versionsgeschichte aus dem Update-Manifest (Feld history, aus NativeClient/release-notes).\n[/list]"
   },
@@ -219,11 +223,11 @@
    "notes": "[b]Version 1.0.0[/b]\n[b]Neu[/b]\n[list]\n[*]Der native Desktop-Client für Windows und Linux ist da: bessere Grafik mit Echtzeitschatten, Bloom, Himmels- und Wasser-Shader, Tag-/Nachtzyklus und flüssigerer Steuerung.\n[*]Alle Funktionen des Web-Clients: Welt, Quests, Kampf, Gruppen, Händler, Greifenflüge, Dungeons und Weltkarte.\n[*]Viele Einstellungen für Grafik, Audio und Steuerung, dazu frei belegbare Tasten und Gamepad-Unterstützung.\n[*]Launcher mit automatischem Update: Er findet neue Versionen selbst, lädt nur geänderte Dateien und repariert beschädigte Installationen.\n[*]Windows-Installer und Installationsskript für Linux.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Client nutzt dasselbe Protokoll wie der Web-Client, der Server bleibt unverändert.\n[/list]"
   }
  ],
- "launcher_version": "1.0.7",
+ "launcher_version": "1.0.8",
  "launcher_files": [
   {
    "path": "Launcher.pck",
-   "sha256": "71be753dd346c2cf7ca5529ea7d449d1107e69823f7c29d9a4d5304b0521680f",
+   "sha256": "baf93ed484f644485c376ac07d36e38481eb2c72daeaee085b32b5b2873bd88f",
    "size": 35524
   },
   {
