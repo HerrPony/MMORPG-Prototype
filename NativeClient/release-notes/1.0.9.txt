@@ -1,0 +1,10 @@
+[b]Version 1.0.9[/b]
+[b]Behoben[/b]
+[list]
+[*]Launcher: Ein Update, das nur das Spiel betrifft, löst kein Launcher-Update mehr aus. Der Launcher lädt sich nicht mehr selbst herunter und startet nicht mehr neu, solange er selbst unverändert ist.
+[/list]
+[b]Technik[/b]
+[list]
+[*]Der Launcher hat jetzt seine eigene Versionsnummer (launcher/project.godot). Der Release-Workflow trägt sie ins Manifest ein, statt der Spielversion. Der Launcher ersetzt sich nur, wenn die Launcher-Version im Manifest eine andere ist und sich eine Launcher-Datei im Inhalt unterscheidet. Fehlende Launcher-Dateien werden weiter repariert.
+[*]Dieses Update bringt den Launcher einmalig auf 1.0.9 (er enthält die Änderung).
+[/list]

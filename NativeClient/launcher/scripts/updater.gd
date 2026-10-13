@@ -314,16 +314,22 @@ func _install_file(part: String, dest: String, f: Dictionary) -> bool:
 
 # ------------------------------------------------------------------ launcher self-update
 
-## True if one of the launcher files of the manifest differs from the installed one. Decided by content, not by
-## version numbers, so a launcher that is already current never restarts itself in a loop. Big files (the engine
-## binary) are compared by size only.
-func launcher_update_available(_own_version := "") -> bool:
+## True if the launcher has to be replaced. A release that only changes the game must never touch the launcher, so
+## both have to hold: the manifest names another launcher version than the one running AND a launcher file differs
+## from the installed one (content; big files like the engine binary by size only). The content check keeps a launcher
+## that is already current from restarting itself in a loop, the version check keeps a rebuild with the same version
+## (files that are not bit for bit identical) from replacing it. A missing launcher file is always repaired.
+func launcher_update_available(own_version := "") -> bool:
 	if OS.has_feature("editor") and not force_launcher_update:
 		return false
+	var new_version := str(manifest.get("launcher_version", ""))
+	var version_differs := own_version == "" or new_version != own_version
 	for f in manifest.get("launcher_files", []):
 		var path := root.path_join(f.path)
 		if not FileAccess.file_exists(path):
 			return true
+		if not version_differs:
+			continue
 		var sz := _file_size(path)
 		if sz != int(f.size):
 			return true

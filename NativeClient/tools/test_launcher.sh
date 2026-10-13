@@ -62,4 +62,11 @@ for i in 1 2 3 4 5 6 7 8; do [ -e "$tmp/inst/update_launcher.sh" ] || break; sle
 [ ! -d "$tmp/inst/.update" ] || fail "staging folder left behind"
 out=$(run --self-update); echo "$out" | grep -q "launcher update available" && fail "a current launcher wants to update again (restart loop)"
 echo "launcher is current: no further update"
+echo "== a release with the launcher version of the running launcher never replaces it"
+lv="$(grep -oP 'config/version="\K[^"]+' "$here/launcher/project.godot")"
+echo "launcher files that differ" > "$tmp/launcher/Launcher.pck"
+head -c 1300000 /dev/urandom > "$tmp/g2/ErlenwaldOnline.pck"
+pub 1.0.4 "$tmp/g2" --launcher-dir "$tmp/launcher" --launcher-version "$lv" >/dev/null
+out=$(run --self-update); echo "$out"; echo "$out" | grep -q "launcher update available" && fail "a game-only release replaced the launcher"
+echo "game-only release: launcher untouched"
 echo "ALL LAUNCHER TESTS PASSED"
