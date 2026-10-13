@@ -2,11 +2,11 @@
  "format": 1,
  "product": "erlenwald",
  "platform": "windows",
- "version": "1.0.9",
- "released": "2026-10-13T06:20:03Z",
+ "version": "1.0.10",
+ "released": "2026-10-13T17:06:28Z",
  "launch": "ErlenwaldOnline.exe",
  "objects": "objects/{h2}/{h}",
- "notes": "[b]Version 1.0.9[/b]\n[b]Behoben[/b]\n[list]\n[*]Launcher: Ein Update, das nur das Spiel betrifft, löst kein Launcher-Update mehr aus. Der Launcher lädt sich nicht mehr selbst herunter und startet nicht mehr neu, solange er selbst unverändert ist.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Launcher hat jetzt seine eigene Versionsnummer (launcher/project.godot). Der Release-Workflow trägt sie ins Manifest ein, statt der Spielversion. Der Launcher ersetzt sich nur, wenn die Launcher-Version im Manifest eine andere ist und sich eine Launcher-Datei im Inhalt unterscheidet. Fehlende Launcher-Dateien werden weiter repariert.\n[*]Dieses Update bringt den Launcher einmalig auf 1.0.9 (er enthält die Änderung).\n[/list]\n",
+ "notes": "[b]Version 1.0.10[/b]\n[b]Neu[/b]\n[list]\n[*]Der öffentliche Spielserver ist jetzt voreingestellt: Der Client verbindet sich standardmäßig mit game.herrpony.de (verschlüsselt). Du musst keine Serveradresse mehr eingeben.\n[*]Auf der Webseite gibt es einen Knopf „Jetzt spielen“, der direkt den Web-Client unter game.herrpony.de öffnet.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Alte Installationen, die noch die frühere Standardadresse (localhost:8080) gespeichert hatten, wechseln beim Start des Launchers automatisch auf game.herrpony.de. Eine eigene Adresse kannst du weiterhin in den Launcher-Einstellungen oder auf dem Anmeldebildschirm eintragen.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Standardserver in Spiel, Launcher und Windows-Installer auf https://game.herrpony.de gesetzt (Verbindung per wss://). Adressen mit http://, https://, ws:// oder wss:// werden weiterhin akzeptiert.\n[*]Dieses Update enthält eine Launcher-Änderung, der Launcher aktualisiert sich daher einmalig auf 1.0.10.\n[/list]\n",
  "files": [
   {
    "path": "ErlenwaldOnline.exe",
@@ -15,7 +15,7 @@
   },
   {
    "path": "ErlenwaldOnline.pck",
-   "sha256": "4c5b4f0bbef70c6b669fa48f791db8cc2469827704e552a076d4b05529f4f917",
+   "sha256": "02e38a523e606ffac8372235b577c3f65f96c50318150cb4fa5044c92d249afa",
    "size": 1298064
   },
   {
@@ -186,6 +186,10 @@
  ],
  "history": [
   {
+   "version": "1.0.10",
+   "notes": "[b]Version 1.0.10[/b]\n[b]Neu[/b]\n[list]\n[*]Der öffentliche Spielserver ist jetzt voreingestellt: Der Client verbindet sich standardmäßig mit game.herrpony.de (verschlüsselt). Du musst keine Serveradresse mehr eingeben.\n[*]Auf der Webseite gibt es einen Knopf „Jetzt spielen“, der direkt den Web-Client unter game.herrpony.de öffnet.\n[/list]\n[b]Geändert[/b]\n[list]\n[*]Alte Installationen, die noch die frühere Standardadresse (localhost:8080) gespeichert hatten, wechseln beim Start des Launchers automatisch auf game.herrpony.de. Eine eigene Adresse kannst du weiterhin in den Launcher-Einstellungen oder auf dem Anmeldebildschirm eintragen.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Standardserver in Spiel, Launcher und Windows-Installer auf https://game.herrpony.de gesetzt (Verbindung per wss://). Adressen mit http://, https://, ws:// oder wss:// werden weiterhin akzeptiert.\n[*]Dieses Update enthält eine Launcher-Änderung, der Launcher aktualisiert sich daher einmalig auf 1.0.10.\n[/list]"
+  },
+  {
    "version": "1.0.9",
    "notes": "[b]Version 1.0.9[/b]\n[b]Behoben[/b]\n[list]\n[*]Launcher: Ein Update, das nur das Spiel betrifft, löst kein Launcher-Update mehr aus. Der Launcher lädt sich nicht mehr selbst herunter und startet nicht mehr neu, solange er selbst unverändert ist.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Launcher hat jetzt seine eigene Versionsnummer (launcher/project.godot). Der Release-Workflow trägt sie ins Manifest ein, statt der Spielversion. Der Launcher ersetzt sich nur, wenn die Launcher-Version im Manifest eine andere ist und sich eine Launcher-Datei im Inhalt unterscheidet. Fehlende Launcher-Dateien werden weiter repariert.\n[*]Dieses Update bringt den Launcher einmalig auf 1.0.9 (er enthält die Änderung).\n[/list]"
   },
@@ -226,7 +230,7 @@
    "notes": "[b]Version 1.0.0[/b]\n[b]Neu[/b]\n[list]\n[*]Der native Desktop-Client für Windows und Linux ist da: bessere Grafik mit Echtzeitschatten, Bloom, Himmels- und Wasser-Shader, Tag-/Nachtzyklus und flüssigerer Steuerung.\n[*]Alle Funktionen des Web-Clients: Welt, Quests, Kampf, Gruppen, Händler, Greifenflüge, Dungeons und Weltkarte.\n[*]Viele Einstellungen für Grafik, Audio und Steuerung, dazu frei belegbare Tasten und Gamepad-Unterstützung.\n[*]Launcher mit automatischem Update: Er findet neue Versionen selbst, lädt nur geänderte Dateien und repariert beschädigte Installationen.\n[*]Windows-Installer und Installationsskript für Linux.\n[/list]\n[b]Technik[/b]\n[list]\n[*]Der Client nutzt dasselbe Protokoll wie der Web-Client, der Server bleibt unverändert.\n[/list]"
   }
  ],
- "launcher_version": "1.0.9",
+ "launcher_version": "1.0.10",
  "launcher_files": [
   {
    "path": "Launcher.exe",
@@ -235,8 +239,8 @@
   },
   {
    "path": "Launcher.pck",
-   "sha256": "812fa7189a64aeda4f55c6b40f398436e401938c143de65984b81028d5131947",
-   "size": 35620
+   "sha256": "cb735a63c0162a67f41253d7f30c0a4b5976e5f0d317967cef367b08c8c4cef0",
+   "size": 35700
   }
  ]
 }
