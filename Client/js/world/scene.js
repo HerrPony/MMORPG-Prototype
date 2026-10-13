@@ -117,7 +117,7 @@ function buildTerrain(sc) {
       for (const t of sc.towns) {
         const dd = Math.hypot(x - t.x, z - t.z);
         if (t.kind === 'capital') {
-          if (Math.abs(x - t.x) < 52 && Math.abs(z - t.z) < 47) {
+          if (Math.abs(x - t.x) < (t.style === 'jade' ? 52 : 78) && Math.abs(z - t.z) < (t.style === 'jade' ? 47 : 71)) {
             if (t.style === 'jade') c.lerp(tmp.setRGB(0.62, 0.5, 0.45), 0.7);
             else c.lerp(tmp.setRGB(0.62, 0.6, 0.55), 0.75);
           }
@@ -239,7 +239,7 @@ export function buildWorld(scenery, renderer) {
 
   scene.add(buildTerrain(scenery));
   const water = new THREE.Mesh(new THREE.PlaneGeometry(3400, 2400), new THREE.MeshPhongMaterial({ color: 0x2f7fb0, transparent: true, opacity: 0.78, shininess: 80, specular: 0x88aacc }));
-  water.rotation.x = -Math.PI / 2; water.position.set(420, -0.12, 0);
+  water.rotation.x = -Math.PI / 2; water.position.set(W.x0 + (W.nx - 1) * W.cell / 2, -0.12, 0);
   scene.add(water);
   const treeGrid = buildVegetation(scene, scenery);
   const solids = buildTowns(scene, scenery.buildings);

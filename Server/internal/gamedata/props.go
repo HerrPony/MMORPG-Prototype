@@ -34,7 +34,7 @@ func worldProps(sc Scenery) []Prop {
 }
 
 const (
-	propPosQ = 40.0  // position steps per metre
+	propPosQ = 24.0  // position steps per metre (uint16: 2700 m)
 	propRyQ  = 255.0 // rotation steps per 2π (6.28)
 )
 

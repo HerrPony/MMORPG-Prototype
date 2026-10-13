@@ -67,12 +67,19 @@ var (
 // It must run before the world is created and is safe to call repeatedly.
 func Init() {
 	initOnce.Do(func() {
+		snapEntities()
 		buildSpawns()
 		spawnsAll = spreadSpawns(Spawns)
 		for i := range spawnsAll { // the hand placed spawns also keep off the roads
 			spawnsAll[i].X, spawnsAll[i].Z = offRoad(spawnsAll[i].X, spawnsAll[i].Z)
 		}
 		spawnsAll = append(spawnsAll, generatedSpawns...)
+		for i := range spawnsAll { // nothing hostile close to a settlement
+			x, z := keepAway(spawnsAll[i].X, spawnsAll[i].Z)
+			x, z = snapLand(x, z)
+			spawnsAll[i].X, spawnsAll[i].Z = offRoad(x, z)
+		}
+		separateSpawns(spawnsAll)
 		for _, g := range objGroups {
 			h := fnv.New32a()
 			h.Write([]byte(g.obj))
@@ -96,7 +103,7 @@ func Init() {
 				placed++
 			}
 		}
-		ObjectSpawns = append(ObjectSpawns, ObjectSpawn{"portal_mine", -175, -198})
+		ObjectSpawns = append(ObjectSpawns, ObjectSpawn{"portal_mine", portalMineX, portalMineZ})
 		ObjectSpawns = append(ObjectSpawns, extraObjectSpawns...)
 		computeQuestAreas()
 		// vendor stock

@@ -15,6 +15,7 @@ static var nz := 0
 static var cell := 2.0
 static var x0 := -300.0
 static var z0 := -300.0
+static var split := 630.0       # x beyond this belongs to the second continent
 static var hm := PackedFloat32Array()
 static var bm := PackedByteArray()
 static var roads: Array = []
@@ -41,7 +42,7 @@ static var solids: Array = []            # building collision boxes {x,z,w,d}
 static var docks: Array = []
 
 const BIOME_KEYS := ["sea", "forest", "plains", "swamp", "snow", "desert", "jungle", "blossom", "mesa", "volcano", "volcano"]
-const NO_SOLID := ["pad", "dock", "ship", "lantern", "pond", "gate"]
+const NO_SOLID := ["pad", "dock", "ship", "lantern", "pond", "gate", "archgate"]
 
 static func load_scenery(sc: Dictionary) -> void:
 	nx = int(sc.nx); nz = int(sc.nz); cell = float(sc.cell); x0 = float(sc.x0); z0 = float(sc.z0)
@@ -62,6 +63,7 @@ static func load_scenery(sc: Dictionary) -> void:
 	bridges = sc.get("bridges", [])
 	zones = sc.get("zones", [])
 	conts = sc.get("conts", [])
+	split = float(sc.get("split", 630.0))
 	prop_kinds = sc.get("pk", [])
 	_decode_props(sc.get("props", ""))
 	docks = buildings.filter(func(b): return b.k == "dock")
@@ -81,8 +83,8 @@ static func _decode_props(b64: String) -> void:
 	for i in n:
 		var o := i * 8
 		p_kind[i] = bin[o]
-		p_x[i] = x0 + (bin[o + 1] | (bin[o + 2] << 8)) / 40.0
-		p_z[i] = z0 + (bin[o + 3] | (bin[o + 4] << 8)) / 40.0
+		p_x[i] = x0 + (bin[o + 1] | (bin[o + 2] << 8)) / 24.0
+		p_z[i] = z0 + (bin[o + 3] | (bin[o + 4] << 8)) / 24.0
 		p_s[i] = bin[o + 5] / 100.0
 		p_ry[i] = bin[o + 6] / 255.0 * 6.28
 		p_solid[i] = bin[o + 7] / 100.0
@@ -126,7 +128,7 @@ static func biome_key(x: float, z: float) -> String:
 	return BIOME_KEYS[biome_at(x, z)]
 
 static func cont_of(x: float) -> int:
-	return 1 if x > 420.0 else 0
+	return 1 if x > split else 0
 
 static func on_dock(x: float, z: float) -> bool:
 	for b in docks:

@@ -15,6 +15,7 @@ import (
 // optional; nil/empty means "use the defaults from the code". ApplyEdits can be called at any time (from the
 // world goroutine) and always starts again from the defaults, so removing an edit restores the original.
 type Edits struct {
+	Scale     float64        `json:"scale,omitempty"`     // WorldScale the edits were made for (the grid and all positions depend on it)
 	Spawns    *[]Spawn       `json:"spawns,omitempty"`    // complete open-world mob spawn list
 	Objects   *[]ObjectSpawn `json:"objects,omitempty"`   // complete list of gather nodes / portals
 	Buildings *[]Building    `json:"buildings,omitempty"` // complete building list
@@ -28,7 +29,7 @@ type Edits struct {
 	Quests map[string]json.RawMessage `json:"quests,omitempty"`
 }
 
-var BuildingKinds = []string{"house", "hut", "tower", "wall", "keep", "fountain", "pad", "tent", "cave", "pagoda", "gate", "pond", "lantern", "dock"}
+var BuildingKinds = []string{"house", "hut", "tower", "wall", "keep", "fountain", "pad", "tent", "cave", "pagoda", "gate", "archgate", "pond", "lantern", "dock"}
 
 var (
 	defOnce   sync.Once
@@ -87,10 +88,16 @@ func LoadEdits(path string) (*Edits, error) {
 	if err := json.Unmarshal(b, &e); err != nil {
 		return nil, err
 	}
+	if e.Scale != WorldScale && string(b) != "{}" {
+		// made for a world of another size: the positions would be wrong, keep the file aside
+		_ = os.Rename(path, path+".unscaled")
+		return &Edits{}, nil
+	}
 	return &e, nil
 }
 
 func SaveEdits(path string, e *Edits) error {
+	e.Scale = WorldScale
 	b, err := json.Marshal(e)
 	if err != nil {
 		return err

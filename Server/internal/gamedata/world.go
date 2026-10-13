@@ -7,18 +7,22 @@ import (
 	"sync"
 )
 
-// The world consists of two continents (each about 600 x 600 m) separated by a sea, stored as a
+// The world consists of two continents (each about 900 x 900 m) separated by a sea, stored as a
 // height grid and a biome grid. The server generates it once at start-up and sends both grids to the
 // clients, so client and server always agree on the terrain.
 const (
-	WorldHalf = 300.0 // half size of one continent
+	// WorldScale stretches the original 600 x 600 m continents; all positions in the data tables are written for
+	// the original size and moved by scaleWorld (zzz_scale.go) before anything uses them.
+	WorldScale = 1.5
+
+	WorldHalf = 300.0 * WorldScale // half size of one continent
 	GridCell  = 2.0
-	WorldMinX = -300.0
-	WorldMaxX = 1140.0
-	WorldMinZ = -300.0
-	WorldMaxZ = 300.0
-	GridNX    = 721 // vertices along x
-	GridNZ    = 301 // vertices along z
+	WorldMinX = -300.0 * WorldScale
+	WorldMaxX = 1140.0 * WorldScale
+	WorldMinZ = -300.0 * WorldScale
+	WorldMaxZ = 300.0 * WorldScale
+	GridNX    = int(1440*WorldScale/GridCell) + 1 // vertices along x
+	GridNZ    = int(600*WorldScale/GridCell) + 1  // vertices along z
 	DeepWater = -1.6
 	// Swimming: players may leave the shallows into the sea as long as the sea floor is above SwimFloor
 	// (a belt of some 30 m around the coast). The open sea between the continents stays closed, so the
@@ -27,8 +31,8 @@ const (
 	SwimLevel = -1.1 // y of a swimming player's feet (the water surface is at about -0.1)
 	SeaLevel  = 0.0
 
-	Cont2X     = 840.0 // center of the second continent
-	ContSplitX = 420.0 // x beyond this belongs to the second continent
+	Cont2X     = 840.0 * WorldScale // center of the second continent
+	ContSplitX = 420.0 * WorldScale // x beyond this belongs to the second continent
 )
 
 // Dungeon instances live far outside the continents on flat ground.
@@ -84,8 +88,8 @@ type Continent struct {
 }
 
 var Continents = []Continent{
-	{0, "Erlenmark", -300, 600},
-	{1, "Jadereich", Cont2X - 300, 600},
+	{0, "Erlenmark", -WorldHalf, 2 * WorldHalf},
+	{1, "Jadereich", Cont2X - WorldHalf, 2 * WorldHalf},
 }
 
 // ContinentOf returns the continent a world x position belongs to.
@@ -295,7 +299,7 @@ func rawHeight(b Biome, x, z float64) float64 {
 		return lift(h + fbm(x*0.06, z*0.06, 2, 44)*1.2)
 	case BiomeVolcano: // jagged ash mountains around a great cone
 		r := 1 - math.Abs(fbm(x*0.016, z*0.016, 4, 45)*2-1)
-		cone := 30 * math.Exp(-math.Pow(math.Hypot(x-1010, z+140)/70, 2))
+		cone := 30 * math.Exp(-math.Pow(math.Hypot(x-1010*WorldScale, z+140*WorldScale)/(70*WorldScale), 2))
 		return 4 + r*r*16 + fbm(x*0.06, z*0.06, 2, 46)*2.5 + cone
 	}
 	return -6
@@ -312,6 +316,7 @@ func contMask(x, z float64) float64 {
 }
 
 func generate() {
+	worldGenerated = true
 	for j := 0; j < GridNZ; j++ {
 		for i := 0; i < GridNX; i++ {
 			x, z := gridXZ(i, j)
@@ -387,6 +392,8 @@ func generate() {
 	}
 }
 
+var worldGenerated bool // set when the terrain is generated; the data tables must be scaled before (zzz_scale.go)
+
 func ensureWorld() { genWG.Do(generate) }
 
 func gridAt(i, j int) float64 {
@@ -430,8 +437,9 @@ func OnDock(x, z float64) bool {
 		if t.X > ContSplitX {
 			dir = -1
 		}
-		cx := t.X + dir*26
-		if math.Abs(x-cx) <= 14 && math.Abs(z-t.Z) <= 2.5 {
+		off, w := pierSpan(t)
+		cx := t.X + dir*off
+		if math.Abs(x-cx) <= w/2 && math.Abs(z-t.Z) <= 2.5 {
 			return true
 		}
 	}

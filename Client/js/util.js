@@ -14,13 +14,13 @@ export function smoothstep(a, b, x) {
 
 // ---- world grids (sent by the server) ----
 // nx/nz grid vertices, x0/z0 world position of grid cell (0,0); two continents share the grid.
-export const W = { nx: 0, nz: 0, cell: 2, x0: -300, z0: -300, hm: null, bm: null, ready: false, conts: [] };
+export const W = { nx: 0, nz: 0, cell: 2, x0: -450, z0: -450, split: 630, hm: null, bm: null, ready: false, conts: [] };
 export const BIOME_KEYS = ['sea', 'forest', 'plains', 'swamp', 'snow', 'desert', 'jungle', 'blossom', 'mesa', 'volcano', 'volcano'];
 export const LAVA = 10;
-export const contOf = (x) => (x > 420 ? 1 : 0);
+export const contOf = (x) => (x > W.split ? 1 : 0);
 
 export function setWorldData(sc) {
-  W.nx = sc.nx; W.nz = sc.nz; W.cell = sc.cell; W.x0 = sc.x0; W.z0 = sc.z0; W.conts = sc.conts;
+  W.nx = sc.nx; W.nz = sc.nz; W.cell = sc.cell; W.x0 = sc.x0; W.z0 = sc.z0; W.conts = sc.conts; W.split = sc.split ?? 630;
   const hb = Uint8Array.from(atob(sc.hm), (c) => c.charCodeAt(0));
   const i16 = new Int16Array(hb.buffer, hb.byteOffset, hb.byteLength / 2);
   W.hm = new Float32Array(i16.length);

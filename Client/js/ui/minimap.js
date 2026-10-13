@@ -57,7 +57,7 @@ export function buildMinimap(scenery) {
   const wpx = (W.nx - 1) * W.cell, hpx = (W.nz - 1) * W.cell;
   base = renderWorldCanvas(PPM, scenery, W.x0, W.z0, wpx, hpx);
   // one map image per continent for the world map
-  S.contCanvas = (scenery.conts || []).map((c) => renderWorldCanvas(1.2, scenery, c.x0, W.z0, c.size, 600));
+  S.contCanvas = (scenery.conts || []).map((c) => renderWorldCanvas(1.2, scenery, c.x0, W.z0, c.size, c.size));
 }
 
 export function drawMinimap(camYaw) {

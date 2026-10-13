@@ -22,7 +22,7 @@ type Town struct {
 
 var Towns = []*Town{
 	{ID: "eichenhain", Name: "Eichenhain", Kind: "village", X: 6, Z: 12, FlatR: 20, BlendR: 40, H: 1.8, Style: "timber"},
-	{ID: "sonnenburg", Name: "Sonnenburg", Kind: "capital", X: 190, Z: -120, FlatR: 62, BlendR: 95, H: 3.0, Style: "plaster"},
+	{ID: "sonnenburg", Name: "Sonnenburg", Kind: "capital", X: 190, Z: -120, FlatR: 105, BlendR: 140, H: 3.0, Style: "plaster"},
 	{ID: "moorbruck", Name: "Moorbruck", Kind: "village", X: -170, Z: 170, FlatR: 24, BlendR: 44, H: 1.4, Style: "stilt"},
 	{ID: "frostwacht", Name: "Frostwacht", Kind: "village", X: -110, Z: -215, FlatR: 24, BlendR: 46, H: 9, Style: "lodge"},
 	{ID: "sandfurt", Name: "Sandfurt", Kind: "village", X: 190, Z: 190, FlatR: 24, BlendR: 44, H: 2.6, Style: "adobe"},
@@ -70,7 +70,7 @@ var POIs = []*POI{
 	{ID: "baerenklamm", Name: "Bärenklamm", X: 66, Z: 36, R: 22, Kind: "cave"},
 	{ID: "spiegelsee", Name: "Spiegelsee", X: 62, Z: 72, R: 22, Kind: "lake"},
 	// Goldene Ebenen
-	{ID: "sonnenburg", Name: "Sonnenburg", X: 190, Z: -120, R: 70, Kind: "town", Town: true},
+	{ID: "sonnenburg", Name: "Sonnenburg", X: 190, Z: -120, R: 100, Kind: "town", Town: true},
 	{ID: "weizenhof", Name: "Weizenhof", X: 140, Z: -60, R: 24, Kind: "wild"},
 	{ID: "windmuehlenhuegel", Name: "Windmühlenhügel", X: 100, Z: -160, R: 22, Kind: "wild"},
 	{ID: "jaegerhain", Name: "Jägerhain", X: 130, Z: -212, R: 22, Kind: "wild"},
@@ -156,28 +156,59 @@ func jadeCapital(t *Town) []Building {
 	return b
 }
 
+// Castle city: a walled town with a gatehouse on the west and the south side, towers along the wall and an inner
+// castle ward with a great keep in the north. The size matches the roads, which were stretched with the world
+// (the west road ends at the west gate, the road to the south at the south gate).
+const (
+	castleHX = 75.0 // half width of the city wall
+	castleHZ = 68.0 // half depth
+)
+
 func capitalBuildings(t *Town) []Building {
 	if t.Style == "jade" {
 		return jadeCapital(t)
 	}
 	var b []Building
 	cx, cz := t.X, t.Z
-	x0, x1, z0, z1 := cx-50, cx+50, cz-45, cz+45
-	const th, wh = 3.0, 7.0
+	x0, x1, z0, z1 := cx-castleHX, cx+castleHX, cz-castleHZ, cz+castleHZ
+	const th, wh, gap = 3.5, 9.0, 6.0 // wall thickness and height, half width of a gate
 	seg := func(ax, az, bx, bz float64) {
 		b = append(b, Building{Kind: "wall", X: (ax + bx) / 2, Z: (az + bz) / 2, W: math.Abs(bx-ax) + th, D: math.Abs(bz-az) + th, H: wh})
 	}
-	seg(x0, z0, x1, z0)   // north
-	seg(x1, z0, x1, z1)   // east
-	seg(x0, z0, x0, cz-7) // west, upper part
-	seg(x0, cz+7, x0, z1) // west, lower part
-	seg(x0, z1, cx-7, z1) // south, left
-	seg(cx+7, z1, x1, z1) // south, right
-	for _, p := range [][2]float64{{x0, z0}, {x1, z0}, {x0, z1}, {x1, z1}, {x0, cz - 8}, {x0, cz + 8}, {cx - 8, z1}, {cx + 8, z1}} {
-		b = append(b, Building{Kind: "tower", X: p[0], Z: p[1], W: 7, D: 7, H: 13})
+	tower := func(x, z, w, h float64) { b = append(b, Building{Kind: "tower", X: x, Z: z, W: w, D: w, H: h}) }
+	// city wall
+	seg(x0, z0, x1, z0)                                                      // north
+	seg(x1, z0, x1, z1)                                                      // east
+	seg(x0, z0, x0, cz-gap)                                                  // west, upper part
+	seg(x0, cz+gap, x0, z1)                                                  // west, lower part
+	seg(x0, z1, cx-gap, z1)                                                  // south, left
+	seg(cx+gap, z1, x1, z1)                                                  // south, right
+	for _, p := range [][2]float64{{x0, z0}, {x1, z0}, {x0, z1}, {x1, z1}} { // corner towers
+		tower(p[0], p[1], 9, 17)
 	}
-	b = append(b, Building{Kind: "keep", Style: "plaster", X: cx, Z: cz - 30, W: 28, D: 18, H: 17})
-	b = append(b, Building{Kind: "fountain", X: cx, Z: cz + 6, W: 8, D: 8, H: 1.6})
+	for _, p := range [][2]float64{{cx - 38, z0}, {cx + 38, z0}, {x1, cz - 34}, {x1, cz}, {x1, cz + 34}, {x0, cz - 38}, {x0, cz + 38}, {cx - 40, z1}, {cx + 40, z1}} {
+		tower(p[0], p[1], 7, 13)
+	}
+	// gatehouses: two flanking towers and the arch above the passage
+	tower(x0, cz-gap-4, 8, 15)
+	tower(x0, cz+gap+4, 8, 15)
+	tower(cx-gap-4, z1, 8, 15)
+	tower(cx+gap+4, z1, 8, 15)
+	b = append(b, Building{Kind: "archgate", X: x0, Z: cz, W: th + 4, D: 2 * gap, H: 12})
+	b = append(b, Building{Kind: "archgate", X: cx, Z: z1, W: 2 * gap, D: th + 4, H: 12})
+	// the castle ward in the north: its own wall, towers and gate towards the city
+	wx0, wx1, wz1 := cx-34, cx+34, cz-26
+	seg(wx0, z0, wx0, wz1)
+	seg(wx1, z0, wx1, wz1)
+	seg(wx0, wz1, cx-gap, wz1)
+	seg(cx+gap, wz1, wx1, wz1)
+	tower(wx0, wz1, 7, 14)
+	tower(wx1, wz1, 7, 14)
+	tower(cx-gap-3, wz1, 6, 13)
+	tower(cx+gap+3, wz1, 6, 13)
+	b = append(b, Building{Kind: "archgate", X: cx, Z: wz1, W: 2 * gap, D: th + 3, H: 11})
+	b = append(b, Building{Kind: "keep", Style: "plaster", X: cx, Z: z0 + 28, W: 38, D: 24, H: 24})
+	b = append(b, Building{Kind: "fountain", X: cx, Z: cz + 12, W: 8, D: 8, H: 1.6})
 	return b
 }
 
@@ -188,8 +219,8 @@ func buildTown(t *Town, rng *rand.Rand, avoid [][3]float64) []Building {
 	switch t.Kind {
 	case "capital":
 		out = capitalBuildings(t)
-		rx0, rx1, rz0, rz1 = t.X-44, t.X+44, t.Z-38, t.Z+38
-		count, plazaR = 26, 14
+		rx0, rx1, rz0, rz1 = t.X-castleHX+9, t.X+castleHX-9, t.Z-castleHZ+9, t.Z+castleHZ-9
+		count, plazaR = 52, 20
 		if t.Style == "jade" {
 			rx0, rx1, rz0, rz1 = t.X-50, t.X+50, t.Z-44, t.Z+44
 			count, plazaR = 30, 16
@@ -230,13 +261,10 @@ func buildTown(t *Town, rng *rand.Rand, avoid [][3]float64) []Building {
 			if math.Abs(z-t.Z) < 11+d/2 && x < t.X { // road from the west gate
 				continue
 			}
-			if math.Abs(x-t.X) < 11+w/2 && z > t.Z { // road from the south gate
+			if math.Abs(x-t.X) < 11+w/2 && z > t.Z-26 { // road from the south gate up to the castle gate
 				continue
 			}
-			if math.Abs(x-t.X) < 22+w/2 && z < t.Z-12 { // keep and courtyard
-				continue
-			}
-			if x < t.X-44 || x > t.X+44 || z < t.Z-38 || z > t.Z+38 {
+			if math.Abs(x-t.X) < 34+w/2 && z < t.Z-26+d/2+3 { // castle ward
 				continue
 			}
 		}
@@ -267,7 +295,8 @@ func buildTown(t *Town, rng *rand.Rand, avoid [][3]float64) []Building {
 		if t.X > ContSplitX {
 			dir = -1
 		}
-		out = append(out, Building{Kind: "dock", Style: t.Style, X: t.X + dir*26, Z: t.Z, W: 28, D: 5, H: 1.2})
+		cx, w := pierSpan(t)
+		out = append(out, Building{Kind: "dock", Style: t.Style, X: t.X + dir*cx, Z: t.Z, W: w, D: 5, H: 1.2})
 		return out
 	}
 	// the griffin landing pad
@@ -291,6 +320,27 @@ func padOffset(t *Town) [2]float64 {
 	return [2]float64{16, 10}
 }
 
+var (
+	pierMu    sync.Mutex
+	pierCache = map[*Town][2]float64{}
+)
+
+// pierSpan returns the centre (distance from the town centre along the pier) and the length of the pier of a harbor:
+// it starts on land and reaches the berth of the ferry, wherever the coast is.
+func pierSpan(t *Town) (float64, float64) {
+	pierMu.Lock()
+	defer pierMu.Unlock()
+	if v, ok := pierCache[t]; ok {
+		return v[0], v[1]
+	}
+	bx, _ := Berth(t)
+	d1 := math.Abs(bx-t.X) + 1
+	d0 := 12.0
+	v := [2]float64{(d0 + d1) / 2, d1 - d0}
+	pierCache[t] = v
+	return v[0], v[1]
+}
+
 // Berth is the place on the water where the ferry lies at the pier of a harbor.
 func Berth(t *Town) (float64, float64) {
 	dir := 1.0
@@ -298,7 +348,7 @@ func Berth(t *Town) (float64, float64) {
 		dir = -1
 	}
 	z := t.Z + 4
-	for d := 10.0; d < 90; d++ { // the first deep water in front of the pier
+	for d := 10.0; d < 160; d++ { // the first deep water in front of the pier
 		if Height(t.X+dir*d, z) < -1.2 {
 			return t.X + dir*(d+5), z
 		}
@@ -347,8 +397,10 @@ func Buildings() []Building {
 			}
 			buildingList = append(buildingList, buildTown(t, rng, avoid)...)
 		}
-		buildingList = append(buildingList, extraBuildings()...)
-		buildingList = append(buildingList, extraBuildings2()...)
+		for _, eb := range append(extraBuildings(), extraBuildings2()...) {
+			eb.X, eb.Z = moveToWorld(eb.X, eb.Z)
+			buildingList = append(buildingList, eb)
+		}
 	})
 	return buildingList
 }
@@ -383,6 +435,7 @@ type Scenery struct {
 	NX        int            `json:"nx"`
 	NZ        int            `json:"nz"`
 	Conts     []Continent    `json:"conts"`
+	Split     float64        `json:"split"` // x beyond this belongs to the second continent
 	Heights   string         `json:"hm"`
 	Biomes    string         `json:"bm"`
 	Zones     []Zone         `json:"zones"`
@@ -470,7 +523,7 @@ func baseScenery() Scenery {
 		roads[i] = r.Pts
 	}
 	return Scenery{
-		X0: WorldMinX, Z0: WorldMinZ, Cell: GridCell, NX: GridNX, NZ: GridNZ, Conts: Continents, Heights: HeightmapB64(), Biomes: BiomemapB64(),
+		X0: WorldMinX, Z0: WorldMinZ, Cell: GridCell, NX: GridNX, NZ: GridNZ, Conts: Continents, Split: ContSplitX, Heights: HeightmapB64(), Biomes: BiomemapB64(),
 		Zones: Zones, Towns: Towns, POIs: POIs, Buildings: Buildings(), Lamps: Lamps(), House: house,
 		Roads: roads, Rivers: Rivers, Lakes: Lakes, Bridges: bridges(), Clears: clears,
 	}

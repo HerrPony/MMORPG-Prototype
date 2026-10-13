@@ -80,27 +80,75 @@ function house(b, hh) {
   return g;
 }
 
+function flag(g, x, y, z, col, h = 2.4) {
+  const pole = cyl(0.06, 0.06, h, M(0x3a2a22), 6); pole.position.set(x, y + h / 2, z); g.add(pole);
+  const cloth = box(1.3, 0.8, 0.06, M(col)); cloth.position.set(x + 0.65, y + h - 0.5, z); cloth.castShadow = false; g.add(cloth);
+}
+
 function tower(b, hh) {
   const g = new THREE.Group();
   const stone = M(0x9a9690);
-  const body = cyl(b.w / 2, b.w / 2 + 0.5, b.h, stone, 14); body.position.y = b.h / 2; g.add(body);
-  const roof = new THREE.Mesh(new THREE.ConeGeometry(b.w / 2 + 0.9, 4, 14), M(0x3a5a9a)); roof.position.y = b.h + 2; roof.castShadow = true; g.add(roof);
-  const crown = cyl(b.w / 2 + 0.4, b.w / 2 + 0.4, 0.8, stone, 14); crown.position.y = b.h - 0.4; g.add(crown);
+  const body = cyl(b.w / 2, b.w / 2 + 0.7, b.h, stone, 14); body.position.y = b.h / 2; g.add(body);
+  const plinth = cyl(b.w / 2 + 1.0, b.w / 2 + 1.1, 1.0, M(0x84807a), 14); plinth.position.y = 0.5; g.add(plinth);
+  const roofH = 4.4 + b.w * 0.2;
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(b.w / 2 + 1.1, roofH, 14), M(0x3a5a9a)); roof.position.y = b.h + roofH / 2; roof.castShadow = true; g.add(roof);
+  const crown = cyl(b.w / 2 + 0.6, b.w / 2 + 0.6, 0.8, M(0x8a8680), 14); crown.position.y = b.h - 0.4; g.add(crown);
+  for (let i = 0; i < 8; i++) { // battlements
+    const a = i * Math.PI / 4, m = box(1.2, 0.9, 1.2, M(0x8a8680));
+    m.position.set(Math.cos(a) * (b.w / 2 + 0.5), b.h + 0.4, Math.sin(a) * (b.w / 2 + 0.5)); g.add(m);
+  }
+  flag(g, 0, b.h + roofH, 0, 0xb8362a);
+  const slit = M(0x1a1816);
+  for (const k of [0.35, 0.65]) for (let i = 0; i < 4; i++) {
+    const a = i * Math.PI / 2, sl = box(0.3, 1.3, 0.12, slit);
+    sl.position.set(Math.cos(a) * (b.w / 2 + 0.55), b.h * k, Math.sin(a) * (b.w / 2 + 0.55)); sl.rotation.y = -a + Math.PI / 2; g.add(sl);
+  }
   g.position.set(b.x, hh, b.z);
   return g;
 }
 
 function wall(b, hh) {
   const g = new THREE.Group();
-  const m = box(b.w, b.h, b.d, M(0xaaa69e)); m.position.y = b.h / 2; g.add(m);
-  // crenellations
-  const long = b.w > b.d;
-  const n = Math.floor((long ? b.w : b.d) / 3);
-  for (let i = 0; i < n; i++) {
-    const c = box(long ? 1.4 : b.d, 1.2, long ? b.d : 1.4, M(0xaaa69e));
-    const off = -((long ? b.w : b.d) / 2) + 1.5 + i * 3;
-    c.position.set(long ? off : 0, b.h + 0.6, long ? 0 : off);
+  const st = M(0xaaa69e);
+  const m = box(b.w, b.h, b.d, st); m.position.y = b.h / 2; g.add(m);
+  const plinth = box(b.w + 0.6, 1.2, b.d + 0.6, M(0x8a867e)); plinth.position.y = 0.6; g.add(plinth);
+  const walk = box(b.w + 0.2, 0.3, b.d + 0.2, M(0x8a867e)); walk.position.y = b.h + 0.1; g.add(walk);
+  // parapets with merlons on both sides of the wall walk
+  const long = b.w > b.d, len = long ? b.w : b.d;
+  const n = Math.floor(len / 3);
+  for (let i = 0; i < n; i++) for (const side of [-1, 1]) {
+    const c = box(long ? 1.6 : 0.7, 1.3, long ? 0.7 : 1.6, st);
+    const off = -len / 2 + 1.5 + i * 3;
+    c.position.set(long ? off : side * (b.w / 2 - 0.35), b.h + 0.9, long ? side * (b.d / 2 - 0.35) : off);
     g.add(c);
+  }
+  const nb = Math.floor(len / 14);
+  for (let i = 0; i < nb; i++) { // buttresses
+    const off = -len / 2 + 7 + i * 14, bt = box(long ? 1.4 : 1.0, b.h * 0.8, long ? 1.0 : 1.4, M(0x9a968e));
+    bt.position.set(long ? off : b.w / 2 + 0.5, b.h * 0.4, long ? b.d / 2 + 0.5 : off); g.add(bt);
+  }
+  g.position.set(b.x, hh, b.z);
+  return g;
+}
+
+// The arch above a gate passage (the passage stays free): lintel, battlements, raised portcullis, banners.
+function archgate(b, hh) {
+  const g = new THREE.Group();
+  const clear = 6, spanX = b.w > b.d;
+  const lintel = box(b.w, b.h - clear, b.d, M(0xb4b0a6)); lintel.position.y = (clear + b.h) / 2; g.add(lintel);
+  const sill = box(b.w + 0.6, 0.7, b.d + 0.6, M(0x8a867e)); sill.position.y = clear - 0.35; g.add(sill);
+  const len = spanX ? b.w : b.d;
+  for (let i = 0; i < Math.floor(len / 2.4); i++) for (const side of [-1, 1]) {
+    const c = box(spanX ? 1.3 : 0.8, 1.2, spanX ? 0.8 : 1.3, M(0xb4b0a6)), off = -len / 2 + 1.2 + i * 2.4;
+    c.position.set(spanX ? off : side * (b.w / 2 - 0.4), b.h + 0.6, spanX ? side * (b.d / 2 - 0.4) : off); g.add(c);
+  }
+  for (let i = -4; i <= 4; i++) { // portcullis
+    const bar = box(0.18, 1.8, 0.18, M(0x2a2622));
+    bar.position.set(spanX ? i * (b.w - 1.5) / 8 : 0, clear - 1.1, spanX ? 0 : i * (b.d - 1.5) / 8); g.add(bar);
+  }
+  for (const side of [-1, 1]) { // banners
+    const ban = box(spanX ? 1.6 : 0.08, (b.h - clear) * 0.8, spanX ? 0.08 : 1.6, M(0xb8362a));
+    ban.position.set(spanX ? 0 : side * (b.w / 2 + 0.05), clear + (b.h - clear) / 2, spanX ? side * (b.d / 2 + 0.05) : 0); g.add(ban);
   }
   g.position.set(b.x, hh, b.z);
   return g;
@@ -108,15 +156,36 @@ function wall(b, hh) {
 
 function keep(b, hh) {
   const g = new THREE.Group();
+  const castle = b.s !== 'adobe' && b.s !== 'redrock';
   const stone = M(b.s === 'adobe' ? 0xd8b878 : b.s === 'redrock' ? 0xc8693f : 0xcfc9bc);
+  const roofCol = b.s === 'adobe' ? 0xc89858 : b.s === 'redrock' ? 0xa84e2e : 0x3a5a9a;
   const body = box(b.w, b.h, b.d, stone); body.position.y = b.h / 2; g.add(body);
-  const roof = new THREE.Mesh(new THREE.ConeGeometry(1, 5, 4), M(b.s === 'adobe' ? 0xc89858 : b.s === 'redrock' ? 0xa84e2e : 0x3a5a9a));
-  roof.rotation.y = Math.PI / 4; roof.scale.set(b.w / 2 * Math.SQRT2, 1, b.d / 2 * Math.SQRT2); roof.position.y = b.h + 2.5; roof.castShadow = true; g.add(roof);
-  if (b.s !== 'adobe' && b.s !== 'redrock') for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-    const t = cyl(2.2, 2.4, b.h + 4, stone, 12); t.position.set(sx * b.w / 2, (b.h + 4) / 2, sz * b.d / 2); g.add(t);
-    const tr = new THREE.Mesh(new THREE.ConeGeometry(3, 4, 12), M(0xc8a24a)); tr.position.set(sx * b.w / 2, b.h + 6, sz * b.d / 2); g.add(tr);
+  if (!castle) {
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1, 5, 4), M(roofCol));
+    roof.rotation.y = Math.PI / 4; roof.scale.set(b.w / 2 * Math.SQRT2, 1, b.d / 2 * Math.SQRT2); roof.position.y = b.h + 2.5; roof.castShadow = true; g.add(roof);
+  } else {
+    const plinth = box(b.w + 1.4, 1.4, b.d + 1.4, M(0xa8a296)); plinth.position.y = 0.7; g.add(plinth);
+    const top = box(b.w + 0.6, 0.5, b.d + 0.6, M(0xb8b2a4)); top.position.y = b.h + 0.1; g.add(top);
+    for (let i = 0; i < Math.floor(b.w / 2.6); i++) for (const side of [-1, 1]) { // battlements
+      const m = box(1.4, 1.3, 0.8, stone); m.position.set(-b.w / 2 + 1.3 + i * 2.6, b.h + 0.9, side * (b.d / 2 - 0.4)); g.add(m);
+    }
+    for (let i = 0; i < Math.floor(b.d / 2.6); i++) for (const side of [-1, 1]) {
+      const m = box(0.8, 1.3, 1.4, stone); m.position.set(side * (b.w / 2 - 0.4), b.h + 0.9, -b.d / 2 + 1.3 + i * 2.6); g.add(m);
+    }
+    const tw = b.w * 0.34, td = b.d * 0.46; // the great tower in the middle
+    const big = box(tw, 11, td, stone); big.position.y = b.h + 5.5; g.add(big);
+    const cap = box(tw + 1, 0.6, td + 1, M(0xb8b2a4)); cap.position.y = b.h + 11.2; g.add(cap);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1, 7, 4), M(roofCol));
+    roof.rotation.y = Math.PI / 4; roof.scale.set((tw + 1.6) / 2 * Math.SQRT2, 1, (td + 1.6) / 2 * Math.SQRT2); roof.position.y = b.h + 11.5 + 3.5; roof.castShadow = true; g.add(roof);
+    flag(g, 0, b.h + 18.5, 0, 0xb8362a, 3.2);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      const t = cyl(3.0, 3.2, b.h + 5, stone, 12); t.position.set(sx * b.w / 2, (b.h + 5) / 2, sz * b.d / 2); g.add(t);
+      const tc = cyl(3.4, 3.4, 0.6, M(0xb8b2a4), 12); tc.position.set(sx * b.w / 2, b.h + 5.2, sz * b.d / 2); g.add(tc);
+      const tr = new THREE.Mesh(new THREE.ConeGeometry(3.6, 6, 12), M(roofCol)); tr.position.set(sx * b.w / 2, b.h + 8.5, sz * b.d / 2); tr.castShadow = true; g.add(tr);
+      flag(g, sx * b.w / 2, b.h + 11.5, sz * b.d / 2, 0xe8c860, 2.0);
+    }
   }
-  const gate = box(4, 6, 0.4, M(0x3a2410)); gate.position.set(0, 3, b.d / 2 + 0.1); g.add(gate);
+  const gate = box(5, 7, 0.4, M(0x3a2410)); gate.position.set(0, 3.5, b.d / 2 + 0.1); g.add(gate);
   for (let i = -2; i <= 2; i++) {
     const f = box(1.2, 3, 0.1, M(i % 2 ? 0xc8a24a : 0x3a5a9a)); f.position.set(i * 4, b.h - 3, b.d / 2 + 0.12); g.add(f);
   }
@@ -257,8 +326,8 @@ function ship(b, hh) {
   return g;
 }
 
-const BUILD = { house, hut: house, tower, wall, keep, fountain, pad, tent, cave, pagoda, gate, pond, lantern, dock, ship };
-const NO_SOLID = new Set(['pad', 'dock', 'ship', 'lantern', 'pond', 'gate']);
+const BUILD = { house, hut: house, tower, wall, keep, fountain, pad, tent, cave, pagoda, gate, archgate, pond, lantern, dock, ship };
+const NO_SOLID = new Set(['pad', 'dock', 'ship', 'lantern', 'pond', 'gate', 'archgate']);
 
 // Builds the cabin at the world origin with its door and furniture (from the first server release).
 export function buildCabin(boxes, scene) {

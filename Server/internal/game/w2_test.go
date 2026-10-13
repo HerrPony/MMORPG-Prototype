@@ -90,6 +90,12 @@ func TestFerryTimetable(t *testing.T) {
 	}
 	// docked: walk over the pier to the shore
 	to := ship.Ship.From
+	for _, lx := range []float64{-1.4, 1.4} { // stand at the side of the deck that faces the pier
+		w.onMove(e, protocol.Move{AB: true, LX: lx, LZ: 0})
+		if e.Z < ship.Z {
+			break
+		}
+	}
 	walk(w, e, ship.X+3, to.Z)
 	if e.P.Aboard != 0 {
 		t.Fatalf("could not step onto the pier (at %.1f,%.1f)", e.X, e.Z)
@@ -262,7 +268,7 @@ func TestSwimmingStopsAtOpenSea(t *testing.T) {
 	if deepest > -2 {
 		t.Fatalf("the player never reached deep water (deepest %.1f at x=%.0f)", deepest, e.X)
 	}
-	if e.X > 420 || !gamedata.Swimmable(e.X, e.Z) {
+	if e.X > gamedata.ContSplitX || !gamedata.Swimmable(e.X, e.Z) {
 		t.Fatalf("swam too far: x=%.0f", e.X)
 	}
 	if e.Y < gamedata.SwimLevel-0.31 || e.Y > 0.5 {
