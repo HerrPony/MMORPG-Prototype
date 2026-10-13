@@ -28,7 +28,7 @@ func _on_world(m: Dictionary) -> void:
 	cam.fov = 70
 	var x := float(args[4]); var z := float(args[5])
 	var y := WD.height_at(x, z)
-	cam.position = Vector3(x, y + 3.0, z)
+	cam.position = Vector3(x, y + (float(args[10]) if args.size() > 10 else 3.0), z)
 	cam.rotation = Vector3(deg_to_rad(float(args[7])), deg_to_rad(float(args[6])), 0)
 	cam.make_current()
 	world.set_zone(args[9] if args.size() > 9 else WD.biome_key(x, z))

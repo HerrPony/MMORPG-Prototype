@@ -25,7 +25,7 @@ let initial = { npcs: {}, mobs: {}, quests: {} }; // JSON of every definition as
 const strip = (kind, o) => { if (kind !== 'quests') return o; const c = clone(o); delete c.areas; delete c.handIn; return c; };
 const markDirty = (layer) => { if (typeof dirty[layer] === 'boolean') dirty[layer] = true; }; // npcs/mobs/quests are computed in updateDirty
 
-const pkey = (x, z) => `${Math.round((x - W.x0) * 40)},${Math.round((z - W.z0) * 40)}`;
+const pkey = (x, z) => `${Math.round((x - W.x0) * 24)},${Math.round((z - W.z0) * 24)}`;
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const LAYER_GET = {
   spawns: () => D.spawns, objects: () => D.objects, buildings: () => D.buildings, npcs: () => D.npcs,
@@ -44,7 +44,7 @@ function load(m) {
   const added = new Set((m.edits.propsAdd || []).map((p) => pkey(p.x, p.z)));
   delKeys = new Set((m.edits.propsDel || []).map((p) => pkey(p[0], p[1])));
   for (let o = 0; o + 8 <= bin.length; o += 8) {
-    const x = W.x0 + (bin[o + 1] | (bin[o + 2] << 8)) / 40, z = W.z0 + (bin[o + 3] | (bin[o + 4] << 8)) / 40;
+    const x = W.x0 + (bin[o + 1] | (bin[o + 2] << 8)) / 24, z = W.z0 + (bin[o + 3] | (bin[o + 4] << 8)) / 24;
     genProps.push({ k: m.scenery.pk[bin[o]], x, z, s: bin[o + 5] / 100, ry: bin[o + 6] / 255 * 6.28, solid: bin[o + 7] / 100, add: added.has(pkey(x, z)) });
   }
   addProps = [];
@@ -269,7 +269,7 @@ function brush(wx, wz, first) {
     for (let i = 0; i < (R < 2 ? 1 : n); i++) {
       const a = Math.random() * 6.28, r = R < 2 ? 0 : Math.sqrt(Math.random()) * R;
       const x = wx + Math.cos(a) * r, z = wz + Math.sin(a) * r;
-      const q = { k: opt.pkind, x: Math.round(x * 40) / 40, z: Math.round(z * 40) / 40, s: +(0.8 + Math.random() * 0.9).toFixed(2), ry: Math.random() * 6.28, solid: DEF_SOLID[opt.pkind] || 0, add: true };
+      const q = { k: opt.pkind, x: Math.round(x * 24) / 24, z: Math.round(z * 24) / 24, s: +(0.8 + Math.random() * 0.9).toFixed(2), ry: Math.random() * 6.28, solid: DEF_SOLID[opt.pkind] || 0, add: true };
       addProps.push(q);
     }
   } else if (tool === 'erase') {

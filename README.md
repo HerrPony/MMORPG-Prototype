@@ -30,8 +30,8 @@ Details, Bauen und Veröffentlichen: [`NativeClient/README.md`](NativeClient/REA
 * Update-Baum direkt vom Server ausliefern: `server -updates ./updates` (unter `/updates/`)
 
 ## Welt
-Zwei Kontinente (je ca. 600 × 600 m), vom Server als Höhen- und Biomkarte erzeugt (`gamedata/world.go`):
-- **Erlenmark** (Stufe 1–20): Erlenwald, Goldene Ebenen, Düstermoor, Eisgipfel, Glutwüste. Hauptstadt Sonnenburg, Dörfer Eichenhain, Moorbruck, Frostwacht, Sandfurt, Hafen Sturmhafen. Dungeon: Schwarzfelsmine (ab Stufe 15).
+Zwei Kontinente (je ca. 900 × 900 m, einstellbar über `WorldScale` in `gamedata/world.go`), vom Server als Höhen- und Biomkarte erzeugt (`gamedata/world.go`):
+- **Erlenmark** (Stufe 1–20): Erlenwald, Goldene Ebenen, Düstermoor, Eisgipfel, Glutwüste. Hauptstadt Sonnenburg (eine Burgstadt mit Stadtmauer, Torhäusern, Türmen und Burg mit Bergfried), Dörfer Eichenhain, Moorbruck, Frostwacht, Sandfurt, Hafen Sturmhafen. Dungeon: Schwarzfelsmine (ab Stufe 15).
 - **Jadereich** (Stufe 20–40): Smaragddschungel, Kirschblütenhain, Rotkluft-Canyon, Aschenlande (mit Lava). Hauptstadt Himmelspforte (Pagoden-Stadt), Dörfer Lotushafen (Hafen), Bambushain, Kirschbach, Rotfels, Aschenwacht – jeweils mit Greifenmeister.
   Dungeons: Versunkener Nebeltempel (Stufe 26–30) und Feuerschlund (Stufe 36–40), je 2 Minibosse, Trash und Endboss für 5 Spieler.
 - **Fähre:** Ein Schiff pendelt im festen Takt (45 s Liegezeit) zwischen Sturmhafen und Lotushafen. Es liegt längsseits am Steg:

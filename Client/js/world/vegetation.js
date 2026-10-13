@@ -118,7 +118,7 @@ export function buildVegetation(scene, sc) {
   const bin = Uint8Array.from(atob(sc.props), (c) => c.charCodeAt(0));
   for (let o = 0; o + 8 <= bin.length; o += 8) {
     const kind = sc.pk[bin[o]];
-    const x = W.x0 + (bin[o + 1] | (bin[o + 2] << 8)) / 40, z = W.z0 + (bin[o + 3] | (bin[o + 4] << 8)) / 40;
+    const x = W.x0 + (bin[o + 1] | (bin[o + 2] << 8)) / 24, z = W.z0 + (bin[o + 3] | (bin[o + 4] << 8)) / 24;
     const s = bin[o + 5] / 100, ry = bin[o + 6] / 255 * 6.28, solid = bin[o + 7] / 100;
     const key = Math.floor(x / 64) + ',' + Math.floor(z / 64);
     let c = chunks.get(key);

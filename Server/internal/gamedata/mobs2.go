@@ -203,6 +203,7 @@ var generatedSpawns []Spawn
 // BuildSpawns places the mob groups on valid ground (deterministic).
 func buildSpawns() {
 	for _, g := range groups() {
+		g.X, g.Z = moveToWorld(g.X, g.Z)
 		h := fnv.New32a()
 		h.Write([]byte(g.Mob))
 		rng := rand.New(rand.NewSource(int64(h.Sum32()) + int64(g.X*7) + int64(g.Z*13)))

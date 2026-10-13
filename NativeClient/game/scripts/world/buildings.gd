@@ -58,6 +58,7 @@ static func build(parent: Node3D) -> void:
 			"cave": _cave(ctx, b)
 			"pagoda": _pagoda(ctx, b)
 			"gate": _gate(ctx, b)
+			"archgate": _archgate(ctx, b)
 			"pond": _pond(ctx, b)
 			"lantern": _lantern(ctx, b)
 			"dock": _dock(ctx, b)
@@ -143,25 +144,88 @@ static func _house(c: Ctx, b: Dictionary) -> void:
 static func _tower(c: Ctx, b: Dictionary) -> void:
 	var w: float = b.w
 	var h: float = b.h
-	c.fr(0, 0, 0, w + 1.0, w + 1.0, w, w, h, 0x9a9690)
-	c.box(0, h - 0.4, 0, w + 0.8, 0.8, w + 0.8, 0x8a8680)
+	c.fr(0, 0, 0, w + 1.4, w + 1.4, w, w, h, 0x9a9690)
+	c.box(0, 0.5, 0, w + 2.0, 1.0, w + 2.0, 0x84807a)   # plinth
+	c.box(0, h - 0.4, 0, w + 1.2, 0.8, w + 1.2, 0x8a8680)
+	# battlements: a merlon at every corner and in the middle of every side
 	for i in 4:
 		var a := i * PI / 2.0
-		c.box(cos(a) * (w / 2 + 0.2), h + 0.4, sin(a) * (w / 2 + 0.2), 1.2, 0.8, 1.2, 0x8a8680)
-	c.fr(0, h, 0, w + 1.8, w + 1.8, 0.2, 0.2, 4.0, 0x3a5a9a)
-	c.lamp(0, h * 0.6, w / 2 + 0.55, 0.8, 1.4, 0.2, 0xffe9a0)
-	c.lamp(w / 2 + 0.55, h * 0.8, 0, 0.2, 1.4, 0.8, 0xffe9a0)
+		c.box(cos(a) * (w / 2 + 0.4), h + 0.4, sin(a) * (w / 2 + 0.4), 1.3, 0.9, 1.3, 0x8a8680)
+		c.box(cos(a + PI / 4.0) * (w / 2 + 0.6), h + 0.4, sin(a + PI / 4.0) * (w / 2 + 0.6), 1.2, 0.8, 1.2, 0x8a8680)
+	c.fr(0, h, 0, w + 2.2, w + 2.2, 0.2, 0.2, 4.4 + w * 0.2, 0x3a5a9a)
+	# banner on the roof
+	var top := h + 4.4 + w * 0.2
+	c.box(0, top + 1.2, 0, 0.12, 2.4, 0.12, 0x3a2a22)
+	c.box(0.65, top + 1.9, 0, 1.3, 0.8, 0.06, 0xb8362a)
+	# arrow slits
+	for k in [0.35, 0.65]:
+		c.box(0, h * k, w / 2 + 0.75, 0.3, 1.3, 0.1, 0x1a1816)
+		c.box(0, h * k, -w / 2 - 0.75, 0.3, 1.3, 0.1, 0x1a1816)
+		c.box(w / 2 + 0.75, h * k, 0, 0.1, 1.3, 0.3, 0x1a1816)
+		c.box(-w / 2 - 0.75, h * k, 0, 0.1, 1.3, 0.3, 0x1a1816)
+	c.lamp(0, h * 0.6, w / 2 + 0.7, 0.8, 1.4, 0.2, 0xffe9a0)
+	c.lamp(w / 2 + 0.7, h * 0.8, 0, 0.2, 1.4, 0.8, 0xffe9a0)
 
 static func _wall(c: Ctx, b: Dictionary) -> void:
 	var w: float = b.w
 	var d: float = b.d
 	var h: float = b.h
-	c.box(0, h / 2, 0, w, h, d, 0xaaa69e)
 	var long := w > d
-	var n := int((w if long else d) / 3.0)
+	var length: float = w if long else d
+	c.box(0, h / 2, 0, w, h, d, 0xaaa69e)
+	# stone plinth and a darker wall walk with a parapet on both sides
+	c.box(0, 0.6, 0, w + 0.6, 1.2, d + 0.6, 0x8a867e)
+	c.box(0, h + 0.1, 0, w + 0.2, 0.3, d + 0.2, 0x8a867e)
+	var n := int(length / 3.0)
 	for i in n:
-		var off := -((w if long else d) / 2.0) + 1.5 + i * 3.0
-		c.box(off if long else 0.0, h + 0.6, 0.0 if long else off, 1.4 if long else d, 1.2, d if long else 1.4, 0xaaa69e)
+		var off := -length / 2.0 + 1.5 + i * 3.0
+		for side in [-1, 1]:
+			if long:
+				c.box(off, h + 0.9, side * (d / 2 - 0.35), 1.6, 1.3, 0.7, 0xaaa69e)
+			else:
+				c.box(side * (w / 2 - 0.35), h + 0.9, off, 0.7, 1.3, 1.6, 0xaaa69e)
+	# buttresses
+	var nb := int(length / 14.0)
+	for i in nb:
+		var off2 := -length / 2.0 + 7.0 + i * 14.0
+		if long:
+			c.box(off2, h * 0.4, d / 2 + 0.5, 1.4, h * 0.8, 1.0, 0x9a968e)
+		else:
+			c.box(w / 2 + 0.5, h * 0.4, off2, 1.0, h * 0.8, 1.4, 0x9a968e)
+
+## The arch above a gate passage (the passage itself stays free to walk): a stone lintel with battlements, a raised portcullis and banners.
+static func _archgate(c: Ctx, b: Dictionary) -> void:
+	var w: float = b.w
+	var d: float = b.d
+	var h: float = b.h
+	var span_x := w > d       # the passage runs along z when the lintel is wide in x
+	var clear := 6.0
+	c.box(0, (clear + h) / 2.0, 0, w, h - clear, d, 0xb4b0a6)
+	c.box(0, clear - 0.35, 0, w + 0.6, 0.7, d + 0.6, 0x8a867e)
+	# battlements on top
+	var length: float = w if span_x else d
+	var n := int(length / 2.4)
+	for i in n:
+		var off := -length / 2.0 + 1.2 + i * 2.4
+		for side in [-1, 1]:
+			if span_x:
+				c.box(off, h + 0.6, side * (d / 2 - 0.4), 1.3, 1.2, 0.8, 0xb4b0a6)
+			else:
+				c.box(side * (w / 2 - 0.4), h + 0.6, off, 0.8, 1.2, 1.3, 0xb4b0a6)
+	# raised portcullis
+	for i in range(-4, 5):
+		if span_x:
+			c.box(i * (w - 1.5) / 8.0, clear - 1.1, 0, 0.18, 1.8, 0.18, 0x2a2622)
+		else:
+			c.box(0, clear - 1.1, i * (d - 1.5) / 8.0, 0.18, 1.8, 0.18, 0x2a2622)
+	# banners on both faces
+	for side in [-1, 1]:
+		if span_x:
+			c.box(0, clear + (h - clear) / 2.0, side * (d / 2 + 0.05), 1.6, (h - clear) * 0.8, 0.08, 0xb8362a)
+			c.box(0, clear + (h - clear) * 0.8, side * (d / 2 + 0.1), 1.0, 0.5, 0.06, 0xe8c860)
+		else:
+			c.box(side * (w / 2 + 0.05), clear + (h - clear) / 2.0, 0, 0.08, (h - clear) * 0.8, 1.6, 0xb8362a)
+			c.box(side * (w / 2 + 0.1), clear + (h - clear) * 0.8, 0, 0.06, 0.5, 1.0, 0xe8c860)
 
 static func _keep(c: Ctx, b: Dictionary) -> void:
 	var s: String = b.get("s", "")
@@ -171,17 +235,43 @@ static func _keep(c: Ctx, b: Dictionary) -> void:
 	var d: float = b.d
 	var h: float = b.h
 	c.box(0, h / 2, 0, w, h, d, stone)
-	c.fr(0, h, 0, w + 1.0, d + 1.0, 1.0, 1.0, 5.0, roof)
-	if s != "adobe" and s != "redrock":
+	if s == "adobe" or s == "redrock":
+		c.fr(0, h, 0, w + 1.0, d + 1.0, 1.0, 1.0, 5.0, roof)
+	else:
+		# a castle: battlements all around, a great tower in the middle and a tower on every corner
+		c.box(0, 0.7, 0, w + 1.4, 1.4, d + 1.4, 0xa8a296)   # plinth
+		c.box(0, h + 0.1, 0, w + 0.6, 0.5, d + 0.6, 0xb8b2a4)
+		for i in int(w / 2.6):
+			var x := -w / 2.0 + 1.3 + i * 2.6
+			c.box(x, h + 0.9, d / 2 - 0.4, 1.4, 1.3, 0.8, stone)
+			c.box(x, h + 0.9, -d / 2 + 0.4, 1.4, 1.3, 0.8, stone)
+		for i in int(d / 2.6):
+			var z := -d / 2.0 + 1.3 + i * 2.6
+			c.box(w / 2 - 0.4, h + 0.9, z, 0.8, 1.3, 1.4, stone)
+			c.box(-w / 2 + 0.4, h + 0.9, z, 0.8, 1.3, 1.4, stone)
+		var tw := w * 0.34
+		var td := d * 0.46
+		c.box(0, h + 5.5, 0, tw, 11.0, td, stone)
+		c.box(0, h + 11.2, 0, tw + 1.0, 0.6, td + 1.0, 0xb8b2a4)
+		c.fr(0, h + 11.5, 0, tw + 1.6, td + 1.6, 0.3, 0.3, 7.0, roof)
+		c.box(0, h + 11.5 + 8.2, 0, 0.14, 3.2, 0.14, 0x3a2a22)
+		c.box(0.9, h + 11.5 + 8.9, 0, 1.6, 1.0, 0.06, 0xb8362a)
 		for sx in [-1, 1]:
 			for sz in [-1, 1]:
-				c.fr(sx * w / 2, 0, sz * d / 2, 4.6, 4.6, 4.2, 4.2, h + 4, stone)
-				c.fr(sx * w / 2, h + 4, sz * d / 2, 5.4, 5.4, 0.3, 0.3, 4.0, 0xc8a24a)
-	c.box(0, 3, d / 2 + 0.1, 4, 6, 0.4, 0x3a2410)
+				c.fr(sx * w / 2, 0, sz * d / 2, 6.0, 6.0, 5.0, 5.0, h + 5, stone)
+				c.box(sx * w / 2, h + 5.2, sz * d / 2, 6.4, 0.6, 6.4, 0xb8b2a4)
+				c.fr(sx * w / 2, h + 5.5, sz * d / 2, 6.0, 6.0, 0.3, 0.3, 6.0, roof)
+				c.box(sx * w / 2, h + 5.5 + 7.0, sz * d / 2, 0.12, 2.0, 0.12, 0x3a2a22)
+				c.box(sx * w / 2 + 0.7, h + 5.5 + 7.5, sz * d / 2, 1.2, 0.7, 0.06, 0xe8c860)
+	c.box(0, 3.5, d / 2 + 0.1, 5, 7, 0.4, 0x3a2410)
+	c.box(0, 7.4, d / 2 + 0.15, 6.4, 0.8, 0.4, 0x8a867e)
 	for i in range(-2, 3):
 		c.box(i * 4.0, h - 3, d / 2 + 0.12, 1.2, 3, 0.1, 0xc8a24a if i % 2 else 0x3a5a9a)
 	for i in range(-2, 3):
 		c.lamp(i * 5.0, h * 0.62, d / 2 + 0.1, 1.0, 1.8, 0.1, 0xffe9a0)
+	if s != "adobe" and s != "redrock":
+		for i in range(-1, 2):
+			c.lamp(i * 6.0, h + 6.0, d * 0.23 + 0.1, 0.9, 1.8, 0.1, 0xffe9a0)
 
 static func _fountain(c: Ctx, b: Dictionary) -> void:
 	c.box(0, 0.5, 0, 8.4, 1.0, 8.4, 0xc4bfb4)

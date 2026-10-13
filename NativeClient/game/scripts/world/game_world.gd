@@ -242,8 +242,10 @@ func _bake_mask() -> Image:
 		match t.kind:
 			"capital":
 				var jade: bool = t.get("style", "") == "jade"
-				for z in range(int(tz - WD.z0 - 47), int(tz - WD.z0 + 47)):
-					for x in range(int(tx - WD.x0 - 52), int(tx - WD.x0 + 52)):
+				var hx := 52 if jade else 78
+				var hz := 47 if jade else 71
+				for z in range(int(tz - WD.z0 - hz), int(tz - WD.z0 + hz)):
+					for x in range(int(tx - WD.x0 - hx), int(tx - WD.x0 + hx)):
 						put.call(x, z, 0.0, 0.7 if jade else 0.75, 1.0 if jade else 0.6)
 			"village":
 				for z in range(int(tz - WD.z0 - 15), int(tz - WD.z0 + 15)):
@@ -300,7 +302,7 @@ func _build_water() -> void:
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://assets/shaders/water.gdshader")
 	water.material_override = mat
-	water.position = Vector3(420, -0.12, 0)
+	water.position = Vector3(WD.x0 + (WD.nx - 1) * WD.cell / 2.0, -0.12, 0)
 	water.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(water)
 

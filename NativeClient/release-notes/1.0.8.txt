@@ -1,0 +1,18 @@
+[b]Version 1.0.8[/b]
+[b]Neu[/b]
+[list]
+[*]Die Kontinente sind etwa doppelt so groß (rund 900 × 900 m statt 600 × 600 m). Städte, Dörfer, Lager, Seen und Flüsse liegen weiter auseinander, die Wege dazwischen sind länger. Die Dörfer selbst bleiben so groß wie zuvor.
+[*]Sonnenburg ist jetzt eine echte Burgstadt: Stadtmauer mit Zinnen, Wehrgängen und Strebepfeilern, Ecktürme und Zwischentürme mit Fahnen, zwei Torhäuser mit Fallgitter und Bannern (West und Süd), dazu eine innere Burg im Norden mit eigener Mauer, Tor und einem mächtigen Bergfried mit Türmen und Flaggen.
+[/list]
+[b]Geändert[/b]
+[list]
+[*]Wölfe, Spinnen, Banditen, Bären und die anderen Gegner halten Abstand zu den Siedlungen: Rund um das erste Dorf Eichenhain ist es jetzt mindestens 130 m weit ruhig, bei den anderen Dörfern rund 80 m. Wolfshügel, Bärenklamm, Spinnenwald und das Banditenlager sind samt Gegnern nach außen gerückt.
+[*]Die Piere der Häfen reichen bis zum Liegeplatz der Fähre. Die Fahrt über das Meer dauert wegen der größeren Entfernung etwas länger.
+[*]Die Stadt Sonnenburg und ihre Umgebung sind größer: Das Pflaster, die Straßen und das ebene Gelände wurden angepasst.
+[/list]
+[b]Technik[/b]
+[list]
+[*]Alle Positionen der Welt werden zentral mit dem Faktor WorldScale (1.5) angepasst (gamedata/zzz_scale.go). Dinge, die zu einem Ort gehören, bleiben dabei an ihrem Ort, NPCs und Objekte im Wasser werden an Land gesetzt.
+[*]Neues Gebäude "archgate" (Torbogen der Burgtore, ohne Kollision). Die Prop-Positionen werden mit 1/24 m statt 1/40 m kodiert, weil die Welt breiter ist.
+[*]Gespeicherte Kartenänderungen des Editors für die alte Weltgröße werden nicht mehr angewendet (die Datei wird zu world_edits.json.unscaled umbenannt).
+[/list]

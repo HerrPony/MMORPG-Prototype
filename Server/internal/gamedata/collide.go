@@ -36,7 +36,7 @@ func initColliders() {
 		}
 		for _, b := range sc.Buildings {
 			switch b.Kind {
-			case "pad", "dock", "ship", "lantern", "pond", "gate":
+			case "pad", "dock", "ship", "lantern", "pond", "gate", "archgate":
 				continue
 			case "tent":
 				b.W, b.D = b.W*0.9, b.D*0.9

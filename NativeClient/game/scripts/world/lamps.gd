@@ -146,7 +146,7 @@ func _build_halos() -> void:
 	halo_mm.material_override = halo_mat
 	halo_mm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	halo_mm.extra_cull_margin = 400.0
-	halo_mm.custom_aabb = AABB(Vector3(-400, -20, -400) + Vector3(420, 0, 0), Vector3(1700, 120, 800))
+	halo_mm.custom_aabb = AABB(Vector3(WD.x0 - 50.0, -20, WD.z0 - 50.0), Vector3((WD.nx - 1) * WD.cell + 100.0, 120, (WD.nz - 1) * WD.cell + 100.0))
 	add_child(halo_mm)
 
 ## day: 0 night .. 1 day. Called every frame by the world.
